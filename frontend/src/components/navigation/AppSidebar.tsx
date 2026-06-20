@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   Code2,
-  Gift,
   LineChart,
   LogIn,
   Menu,
@@ -267,7 +266,6 @@ function AppSidebarInner({ brandHref, sectionTitle, contextItems, isOpen, onTogg
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
   const displayName = fullName || user?.email?.split("@")[0] || "Account"
   const tierLabel = tier === "pro" ? "Member" : "Free account"
-  const isPaidMember = tier === "pro"
   const sidebarJumpPlaceholder = getSidebarJumpPlaceholder(sectionTitle)
 
   const avatarNode = user?.picture_url ? (
@@ -581,15 +579,6 @@ function AppSidebarInner({ brandHref, sectionTitle, contextItems, isOpen, onTogg
           <div className={styles.sidebarBottom}>
             {isAuthenticated ? (
               <div className={styles.accountActions}>
-                {!isPaidMember ? (
-                  <Link href="/pricing" className={`${styles.accountRow} ${styles.memberLoginRow}`}>
-                    <Gift className={styles.offerIcon} aria-hidden="true" size={15} strokeWidth={1.8} />
-                    <div className={`${styles.accountMeta} ${isOpen ? styles.accountMetaVisible : styles.accountMetaHidden}`}>
-                      <div className={styles.accountName}>Upgrade</div>
-                    </div>
-                  </Link>
-                ) : null}
-
                 <Link href="/settings" className={styles.accountRow}>
                   <div className={styles.accountAvatarWrap}>{avatarNode}</div>
                   <div className={`${styles.accountMeta} ${isOpen ? styles.accountMetaVisible : styles.accountMetaHidden}`}>

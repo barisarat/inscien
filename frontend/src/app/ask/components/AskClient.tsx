@@ -31,16 +31,6 @@ import {
   startNarration,
   startWriteup,
 } from "@/lib/api"
-import PriceSeriesChart from "./PriceSeriesChart"
-import VolSeriesChart from "./VolSeriesChart"
-import NewsIndexChart from "./NewsIndexChart"
-import NewsBacktestChart from "./NewsBacktestChart"
-import SeriesCorrelationChart from "./SeriesCorrelationChart"
-import SeriesPlotChart from "./SeriesPlotChart"
-import SignalIndexChart from "./SignalIndexChart"
-import SignalSavedCard from "./SignalSavedCard"
-import SignalTestSavedCard from "./SignalTestSavedCard"
-import PaperRunStartedCard from "./PaperRunStartedCard"
 import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
 import { type GraphData } from "./GraphView"
 import pageStyles from "../ask.module.css"
@@ -61,195 +51,10 @@ type LabCitation = {
   passage?: string
 }
 
-export type PriceSeriesWidget = {
-  kind: "priceSeries"
-  ticker: string
-  name: string
-  range: string
-  frequency?: string
-  points: { date: string; close: number }[]
-  start?: string
-  end?: string
-  note?: string
-}
-
-export type VolSeriesWidget = {
-  kind: "volSeries"
-  ticker: string
-  name: string
-  frequency?: string
-  shortWindow: number
-  longWindow: number
-  currentShortVol: number
-  currentLongVol: number | null
-  regime: string | null
-  shortSeries: { date: string; vol: number }[]
-  longSeries: { date: string; vol: number }[]
-}
-
-export type BacktestMetrics = {
-  totalReturnPct?: number
-  cagrPct?: number
-  annVolPct?: number
-  sharpe?: number
-  maxDrawdownPct?: number
-  winRate?: number
-  numTrades?: number
-  exposurePct?: number
-}
-
-export type NewsIndexPoint = { date: string; value: number | null; valueSmoothed: number | null; articleCount: number }
-
-export type NewsIndexWidget = {
-  kind: "newsIndex"
-  scope: string
-  scopeLabel: string
-  sentimentType: string
-  frequency?: string
-  smoothing?: number
-  windowHours?: number
-  range?: string
-  indexSeries: NewsIndexPoint[]
-  meta: {
-    themes: string[]
-    start: string
-    end: string
-    totalArticles: number
-    daysCovered: number
-    avgArticlesPerDay: number
-  }
-  note?: string
-}
-
-export type NewsBacktestWidget = {
-  kind: "newsBacktest"
-  ticker: string
-  name: string
-  scope: string
-  scopeLabel: string
-  sentimentType: string
-  rule: string
-  threshold: number
-  smoothing: number | null
-  windowHours?: number | null
-  frequency: string
-  start: string
-  end: string
-  metrics: BacktestMetrics
-  equityCurve: { ts: string; equity: number }[]
-  indexSeries: { date: string; value: number | null; valueSmoothed: number | null }[]
-  priceSeries: { date: string; close: number }[]
-  correlations: { sameDay: number | null; lag1: number | null; nextDay: number | null }
-  stats: { daysCovered: number; avgArticlesPerDay: number; totalArticles: number }
-  note?: string
-}
-
-export type SeriesCorrelationWidget = {
-  kind: "seriesCorrelation"
-  labelA: string
-  labelB: string
-  method: string
-  frequency?: string
-  range?: string
-  start?: string
-  end?: string
-  r: number | null
-  pValue: number | null
-  n: number
-  points: { date: string; x: number | null; y: number | null }[]
-  regression: { x0: number; y0: number; x1: number; y1: number } | null
-  note?: string
-}
-
-export type SeriesPlotWidget = {
-  kind: "seriesPlot"
-  series: {
-    label: string
-    source?: string
-    ticker?: string | null
-    name?: string | null
-    transform?: string
-    format?: "currency" | "percent" | "number"
-    points: { date: string; value: number | null }[]
-  }[]
-  frequency?: string
-  range?: string
-  start?: string
-  end?: string
-  note?: string
-}
-
-export type SignalIndexWidget = {
-  kind: "signalIndex"
-  index: string
-  label: string
-  frequency: string
-  breakdown?: string | null
-  series: { label: string; points: { date: string; value: number | null }[] }[]
-  meta?: { start?: string; end?: string; note?: string; eventsInWindow?: number } & Record<string, unknown>
-  topEvents?: { date: string; title: string; finbert: number | null; outlets: number }[]
-  note?: string
-}
-
-export type ValidationSnapshotPayload = {
-  type: string
-  label?: string
-  metrics?: Record<string, number | string>
-  window?: { start: string | null; end: string | null; range: string | null }
-  frequency?: string | null
-  asset?: string | null
-  capturedAt?: string
-  chart?: { ts: string; equity: number }[] | null
-}
-
-export type SignalSavedWidget = {
-  kind: "signalSaved"
-  signalId: number
-  name: string
-  signalType?: string
-  scope?: string | null
-  signalLabel?: string
-  validation?: Record<string, ValidationSnapshotPayload> | null
-}
-
-export type SignalTestSavedWidget = {
-  kind: "signalTestSaved"
-  signalId: number
-  signalTestId: number
-  name: string
-  ticker: string
-  rule?: string
-  frequency?: string
-  validation?: Record<string, ValidationSnapshotPayload> | null
-}
-
-export type PaperRunStartedWidget = {
-  kind: "paperRunStarted"
-  runId: number
-  signalTestId: number
-  ticker: string
-  strategyLabel: string
-  frequency?: string
-  status: string
-  startingCash: number
-}
-
-type LabWidget =
-  | PriceSeriesWidget
-  | VolSeriesWidget
-  | NewsIndexWidget
-  | NewsBacktestWidget
-  | SeriesCorrelationWidget
-  | SeriesPlotWidget
-  | SignalIndexWidget
-  | SignalSavedWidget
-  | SignalTestSavedWidget
-  | PaperRunStartedWidget
 
 type LabStreamEvent =
   | { type: "stage"; stage: LoadingStage; tool?: string; label?: string }
   | { type: "citations"; citations: LabCitation[] }
-  | { type: "widget"; widget: LabWidget }
   | { type: "delta"; text: string }
   | { type: "graph"; nodes: GraphData["nodes"]; edges: GraphData["edges"] }
   | { type: "refs"; matches: RefMatch[] }
@@ -258,7 +63,6 @@ type LabStreamEvent =
       query: string
       answer: string
       citations: LabCitation[]
-      widgets?: LabWidget[]
       contextSummary?: string
       sessionId?: number | null
       related: LabCitation[]
@@ -283,7 +87,6 @@ type LabMessage = {
   content: string
   visibleContent?: string
   citations?: LabCitation[]
-  widgets?: LabWidget[]
   related?: LabCitation[]
   retrievedCount?: number
   insufficientContext?: boolean
@@ -1221,7 +1024,6 @@ function MessageBubble({
 
   const text = message.visibleContent ?? message.content
   const citations = message.citations ?? []
-  const widgets = message.widgets ?? []
   const isComplete = !message.streaming
 
   if (message.narration) {
@@ -1260,13 +1062,6 @@ function MessageBubble({
   return (
     <div className={`${styles.row} ${styles.rowAssistant}`}>
       <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-        {widgets.length > 0 ? (
-          <div className={styles.widgets}>
-            {widgets.map((widget, index) => (
-              <WidgetRenderer key={`${widget.kind}-${index}`} widget={widget} />
-            ))}
-          </div>
-        ) : null}
 
         {message.isTyping ? (
           <span className={styles.loadingLabel}>
@@ -1357,48 +1152,6 @@ function RefResults({
   )
 }
 
-function WidgetRenderer({ widget }: { widget: LabWidget }) {
-  if (widget.kind === "priceSeries") {
-    return <PriceSeriesChart widget={widget} />
-  }
-
-  if (widget.kind === "volSeries") {
-    return <VolSeriesChart widget={widget} />
-  }
-
-  if (widget.kind === "newsIndex") {
-    return <NewsIndexChart widget={widget} />
-  }
-
-  if (widget.kind === "newsBacktest") {
-    return <NewsBacktestChart widget={widget} />
-  }
-
-  if (widget.kind === "seriesCorrelation") {
-    return <SeriesCorrelationChart widget={widget} />
-  }
-
-  if (widget.kind === "seriesPlot") {
-    return <SeriesPlotChart widget={widget} />
-  }
-  if (widget.kind === "signalIndex") {
-    return <SignalIndexChart widget={widget} />
-  }
-
-  if (widget.kind === "signalSaved") {
-    return <SignalSavedCard widget={widget} />
-  }
-
-  if (widget.kind === "signalTestSaved") {
-    return <SignalTestSavedCard widget={widget} />
-  }
-
-  if (widget.kind === "paperRunStarted") {
-    return <PaperRunStartedCard widget={widget} />
-  }
-
-  return null
-}
 
 function AskContent() {
   const searchParams = useSearchParams()
@@ -2024,7 +1777,6 @@ function AskContent() {
     let started = false
     let finalized = false
 
-    let widgets: LabWidget[] = []
 
     const handleEvent = (payload: LabStreamEvent) => {
       if (payload.type === "stage") {
@@ -2041,11 +1793,6 @@ function AskContent() {
         return
       }
 
-      if (payload.type === "widget") {
-        widgets = [...widgets, payload.widget]
-        updateAssistant({ widgets })
-        return
-      }
 
       if (payload.type === "graph") {
         // Open the citation map in the right work-panel, and stash it on the message so
@@ -2087,7 +1834,6 @@ function AskContent() {
           content: payload.answer,
           visibleContent: payload.answer,
           citations: payload.citations,
-          widgets: payload.widgets ?? widgets,
           contextSummary: payload.contextSummary,
           related: payload.related,
           retrievedCount: payload.retrievedCount,

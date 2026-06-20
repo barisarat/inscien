@@ -1,4 +1,0 @@
-left,left_condition,right,right_condition,n_units,wilcoxon_stat,raw_p_value,bonferroni_p_value
-model_a,condition_3,model_b,condition_3,8,0.0,0.0078125,0.0234375
-model_a,condition_3,model_c,condition_3,8,0.0,0.0078125,0.0234375
-model_b,condition_3,model_c,condition_3,8,0.0,0.0078125,0.0234375

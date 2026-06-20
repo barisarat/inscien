@@ -1,4 +1,0 @@
-left,right,n_units,wilcoxon_stat,raw_p_value,bonferroni_p_value
-model_a,model_b,8,0.0,0.0078125,0.0234375
-model_a,model_c,8,0.0,0.0078125,0.0234375
-model_b,model_c,8,0.0,0.0078125,0.0234375

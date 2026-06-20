@@ -1,8 +1,0 @@
-question,reference_answer
-What is one paired observation?,One unit measured under two or more conditions.
-What does Friedman test?,Whether several paired conditions have different ranks overall.
-Why one Friedman p-value?,It is one overall test across all condition columns.
-What does Wilcoxon test?,Whether one paired condition difference has median zero.
-Does Wilcoxon only count signs?,No. It ranks absolute differences and uses signs.
-What does Bonferroni do?,It multiplies raw p-values by the number of tests.
-When should correction be used?,When many related p-values are tested and reported.
