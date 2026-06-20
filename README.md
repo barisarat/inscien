@@ -110,3 +110,7 @@ The distinction: **`papers/` + `data/` are irreplaceable; the index and vectors 
 Key env vars (set on the backend service in `compose.yaml`, overridable via `.env` —
 see `.env.example`): `OLLAMA_BASE_URL`, `PAPERS_DIR`, `QDRANT_URL`, `DATABASE_URL`,
 `KOKORO_VOICE`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
