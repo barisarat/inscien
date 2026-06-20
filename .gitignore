@@ -342,3 +342,8 @@ data/*
 
 # throwaway TTS benchmark harness
 tts-bench/
+
+# Editor + AI-assistant local files (kept locally, not shipped in the public repo)
+.vscode/
+CLAUDE.md
+AGENTS.md
