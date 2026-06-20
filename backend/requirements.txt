@@ -86,3 +86,8 @@ wcwidth==0.6.0
 
 # PDF parsing for the local research-paper library (InScien ingestion).
 pymupdf>=1.24,<2.0
+
+# Narration (/narrate): CPU text-to-speech via Kokoro on onnxruntime (already pinned above),
+# plus pydub for stitching chunks and mp3 export (uses the ffmpeg installed in the image).
+kokoro-onnx>=0.4
+pydub>=0.25

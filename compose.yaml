@@ -2,7 +2,8 @@ name: inscien
 
 # Local-first single-user stack: just the API, the web UI, and the vector store.
 # No MySQL / Redis / Celery — chat history lives in a file-based SQLite DB and
-# ingestion is an on-demand script, not a scheduled worker.
+# ingestion is an on-demand script, not a scheduled worker. Narration (TTS) runs
+# inside the backend on CPU (Kokoro), so there is no GPU service and no GPU required.
 
 services:
   backend:
@@ -31,38 +32,6 @@ services:
       - LAB_TOP_K=10
       - PAPERS_DIR=/workspace/papers
       - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
-      - TTS_SERVICE_URL=http://tts:8300
-
-  # GPU narration worker: parse -> script (Ollama) -> XTTS audio. Heavy (torch+CUDA),
-  # kept OUT of the lean backend. XTTS weights are fetched on first run, not bundled.
-  tts:
-    build:
-      context: ./tts
-    env_file:
-      - .env.dev
-    working_dir: /workspace
-    volumes:
-      - ./tts:/workspace
-      - ./papers:/workspace/papers:ro
-      - tts_jobs:/workspace/jobs
-      - tts_models:/root/.local/share/tts
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - PAPERS_DIR=/workspace/papers
-      - JOBS_DIR=/workspace/jobs
-      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
-      - TTS_SPEAKER=Viktor Menelaos
-      - TTS_LLM_MODEL=qwen2.5:7b
-      - COQUI_TOS_AGREED=1
-    # GPU access (requires NVIDIA Container Toolkit on the host).
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   frontend:
     build:
@@ -95,5 +64,3 @@ services:
 
 volumes:
   qdrant_data:
-  tts_jobs:
-  tts_models:

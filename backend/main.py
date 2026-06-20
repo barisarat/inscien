@@ -72,8 +72,10 @@ def on_startup():
     # In-process jobs don't survive a restart — fail any that were mid-run.
     from services.compare.jobs import recover_stale as recover_compare
     from services.writeup.jobs import recover_stale as recover_writeup
+    from services.narration.jobs import recover_stale as recover_narration
     recover_compare()
     recover_writeup()
+    recover_narration()
 
 
 @app.get("/health")

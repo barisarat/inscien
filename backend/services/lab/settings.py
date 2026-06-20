@@ -3,7 +3,6 @@ import os
 
 LAB_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 LAB_VECTOR_SIZE = 384
-LAB_ANSWER_MODEL = "gpt-5.4-nano"
 
 
 def get_lab_settings():
@@ -18,5 +17,4 @@ def get_lab_settings():
         "top_k": int(os.getenv("LAB_TOP_K", "10")),
         "embedding_model": LAB_EMBEDDING_MODEL,
         "vector_size": LAB_VECTOR_SIZE,
-        "answer_model": os.getenv("LAB_ANSWER_MODEL", LAB_ANSWER_MODEL),
     }
