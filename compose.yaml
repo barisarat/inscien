@@ -8,6 +8,10 @@ name: inscien
 # `docker compose up` boots the whole stack with no env setup. The only thing you must
 # run yourself is a native Ollama on the host (see README). Override OLLAMA_BASE_URL /
 # KOKORO_VOICE via a local .env file if needed (see .env.example).
+#
+# Data model: irreplaceable state (DB, indexes, narration) lives in the host `./data/`
+# folder; the Qdrant `qdrant_data` volume is a rebuildable cache (reindex from papers/).
+# `docker compose down` keeps everything; `down -v` clears only the rebuildable cache.
 
 services:
   backend:
@@ -18,6 +22,9 @@ services:
     volumes:
       - ./backend:/workspace
       - ./papers:/workspace/papers:ro
+      # Durable user data (SQLite DB, indexes, narration audio) on an explicit host
+      # folder — survives `down`/`down -v` and is independent of the source mount above.
+      - ./data:/workspace/data
     ports:
       - "8200:8000"
     # Lets the backend reach an Ollama running on the host (works on Linux too).

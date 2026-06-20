@@ -334,5 +334,11 @@ inscien.db
 papers/
 !papers/.gitkeep
 
+# Durable user data (DB, indexes, narration audio) — host-owned, never tracked.
+# Use `data/*` (not `data/`) so the negation below can re-include the keep file:
+# Git can't re-include a path once its parent directory itself is excluded.
+data/*
+!data/.gitkeep
+
 # throwaway TTS benchmark harness
 tts-bench/

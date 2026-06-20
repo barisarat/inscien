@@ -87,10 +87,26 @@ setup beyond installing Docker and Ollama.
 See `CLAUDE.md` for the full architecture notes and `INSCIEN-BRIEF.md` for the design
 rationale.
 
-## Data & configuration
+## Your data & backups
 
-- PDFs live in `papers/` (mounted read-only into the backend).
-- SQLite DB, the chunk manifest, and narration jobs live under `backend/data/`.
-- Vector data persists in the `qdrant_data` Docker volume.
-- Key env vars (set on the backend service in `compose.yaml`): `OLLAMA_BASE_URL`,
-  `PAPERS_DIR`, `QDRANT_URL`, `DATABASE_URL`, `KOKORO_VOICE`.
+Two host folders hold everything that's yours:
+
+- **`papers/`** — your source PDFs (mounted read-only into the backend).
+- **`data/`** — all durable app state: the SQLite DB (chat history + settings), the search
+  index, and narration audio.
+
+Qdrant's vectors live in the `qdrant_data` Docker volume. They're a **rebuildable cache** —
+regenerated from `papers/` by the ingest script — so they're not something you need to back up.
+
+The distinction: **`papers/` + `data/` are irreplaceable; the index and vectors are derived.**
+
+- **Back up** = copy `papers/` and `data/`. That's your whole library and history.
+- `docker compose down` preserves everything (both folders and the Qdrant volume).
+- `docker compose down -v` also removes the Qdrant volume — but your DB in `data/` is safe
+  (it's a plain host file, not a volume). Rebuild the vectors with
+  `docker compose exec backend python scripts/inscien_ingest.py`.
+
+### Configuration
+Key env vars (set on the backend service in `compose.yaml`, overridable via `.env` —
+see `.env.example`): `OLLAMA_BASE_URL`, `PAPERS_DIR`, `QDRANT_URL`, `DATABASE_URL`,
+`KOKORO_VOICE`.
