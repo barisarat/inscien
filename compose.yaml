@@ -1,0 +1,99 @@
+name: inscien
+
+# Local-first single-user stack: just the API, the web UI, and the vector store.
+# No MySQL / Redis / Celery — chat history lives in a file-based SQLite DB and
+# ingestion is an on-demand script, not a scheduled worker.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env.dev
+    working_dir: /workspace
+    volumes:
+      - ./backend:/workspace
+      - ./papers:/workspace/papers:ro
+    ports:
+      - "8200:8000"
+    stdin_open: true
+    tty: true
+    # Lets the backend reach an Ollama running on the host (works on Linux too).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - qdrant
+    environment:
+      - APP_NAME=inscien
+      - DATABASE_URL=sqlite:////workspace/data/inscien.db
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=inscien_lab_chunks
+      - LAB_TOP_K=10
+      - PAPERS_DIR=/workspace/papers
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+      - TTS_SERVICE_URL=http://tts:8300
+
+  # GPU narration worker: parse -> script (Ollama) -> XTTS audio. Heavy (torch+CUDA),
+  # kept OUT of the lean backend. XTTS weights are fetched on first run, not bundled.
+  tts:
+    build:
+      context: ./tts
+    env_file:
+      - .env.dev
+    working_dir: /workspace
+    volumes:
+      - ./tts:/workspace
+      - ./papers:/workspace/papers:ro
+      - tts_jobs:/workspace/jobs
+      - tts_models:/root/.local/share/tts
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - PAPERS_DIR=/workspace/papers
+      - JOBS_DIR=/workspace/jobs
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - TTS_SPEAKER=Viktor Menelaos
+      - TTS_LLM_MODEL=qwen2.5:7b
+      - COQUI_TOS_AGREED=1
+    # GPU access (requires NVIDIA Container Toolkit on the host).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - .env.dev
+    working_dir: /workspace
+    volumes:
+      - ./frontend:/workspace
+    ports:
+      - "3200:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+    environment:
+      - APP_NAME=inscien
+      - NEXT_PUBLIC_APP_NAME=InScien
+      - NEXT_PUBLIC_API_URL=http://localhost:8200
+      - API_BASE_URL=http://backend:8000
+      - INTERNAL_API_BASE_URL=http://backend:8000
+
+  qdrant:
+    image: qdrant/qdrant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6335:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  qdrant_data:
+  tts_jobs:
+  tts_models:

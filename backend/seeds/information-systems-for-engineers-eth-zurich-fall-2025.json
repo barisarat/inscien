@@ -1,0 +1,246 @@
+{
+  "id": "information-systems-for-engineers-eth-zurich-fall-2025",
+  "name": "Information Systems for Engineers",
+  "href": "/courses/information-systems-for-engineers-eth-zurich-fall-2025",
+  "category": "Computer Science",
+  "source": "ETH Zurich",
+  "desc": "Information Systems for Engineers lecture series by Ghislain Fourny from ETH Zurich Fall 2025, covering relational models, SQL data definition, relational algebra, SQL queries, database design theory, transactions, views, indices, data cubes, database architecture, and outlook topics.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: Introduction",
+      "parts": [
+        {
+          "id": "L01.1",
+          "title": "Introduction (1/2)",
+          "videoId": "HJUzx1PhNdI"
+        },
+        {
+          "id": "L01.2",
+          "title": "Introduction (2/2)",
+          "videoId": "F3O_ZVJmLGk"
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: The Relational Model",
+      "parts": [
+        {
+          "id": "L02.1",
+          "title": "The Relational Model (1/3)",
+          "videoId": "yeZ3EefutFk"
+        },
+        {
+          "id": "L02.2",
+          "title": "The Relational Model (2/3)",
+          "videoId": "XXMnwjZ1J5k"
+        },
+        {
+          "id": "L02.3",
+          "title": "The Relational Model (3/3)",
+          "videoId": "KbLOqYE2JsQ"
+        }
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Data Definition with SQL",
+      "parts": [
+        {
+          "id": "L03.1",
+          "title": "Data Definition with SQL (1/4)",
+          "videoId": "ZF75UNG9OSY"
+        },
+        {
+          "id": "L03.2",
+          "title": "Data Definition with SQL (2/4)",
+          "videoId": "_SUx3tJuw_A"
+        },
+        {
+          "id": "L03.3",
+          "title": "Data Definition with SQL (3/4)",
+          "videoId": "GpBOijkLE08"
+        },
+        {
+          "id": "L03.4",
+          "title": "Data Definition with SQL (4/4)",
+          "videoId": "Oq75U0qiHE0"
+        }
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: The Relational Algebra",
+      "parts": [
+        {
+          "id": "L04.1",
+          "title": "The Relational Algebra (1/3)",
+          "videoId": "lI-afkg0xHc"
+        },
+        {
+          "id": "L04.2",
+          "title": "The Relational Algebra (2/3)",
+          "videoId": "09knatfiToc"
+        },
+        {
+          "id": "L04.3",
+          "title": "The Relational Algebra (3/3)",
+          "videoId": "DdDqnkrmOsw"
+        }
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Queries with SQL",
+      "parts": [
+        {
+          "id": "L05.1",
+          "title": "Queries with SQL (1/4)",
+          "videoId": "glk4TWU-JRc"
+        },
+        {
+          "id": "L05.2",
+          "title": "Queries with SQL (2/4)",
+          "videoId": "bHghM7u1AeA"
+        },
+        {
+          "id": "L05.3",
+          "title": "Queries with SQL (3/4)",
+          "videoId": "_n8ZXlqO6xc"
+        },
+        {
+          "id": "L05.4",
+          "title": "Queries with SQL (4/4)",
+          "videoId": "x-LzgGeHMr8"
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Database Design Theory",
+      "parts": [
+        {
+          "id": "L06.1",
+          "title": "Database Design Theory (1/5)",
+          "videoId": "tMynw9KjCuQ"
+        },
+        {
+          "id": "L06.2",
+          "title": "Database Design Theory (2/5)",
+          "videoId": "c1jJ6tYhAvw"
+        },
+        {
+          "id": "L06.3",
+          "title": "Database Design Theory (3/5)",
+          "videoId": "ffQDUlzvpzE"
+        },
+        {
+          "id": "L06.4",
+          "title": "Database Design Theory (4/5)",
+          "videoId": "fu_K4rg2UGc"
+        },
+        {
+          "id": "L06.5",
+          "title": "Database Design Theory (5/5)",
+          "videoId": "7Ze7nNo4NTM"
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Transactions",
+      "parts": [
+        {
+          "id": "L07.1",
+          "title": "Transactions (1/3)",
+          "videoId": "rQ6KD1xmG0s"
+        },
+        {
+          "id": "L07.2",
+          "title": "Transactions (2/3)",
+          "videoId": "qoiFXAEnNgk"
+        },
+        {
+          "id": "L07.3",
+          "title": "Transactions (3/3)",
+          "videoId": "4Y2gbuxgeAE"
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Views and Indices",
+      "parts": [
+        {
+          "id": "L08.1",
+          "title": "Views and Indices (1/4)",
+          "videoId": "Vic7gQbIAIc"
+        },
+        {
+          "id": "L08.2",
+          "title": "Views and Indices (2/4)",
+          "videoId": "nl2i37PylI4"
+        },
+        {
+          "id": "L08.3",
+          "title": "Views and Indices (3/4)",
+          "videoId": "ffGcBovnIfs"
+        },
+        {
+          "id": "L08.4",
+          "title": "Views and Indices (4/4)",
+          "videoId": "8J_IacvBk2Y"
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Data Cubes",
+      "parts": [
+        {
+          "id": "L09.1",
+          "title": "Data Cubes (1/3)",
+          "videoId": "atWkMsCGNBk"
+        },
+        {
+          "id": "L09.2",
+          "title": "Data Cubes (2/3)",
+          "videoId": "xrPGU9dRDGw"
+        },
+        {
+          "id": "L09.3",
+          "title": "Data Cubes (3/3)",
+          "videoId": "CKam9nBaDvw"
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Database Architecture",
+      "parts": [
+        {
+          "id": "L10.1",
+          "title": "Database Architecture",
+          "videoId": "n3SEZIkmAUA"
+        }
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Outlook",
+      "parts": [
+        {
+          "id": "L11.1",
+          "title": "Outlook (1/2)",
+          "videoId": "r9v1-oHO4vo"
+        },
+        {
+          "id": "L11.2",
+          "title": "Outlook (2/2)",
+          "videoId": "vIqWXBa2X_g"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "id": "stanford-ee364a-convex-optimization",
+  "name": "Stanford EE364A Convex Optimization",
+  "category": "Mathematics",
+  "href": "/courses/stanford-ee364a-convex-optimization",
+  "desc": "Full lecture series from Stanford Online by Stephen Boyd covering convex optimization, convex sets, convex functions, standard problem forms, duality, optimality conditions, numerical methods, and applications.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: Convex Optimization",
+      "parts": [
+        {"id": "L01.1", "title": "Convex Optimization", "videoId": "kV1ru-Inzl4"}
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Convex Optimization",
+      "parts": [
+        {"id": "L02.1", "title": "Convex Optimization", "videoId": "2H4_7izio9Y"}
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Convex Optimization",
+      "parts": [
+        {"id": "L03.1", "title": "Convex Optimization", "videoId": "1menqhfNzzo"}
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Convex Optimization",
+      "parts": [
+        {"id": "L04.1", "title": "Convex Optimization", "videoId": "U2HRwA7XePU"}
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Convex Optimization",
+      "parts": [
+        {"id": "L05.1", "title": "Convex Optimization", "videoId": "AAjG1TQcL7c"}
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Convex Optimization",
+      "parts": [
+        {"id": "L06.1", "title": "Convex Optimization", "videoId": "d2jF3SXcFQ8"}
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Convex Optimization",
+      "parts": [
+        {"id": "L07.1", "title": "Convex Optimization", "videoId": "P_SuSVZnrT0"}
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Convex Optimization",
+      "parts": [
+        {"id": "L08.1", "title": "Convex Optimization", "videoId": "wsRznzNgTS0"}
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Convex Optimization",
+      "parts": [
+        {"id": "L09.1", "title": "Convex Optimization", "videoId": "whE03c84ahA"}
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Convex Optimization",
+      "parts": [
+        {"id": "L10.1", "title": "Convex Optimization", "videoId": "N3V2AdTImJE"}
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Convex Optimization",
+      "parts": [
+        {"id": "L11.1", "title": "Convex Optimization", "videoId": "trs0RI39uWI"}
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Convex Optimization",
+      "parts": [
+        {"id": "L12.1", "title": "Convex Optimization", "videoId": "t8sp9rv-Dqo"}
+      ]
+    },
+    {
+      "id": "L13",
+      "title": "Lecture 13: Convex Optimization",
+      "parts": [
+        {"id": "L13.1", "title": "Convex Optimization", "videoId": "ankx1lGi5jI"}
+      ]
+    },
+    {
+      "id": "L14",
+      "title": "Lecture 14: Convex Optimization",
+      "parts": [
+        {"id": "L14.1", "title": "Convex Optimization", "videoId": "dAvxvA4_Euo"}
+      ]
+    },
+    {
+      "id": "L15",
+      "title": "Lecture 15: Convex Optimization",
+      "parts": [
+        {"id": "L15.1", "title": "Convex Optimization", "videoId": "zVO4ccvrwrI"}
+      ]
+    },
+    {
+      "id": "L16",
+      "title": "Lecture 16: Convex Optimization",
+      "parts": [
+        {"id": "L16.1", "title": "Convex Optimization", "videoId": "Sx7TKDFJjmk"}
+      ]
+    },
+    {
+      "id": "L17",
+      "title": "Lecture 17: Convex Optimization",
+      "parts": [
+        {"id": "L17.1", "title": "Convex Optimization", "videoId": "vcTIA2X0UVk"}
+      ]
+    },
+    {
+      "id": "L18",
+      "title": "Lecture 18: Convex Optimization",
+      "parts": [
+        {"id": "L18.1", "title": "Convex Optimization", "videoId": "4A5opemjRW4"}
+      ]
+    }
+  ]
+}

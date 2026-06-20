@@ -1,0 +1,139 @@
+.panel {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.tabBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  padding: 6px 8px 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: var(--surface-subtle);
+}
+
+.tabActive {
+  background: var(--surface-muted);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.tabTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+
+.tabClose:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.panelAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.panelAction:hover {
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+
+/* Scrollable document area */
+.docScroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pageWrap {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.docStatus {
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  padding: 24px;
+}
+
+/* Citation-graph canvas fills the panel body. */
+.graphWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* The passage highlight, drawn on pdf.js's own text layer (B2). */
+.inscienHighlight {
+  background: rgba(250, 204, 21, 0.4);
+  border-radius: 2px;
+  color: inherit;
+}

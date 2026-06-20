@@ -1,0 +1,4 @@
+left,right,wilcoxon_stat,raw_p_value,bonferroni_p_value
+condition_1,condition_2,0.0,0.0078125,0.0234375
+condition_1,condition_3,0.0,0.0078125,0.0234375
+condition_2,condition_3,0.0,0.0078125,0.0234375

@@ -1,0 +1,397 @@
+.pageShell {
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--text-3);
+  font-size: var(--text-sm);
+}
+
+.mainContent {
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.mainContentOpen {
+  margin-left: 292px;
+}
+
+.mainContentClosed {
+  margin-left: 132px;
+}
+
+.main {
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 36px 48px 64px;
+  box-sizing: border-box;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: var(--title-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.desc {
+  font-size: var(--text-md);
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 620px;
+}
+
+.error {
+  margin-bottom: 20px;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: var(--text-sm);
+}
+
+.section {
+  margin-bottom: 36px;
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+
+.empty {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* --- Health banner + history --- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: var(--text-sm);
+}
+
+.bannerOk {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.bannerBad {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.historyStrip {
+  display: flex;
+  gap: 3px;
+  margin-top: 10px;
+}
+
+.historyCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* --- Pills (live-run convention) --- */
+
+.pill {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.pillOk {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.pillCritical {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.pillWarn {
+  background: var(--surface-muted);
+  color: var(--text-2);
+}
+
+/* --- Violations list --- */
+
+.listWrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+
+.listRow:last-child {
+  border-bottom: none;
+}
+
+.violationKey {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.violationMsg {
+  font-size: var(--text-xs);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* --- Schedule board --- */
+
+.taskGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.taskCard {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.taskHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.headPills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.taskName {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  word-break: break-all;
+}
+
+.taskName:hover {
+  color: var(--accent);
+}
+
+.metricRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.metric {
+  background: var(--surface-muted);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.metric strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.taskError {
+  font-size: var(--text-xs);
+  color: var(--danger-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.drilldown {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drillRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+/* --- GDELT coverage strip --- */
+
+.coverageStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.coverageCell {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.cellOk {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  box-sizing: border-box;
+}
+
+.cellBad {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  box-sizing: border-box;
+}
+
+.cellCold {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Market staleness table --- */
+
+.tableWrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.table td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-2);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.tickerCell {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tdBad {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+.tdMuted {
+  color: var(--text-3);
+}
+
+/* --- Paper runs --- */
+
+.rowName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rowSub {
+  font-weight: 400;
+  color: var(--text-3);
+  font-size: var(--text-xs);
+}
+
+.rowMeta {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .mainContentOpen,
+  .mainContentClosed {
+    margin-left: 0;
+  }
+
+  .main {
+    padding: 24px 20px 48px;
+  }
+}

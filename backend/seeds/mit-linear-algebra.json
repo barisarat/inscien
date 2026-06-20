@@ -1,0 +1,261 @@
+{
+  "id": "mit-linear-algebra",
+  "name": "MIT 18.06 Linear Algebra",
+  "category": "Mathematics",
+  "href": "/courses/mit-linear-algebra",
+  "desc": "Full lecture series from MIT OpenCourseWare by Gilbert Strang covering linear equations, matrices, vector spaces, orthogonality, determinants, eigenvalues, diagonalization, Fourier series, positive definiteness, singular value decomposition, and linear transformations.",
+  "lectures": [
+    {
+      "id": "I01",
+      "title": "Interview: An Interview with Gilbert Strang on Teaching Linear Algebra",
+      "parts": [
+        {"id": "I01.1", "title": "An Interview with Gilbert Strang on Teaching Linear Algebra", "videoId": "7UJ4CFRGd-U"}
+      ]
+    },
+    {
+      "id": "L01",
+      "title": "Lecture 1: The Geometry of Linear Equations",
+      "parts": [
+        {"id": "L01.1", "title": "The Geometry of Linear Equations", "videoId": "J7DzL2_Na80"}
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Elimination with Matrices",
+      "parts": [
+        {"id": "L02.1", "title": "Elimination with Matrices", "videoId": "QVKj3LADCnA"}
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Multiplication and Inverse Matrices",
+      "parts": [
+        {"id": "L03.1", "title": "Multiplication and Inverse Matrices", "videoId": "FX4C-JpTFgY"}
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Factorization into A = LU",
+      "parts": [
+        {"id": "L04.1", "title": "Factorization into A = LU", "videoId": "MsIvs_6vC38"}
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Transposes, Permutations, Spaces R^n",
+      "parts": [
+        {"id": "L05.1", "title": "Transposes, Permutations, Spaces R^n", "videoId": "JibVXBElKL0"}
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Column Space and Nullspace",
+      "parts": [
+        {"id": "L06.1", "title": "Column Space and Nullspace", "videoId": "8o5Cmfpeo6g"}
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Solving Ax = 0: Pivot Variables, Special Solutions",
+      "parts": [
+        {"id": "L07.1", "title": "Solving Ax = 0: Pivot Variables, Special Solutions", "videoId": "VqP2tREMvt0"}
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Solving Ax = b: Row Reduced Form R",
+      "parts": [
+        {"id": "L08.1", "title": "Solving Ax = b: Row Reduced Form R", "videoId": "9Q1q7s1jTzU"}
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Independence, Basis, and Dimension",
+      "parts": [
+        {"id": "L09.1", "title": "Independence, Basis, and Dimension", "videoId": "yjBerM5jWsc"}
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: The Four Fundamental Subspaces",
+      "parts": [
+        {"id": "L10.1", "title": "The Four Fundamental Subspaces", "videoId": "nHlE7EgJFds"}
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Matrix Spaces; Rank 1; Small World Graphs",
+      "parts": [
+        {"id": "L11.1", "title": "Matrix Spaces; Rank 1; Small World Graphs", "videoId": "2IdtqGM6KWU"}
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Graphs, Networks, Incidence Matrices",
+      "parts": [
+        {"id": "L12.1", "title": "Graphs, Networks, Incidence Matrices", "videoId": "6-wh6yvk6uc"}
+      ]
+    },
+    {
+      "id": "R01",
+      "title": "Review: Quiz 1 Review",
+      "parts": [
+        {"id": "R01.1", "title": "Quiz 1 Review", "videoId": "l88D4r74gtM"}
+      ]
+    },
+    {
+      "id": "L14",
+      "title": "Lecture 14: Orthogonal Vectors and Subspaces",
+      "parts": [
+        {"id": "L14.1", "title": "Orthogonal Vectors and Subspaces", "videoId": "YzZUIYRCE38"}
+      ]
+    },
+    {
+      "id": "L15",
+      "title": "Lecture 15: Projections onto Subspaces",
+      "parts": [
+        {"id": "L15.1", "title": "Projections onto Subspaces", "videoId": "Y_Ac6KiQ1t0"}
+      ]
+    },
+    {
+      "id": "L16",
+      "title": "Lecture 16: Projection Matrices and Least Squares",
+      "parts": [
+        {"id": "L16.1", "title": "Projection Matrices and Least Squares", "videoId": "osh80YCg_GM"}
+      ]
+    },
+    {
+      "id": "L17",
+      "title": "Lecture 17: Orthogonal Matrices and Gram-Schmidt",
+      "parts": [
+        {"id": "L17.1", "title": "Orthogonal Matrices and Gram-Schmidt", "videoId": "0MtwqhIwdrI"}
+      ]
+    },
+    {
+      "id": "L18",
+      "title": "Lecture 18: Properties of Determinants",
+      "parts": [
+        {"id": "L18.1", "title": "Properties of Determinants", "videoId": "srxexLishgY"}
+      ]
+    },
+    {
+      "id": "L19",
+      "title": "Lecture 19: Determinant Formulas and Cofactors",
+      "parts": [
+        {"id": "L19.1", "title": "Determinant Formulas and Cofactors", "videoId": "23LLB9mNJvc"}
+      ]
+    },
+    {
+      "id": "L20",
+      "title": "Lecture 20: Cramer's Rule, Inverse Matrix, and Volume",
+      "parts": [
+        {"id": "L20.1", "title": "Cramer's Rule, Inverse Matrix, and Volume", "videoId": "QNpj-gOXW9M"}
+      ]
+    },
+    {
+      "id": "L21",
+      "title": "Lecture 21: Eigenvalues and Eigenvectors",
+      "parts": [
+        {"id": "L21.1", "title": "Eigenvalues and Eigenvectors", "videoId": "cdZnhQjJu4I"}
+      ]
+    },
+    {
+      "id": "L22",
+      "title": "Lecture 22: Diagonalization and Powers of A",
+      "parts": [
+        {"id": "L22.1", "title": "Diagonalization and Powers of A", "videoId": "13r9QY6cmjc"}
+      ]
+    },
+    {
+      "id": "L23",
+      "title": "Lecture 23: Differential Equations and exp(At)",
+      "parts": [
+        {"id": "L23.1", "title": "Differential Equations and exp(At)", "videoId": "IZqwi0wJovM"}
+      ]
+    },
+    {
+      "id": "L24",
+      "title": "Lecture 24: Markov Matrices; Fourier Series",
+      "parts": [
+        {"id": "L24.1", "title": "Markov Matrices; Fourier Series", "videoId": "lGGDIGizcQ0"}
+      ]
+    },
+    {
+      "id": "R02",
+      "title": "Review: Quiz 2 Review",
+      "parts": [
+        {"id": "R02.1", "title": "Quiz 2 Review", "videoId": "QuZL5IKpO_U"}
+      ]
+    },
+    {
+      "id": "L25",
+      "title": "Lecture 25: Symmetric Matrices and Positive Definiteness",
+      "parts": [
+        {"id": "L25.1", "title": "Symmetric Matrices and Positive Definiteness", "videoId": "UCc9q_cAhho"}
+      ]
+    },
+    {
+      "id": "L26",
+      "title": "Lecture 26: Complex Matrices; Fast Fourier Transform",
+      "parts": [
+        {"id": "L26.1", "title": "Complex Matrices; Fast Fourier Transform", "videoId": "M0Sa8fLOajA"}
+      ]
+    },
+    {
+      "id": "L27",
+      "title": "Lecture 27: Positive Definite Matrices and Minima",
+      "parts": [
+        {"id": "L27.1", "title": "Positive Definite Matrices and Minima", "videoId": "vF7eyJ2g3kU"}
+      ]
+    },
+    {
+      "id": "L28",
+      "title": "Lecture 28: Similar Matrices and Jordan Form",
+      "parts": [
+        {"id": "L28.1", "title": "Similar Matrices and Jordan Form", "videoId": "TSdXJw83kyA"}
+      ]
+    },
+    {
+      "id": "L29",
+      "title": "Lecture 29: Singular Value Decomposition",
+      "parts": [
+        {"id": "L29.1", "title": "Singular Value Decomposition", "videoId": "TX_vooSnhm8"}
+      ]
+    },
+    {
+      "id": "L30",
+      "title": "Lecture 30: Linear Transformations and Their Matrices",
+      "parts": [
+        {"id": "L30.1", "title": "Linear Transformations and Their Matrices", "videoId": "Ts3o2I8_Mxc"}
+      ]
+    },
+    {
+      "id": "L31",
+      "title": "Lecture 31: Change of Basis; Image Compression",
+      "parts": [
+        {"id": "L31.1", "title": "Change of Basis; Image Compression", "videoId": "0h43aV4aH7I"}
+      ]
+    },
+    {
+      "id": "R03",
+      "title": "Review: Quiz 3 Review",
+      "parts": [
+        {"id": "R03.1", "title": "Quiz 3 Review", "videoId": "HgC1l_6ySkc"}
+      ]
+    },
+    {
+      "id": "L33",
+      "title": "Lecture 33: Left and Right Inverses; Pseudoinverse",
+      "parts": [
+        {"id": "L33.1", "title": "Left and Right Inverses; Pseudoinverse", "videoId": "Go2aLo7ZOlU"}
+      ]
+    },
+    {
+      "id": "R04",
+      "title": "Review: Final Course Review",
+      "parts": [
+        {"id": "R04.1", "title": "Final Course Review", "videoId": "RWvi4Vx4CDc"}
+      ]
+    }
+  ]
+}

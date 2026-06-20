@@ -1,0 +1,610 @@
+[
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::overview",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Overview",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Overview\n\nA collection is a way to hold multiple values. Different collection types answer different questions.\nThe most important differences are whether order matters, whether duplicates are allowed, whether lookup uses a key, and whether the structure is fixed or variable.\n\nTable:\nTerm | Order matters | Duplicates allowed | Main idea\nSet | No | No | A collection of unique values\nList | Yes | Yes | An ordered collection of values\nBag | No | Yes | A collection that counts repeated values\nMap | Not usually the main point | Keys are unique | A key to value relationship\nDictionary | Not usually the main point | Keys are unique | A programming version of a map\nTuple | Yes | Yes | A fixed ordered group of values\nSequence | Yes | Usually yes | A general ordered series of values",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::set",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Set",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Set\n\nA set is a collection of unique values. If the same value is inserted more than once, it still appears once.\nIn mathematics and programming, a set is useful when membership matters more than position or count.\n\nCode (python):\nitems = {\"apple\", \"banana\", \"apple\"}\n\nprint(items)\n\nThe repeated apple value does not become a second separate item. This is the main reason a set is not a good representation when counts matter.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::list",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "List",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: List\n\nA list is an ordered collection. Values can repeat, and the position of each value matters.\nLists are common in code because they preserve the order in which values are added.\n\nCode (python):\nitems = [\"apple\", \"banana\", \"apple\"]\n\nprint(items[0])\nprint(items[2])",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::bag",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Bag",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Bag\n\nA bag is also called a multiset. It is a collection where repeated values are allowed, but order is usually not important.\nA bag is useful when counts matter but position does not. This is why the term appears in bag of words.\n\nCode (python):\nfrom collections import Counter\n\nitems = [\"apple\", \"banana\", \"apple\"]\nbag = Counter(items)\n\nprint(bag)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::map-and-dictionary",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Map and dictionary",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Map and dictionary\n\nA map stores relationships from keys to values. A dictionary is a common programming implementation of this idea.\nIn Python, dictionary keys are unique. If the same key is assigned again, the value is replaced.\n\nCode (python):\nscores = {\n \"alice\": 10,\n \"bob\": 8,\n}\n\nscores[\"alice\"] = 12\n\nprint(scores)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::tuple-and-sequence",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Tuple and sequence",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Tuple and sequence\n\nA tuple is an ordered group of values. It is often used when values belong together as one record or coordinate.\nA sequence is a broader term for ordered values. Text, tokens, arrays, lists, and time series can all be discussed as sequences depending on context.\n\nCode (python):\npoint = (3, 5)\ntokens = [\"machine\", \"learning\", \"model\"]\n\nprint(point)\nprint(tokens)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "data-collections",
+    "chunkId": "glossary::data-collections::why-this-matters-in-ml",
+    "title": "Set, List, Bag, Map, Dictionary, Tuple, and Sequence",
+    "description": "Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.",
+    "category": "Data Structures and Representation",
+    "sectionTitle": "Why this matters in ML",
+    "url": "/docs/data-collections",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Set, List, Bag, Map, Dictionary, Tuple, and Sequence\n\nCategory: Data Structures and Representation\n\nDescription: Core collection terms that appear in programming, mathematics, data processing, and machine learning representations.\n\nIntro: These collection terms look simple, but they affect how data is counted, ordered, grouped, indexed, and represented. Many machine learning ideas become easier when these basic representation terms are clear.\n\nSection: Why this matters in ML\n\n- A set is useful for unique vocabulary items.\n- A list is useful for ordered tokens.\n- A bag is useful for word counts.\n- A dictionary is useful for mappings such as token to id or feature to value.\n- A sequence is important for text, time series, and language models.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::overview",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "Overview",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: Overview\n\nBag of words represents a document by counting which words appear and how often they appear.\nIt usually ignores grammar, sentence structure, and word order. The result is a vector of counts over a vocabulary.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::simple-example",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "Simple example",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: Simple example\n\nTake two short documents. First build a vocabulary from the unique words. Then count how often each vocabulary word appears in each document.\n\nCode (python):\ndocuments = [\n \"cat sat cat\",\n \"dog sat\",\n]\n\nvocabulary = [\"cat\", \"dog\", \"sat\"]\n\nvectors = [\n [2, 0, 1],\n [0, 1, 1],\n]\n\nprint(vocabulary)\nprint(vectors)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::what-is-kept-and-what-is-lost",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "What is kept and what is lost",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: What is kept and what is lost\n\nTable:\nPart | Kept or lost | Reason\nWord identity | Kept | The vocabulary stores which words are known\nWord count | Kept | The vector stores how often each word appears\nWord order | Mostly lost | The vector does not preserve original positions\nGrammar | Mostly lost | The representation is count based\nDocument length signal | Partly kept | Longer documents can have larger counts",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::why-bag-means-repeated-entries",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "Why bag means repeated entries",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: Why bag means repeated entries\n\nIn this context, bag means that repeated items matter. If cat appears twice, the count for cat is 2.\nThis is different from a set. A set would only tell us that cat exists in the document, not that it appears twice.\n\nCode (python):\nfrom collections import Counter\n\ndocument = \"cat sat cat\"\ntokens = document.split()\n\nword_set = set(tokens)\nword_bag = Counter(tokens)\n\nprint(word_set)\nprint(word_bag)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::common-confusion",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "Common confusion",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: Common confusion\n\n- Bag of words is not a language model.\n- Bag of words does not understand word meaning by itself.\n- Bag of words is not the same as embeddings.\n- Bag of words can still be useful as a baseline for classification, search, and simple text analysis.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "bag-of-words",
+    "chunkId": "glossary::bag-of-words::related-terms",
+    "title": "Bag of Words",
+    "description": "A text representation that keeps word counts while ignoring most word order.",
+    "category": "Information Retrieval",
+    "sectionTitle": "Related terms",
+    "url": "/docs/bag-of-words",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Bag of Words\n\nCategory: Information Retrieval\n\nDescription: A text representation that keeps word counts while ignoring most word order.\n\nIntro: Bag of words is one of the simplest text representation methods. It is easier to understand when the word bag is read as multiset, not as an everyday physical bag.\n\nSection: Related terms\n\n- Token\n- Vocabulary\n- Corpus\n- Document\n- Term frequency\n- Sparse vector\n- TF-IDF",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::overview",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Overview",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Overview\n\nTable:\nTerm | Focus | Typical question\nDeclarative | The desired result | What should be true?\nImperative | The exact steps | How should the machine do it?",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::imperative-language",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Imperative language",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Imperative language\n\nImperative code describes the steps required to produce a result. It often uses explicit control flow, mutation, loops, and assignments.\nThis style is natural when the exact order of operations matters.\n\nCode (python):\nnumbers = [1, 2, 3, 4]\nresult = []\n\nfor number in numbers:\n if number > 2:\n result.append(number)\n\nprint(result)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::declarative-language",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Declarative language",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Declarative language\n\nDeclarative code describes the result more directly. The runtime, database engine, framework, or tool decides the execution details.\nSQL is a common example. A query describes the data wanted, while the database decides the execution plan.\n\nCode (bash):\nSELECT name\nFROM users\nWHERE score > 2",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::same-idea-in-programming",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Same idea in programming",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Same idea in programming\n\nEven inside a general purpose programming language, code can be written in a more declarative style.\n\nCode (python):\nnumbers = [1, 2, 3, 4]\nresult = [number for number in numbers if number > 2]\n\nprint(result)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::common-examples",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Common examples",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Common examples\n\nTable:\nArea | More declarative | More imperative\nDatabase | SQL query | Manual row scanning\nFrontend | React component state to UI | Manual DOM mutation\nInfrastructure | Docker Compose service definition | Manual process startup commands\nData processing | Pandas expression | Manual loops over rows",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "programming-paradigms",
+    "chunkId": "glossary::programming-paradigms::common-confusion",
+    "title": "Declarative and Imperative Language",
+    "description": "Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.",
+    "category": "Programming Concepts",
+    "sectionTitle": "Common confusion",
+    "url": "/docs/programming-paradigms",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Declarative and Imperative Language\n\nCategory: Programming Concepts\n\nDescription: Two ways of expressing computation: describing what result is wanted or describing the steps to produce it.\n\nIntro: Declarative and imperative styles appear in programming languages, query languages, UI frameworks, data pipelines, and infrastructure tools. The distinction is practical because it affects how code is read, optimized, and maintained.\n\nSection: Common confusion\n\n- Declarative does not mean no execution happens. It means execution details are delegated.\n- Imperative does not mean bad. It is useful when detailed control is required.\n- Many systems mix both styles.\n- SQL is declarative, but database engines still execute detailed physical steps internally.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::overview",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "Overview",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: Overview\n\nTable:\nTerm | Meaning | Example\nSQL | A language used to define, query, and modify relational data | SELECT, INSERT, UPDATE\nSQL database | A managed database that contains tables and other database objects | app_db\nSQL table | A relation-like structure with rows and columns | users\nRow | One record in a table | One user\nColumn | One named attribute in a table | email",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::what-sql-means",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "What SQL means",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: What SQL means\n\nSQL stands for Structured Query Language. It is used to create schema, read data, insert rows, update rows, delete rows, and define constraints.\nIn practice, SQL is used with database systems such as PostgreSQL, MySQL, SQL Server, SQLite, and others.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::sql-database",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "SQL database",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: SQL database\n\nA SQL database is a managed collection of database objects. Tables are the most visible object, but a database can also contain views, indexes, constraints, functions, stored procedures, users, permissions, and metadata.\nThe exact meaning of database can vary slightly between database systems, but in application development it usually means the named storage area used by an application.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::sql-table",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "SQL table",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: SQL table\n\nA SQL table stores data in rows and columns. Each row is a record. Each column defines one attribute of that record.\nTables usually have constraints that protect data quality, such as primary keys, foreign keys, not null constraints, unique constraints, and check constraints.\n\nCode (bash):\nCREATE TABLE users (\n id INT PRIMARY KEY,\n email VARCHAR(255) NOT NULL UNIQUE,\n name VARCHAR(100) NOT NULL\n)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::table-as-a-relation",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "Table as a relation",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: Table as a relation\n\nIn relational theory, a table is close to the idea of a relation. A relation represents a set of rows with the same attributes.\nIn real SQL systems, tables can behave differently from pure mathematical relations. For example, SQL tables can have ordering in query output only when ORDER BY is used, and duplicate rows can exist unless constraints prevent them.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "sql-database-and-table",
+    "chunkId": "glossary::sql-database-and-table::common-confusion",
+    "title": "SQL Database and SQL Table",
+    "description": "Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.",
+    "category": "Database Concepts",
+    "sectionTitle": "Common confusion",
+    "url": "/docs/sql-database-and-table",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: SQL Database and SQL Table\n\nCategory: Database Concepts\n\nDescription: Basic SQL storage terms: the database as a managed collection of objects and the table as rows and columns.\n\nIntro: SQL database and SQL table are foundational terms. A database is the managed environment that stores objects. A table is one of the main objects inside it, organized as rows and columns.\n\nSection: Common confusion\n\n- SQL is the language. The database system is the software. The database is the managed storage area. The table is a structured object inside it.\n- A table is not a spreadsheet, although it may visually look similar.\n- A row is not automatically unique unless a key or constraint makes it unique.\n- A column type alone is not always enough. Constraints are also needed for valid data.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::overview",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Overview",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Overview\n\nTable:\nTerm | Question it answers | Typical SQL mechanism\nDomain integrity | Is this column value valid? | Data type, NOT NULL, CHECK\nEntity integrity | Can this row be uniquely identified? | PRIMARY KEY\nReferential integrity | Does this relationship point to a valid row? | FOREIGN KEY\nAtomic value | Does this cell hold one indivisible value? | Schema design",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::domain-integrity",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Domain integrity",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Domain integrity\n\nDomain integrity means values in a column must belong to the allowed domain for that column.\nThe domain can include type, length, range, format, allowed set, and nullability.\n\nCode (bash):\nCREATE TABLE products (\n id INT PRIMARY KEY,\n name VARCHAR(100) NOT NULL,\n price DECIMAL(10, 2) NOT NULL CHECK (price >= 0)\n)\n\nIn this example, price must be a decimal value, must not be null, and must be greater than or equal to zero.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::entity-integrity",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Entity integrity",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Entity integrity\n\nEntity integrity means each row should be uniquely identifiable.\nThis is usually enforced with a primary key. A primary key should be unique and not null.\n\nCode (bash):\nCREATE TABLE users (\n id INT PRIMARY KEY,\n email VARCHAR(255) NOT NULL UNIQUE\n)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::referential-integrity",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Referential integrity",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Referential integrity\n\nReferential integrity means relationships between tables should stay valid.\nA foreign key should point to an existing referenced row, unless the relationship is optional and null is allowed.\n\nCode (bash):\nCREATE TABLE orders (\n id INT PRIMARY KEY,\n user_id INT NOT NULL,\n FOREIGN KEY (user_id) REFERENCES users(id)\n)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::atomic-value",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Atomic value",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Atomic value\n\nAn atomic value is a single indivisible value stored in one cell.\nFor relational design, a cell should not contain a list of separate values that need to be independently searched, joined, counted, or constrained.\n\nTable:\nDesign | Example | Issue\nNon-atomic | phone_numbers = '111,222,333' | Individual phone numbers are hidden inside one string\nAtomic | one phone number per row | Each phone number can be queried and constrained",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::atomic-value-example",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Atomic value example",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Atomic value example\n\nCode (bash):\nCREATE TABLE user_phone_numbers (\n id INT PRIMARY KEY,\n user_id INT NOT NULL,\n phone_number VARCHAR(50) NOT NULL,\n FOREIGN KEY (user_id) REFERENCES users(id)\n)",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "relational-integrity",
+    "chunkId": "glossary::relational-integrity::common-confusion",
+    "title": "Domain, Entity, Referential Integrity, and Atomic Values",
+    "description": "Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.",
+    "category": "Database Concepts",
+    "sectionTitle": "Common confusion",
+    "url": "/docs/relational-integrity",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: Domain, Entity, Referential Integrity, and Atomic Values\n\nCategory: Database Concepts\n\nDescription: Core relational integrity ideas that protect valid values, identifiable rows, valid relationships, and single-value cells.\n\nIntro: Relational integrity is a broad way to discuss data correctness in relational databases. The standard terms usually include domain integrity, entity integrity, and referential integrity. Atomic values are closely related because they describe how values should be stored inside table cells.\n\nSection: Common confusion\n\n- Relational integrity is a broad phrase. Referential integrity is the specific foreign key relationship rule.\n- Domain integrity is not only about data type. It also includes allowed values and constraints.\n- Entity integrity is about row identity, not business correctness by itself.\n- Atomic does not mean short. It means the value should not be split into separate meaningful values for that design.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::overview",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Overview",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Overview\n\nTable:\nLetter | Term | Meaning\nA | Atomicity | A transaction fully completes or fully rolls back\nC | Consistency | A transaction moves the database from one valid state to another valid state\nI | Isolation | Concurrent transactions should not corrupt each other\nD | Durability | Committed data should survive failures",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::atomicity",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Atomicity",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Atomicity\n\nAtomicity means a transaction is treated as one unit.\nIf one part fails, the whole transaction should be rolled back. This prevents partial updates.\n\nCode (bash):\nBEGIN;\n\nUPDATE accounts\nSET balance = balance - 100\nWHERE id = 1;\n\nUPDATE accounts\nSET balance = balance + 100\nWHERE id = 2;\n\nCOMMIT;",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::consistency",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Consistency",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Consistency\n\nConsistency means transactions should preserve database rules.\nRules can include primary keys, foreign keys, check constraints, not null constraints, and application-level invariants.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::isolation",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Isolation",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Isolation\n\nIsolation controls how concurrent transactions see each other's changes.\nWithout proper isolation, two users or processes can read and write overlapping data in ways that produce incorrect results.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::durability",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Durability",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Durability\n\nDurability means that once a transaction is committed, the database should keep that committed result even after a crash or restart.\nDatabase systems use mechanisms such as logs, checkpoints, and storage synchronization to support durability.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  },
+  {
+    "sourceType": "glossary",
+    "sourceId": "acid-transactions",
+    "chunkId": "glossary::acid-transactions::common-confusion",
+    "title": "ACID",
+    "description": "A transaction reliability model based on atomicity, consistency, isolation, and durability.",
+    "category": "Database Concepts",
+    "sectionTitle": "Common confusion",
+    "url": "/docs/acid-transactions",
+    "contentMode": "full_text",
+    "text": "Source type: Glossary\n\nTitle: ACID\n\nCategory: Database Concepts\n\nDescription: A transaction reliability model based on atomicity, consistency, isolation, and durability.\n\nIntro: ACID describes guarantees expected from database transactions. It is important for systems where partial writes, invalid state, concurrent changes, or lost data would create serious correctness problems.\n\nSection: Common confusion\n\n- ACID atomicity is about all-or-nothing transactions.\n- Atomic value in relational modeling is about one indivisible value in a table cell.\n- Consistency in ACID does not mean every business rule is magically correct. The rules must be defined and enforced.\n- Isolation level is configurable in many databases, so behavior can differ by database and configuration.",
+    "metadata": {
+      "kind": "codenote",
+      "resources": []
+    }
+  }
+]

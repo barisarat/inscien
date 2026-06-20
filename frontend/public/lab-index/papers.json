@@ -1,0 +1,2959 @@
+[
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "foundational-ml",
+    "chunkId": "paper_topic::foundational-ml::overview",
+    "title": "Foundational ML",
+    "description": "A literature map for foundational machine learning papers covering representation learning, word embeddings, autoencoders, contrastive learning, self-supervised vision, multimodal pretraining, and information-theoretic foundations.",
+    "category": "Machine Learning",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/foundational-ml",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Foundational ML\n\nCategory: Machine Learning\n\nSubtitle: Representation learning, embeddings, self-supervision, and multimodal pretraining\n\nDescription: A literature map for foundational machine learning papers covering representation learning, word embeddings, autoencoders, contrastive learning, self-supervised vision, multimodal pretraining, and information-theoretic foundations.\n\nIntro:\nThis topic starts from information-theoretic and autoencoder foundations, then moves into word embeddings, broad representation learning, contrastive learning, self-supervised visual models, masked autoencoders, and multimodal pretraining.\nThe curated set is designed as a compact foundation layer for applied ML readers who want to understand the papers behind modern embeddings, representation learning, and pretraining workflows.\n\nMap intro: This map focuses on foundational machine learning literature. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- Efficient Estimation of Word Representations in Vector Space (2013)\n- GloVe: Global Vectors for Word Representation (2014)\n- Reducing the Dimensionality of Data with Neural Networks (2006)\n- Auto-Encoding Variational Bayes (2013)\n- Representation Learning: A Review and New Perspectives (2013)\n- Representation Learning with Contrastive Predictive Coding (2018)\n- A Simple Framework for Contrastive Learning of Visual Representations (2020)\n- Momentum Contrast for Unsupervised Visual Representation Learning (2020)\n- Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning (2020)\n- Masked Autoencoders Are Scalable Vision Learners (2022)\n- Learning Transferable Visual Models from Natural Language Supervision (2021)\n- The Information Bottleneck Method (2000)\n- Deep Learning (2015)",
+    "metadata": {
+      "subtitle": "Representation learning, embeddings, self-supervision, and multimodal pretraining",
+      "paperCount": 13
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "mikolov-2013-word2vec",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::mikolov-2013-word2vec",
+    "title": "Efficient Estimation of Word Representations in Vector Space",
+    "description": "Introduces efficient neural methods for learning distributed word representations, including the skip-gram and continuous bag-of-words formulations that became foundational for word embedding research.",
+    "category": "Machine Learning",
+    "sectionTitle": "Word and Language Representations",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://arxiv.org/abs/1301.3781",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Efficient Estimation of Word Representations in Vector Space\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Tomas Mikolov, Kai Chen, Greg Corrado, Jeffrey Dean\n\nYear: 2013\n\nVenue: arXiv\n\nType: preprint\n\nLane: Word and Language Representations\n\nCitation count: 51355\n\nTags: word2vec, embeddings, representation learning, nlp\n\nAbstract metadata: Introduces efficient neural methods for learning distributed word representations, including the skip-gram and continuous bag-of-words formulations that became foundational for word embedding research.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Tomas Mikolov",
+        "Kai Chen",
+        "Greg Corrado",
+        "Jeffrey Dean"
+      ],
+      "year": 2013,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Word and Language Representations",
+      "citationCount": 51355,
+      "tags": [
+        "word2vec",
+        "embeddings",
+        "representation learning",
+        "nlp"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "pennington-2014-glove",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::pennington-2014-glove",
+    "title": "GloVe: Global Vectors for Word Representation",
+    "description": "Presents Global Vectors, a word representation method that combines global matrix factorization with local context-window learning.",
+    "category": "Machine Learning",
+    "sectionTitle": "Word and Language Representations",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://aclanthology.org/D14-1162.pdf",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: GloVe: Global Vectors for Word Representation\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Jeffrey Pennington, Richard Socher, Christopher D. Manning\n\nYear: 2014\n\nVenue: EMNLP\n\nType: conference\n\nLane: Word and Language Representations\n\nCitation count: 48627\n\nTags: GloVe, embeddings, nlp, matrix factorization\n\nAbstract metadata: Presents Global Vectors, a word representation method that combines global matrix factorization with local context-window learning.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Jeffrey Pennington",
+        "Richard Socher",
+        "Christopher D. Manning"
+      ],
+      "year": 2014,
+      "venue": "EMNLP",
+      "paperType": "conference",
+      "lane": "Word and Language Representations",
+      "citationCount": 48627,
+      "tags": [
+        "GloVe",
+        "embeddings",
+        "nlp",
+        "matrix factorization"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "hinton-2006-dimensionality-reduction",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::hinton-2006-dimensionality-reduction",
+    "title": "Reducing the Dimensionality of Data with Neural Networks",
+    "description": "Shows how deep autoencoder networks can learn compact nonlinear representations for dimensionality reduction.",
+    "category": "Machine Learning",
+    "sectionTitle": "Autoencoders and Latent Variables",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://www.science.org/doi/abs/10.1126/science.1127647",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Reducing the Dimensionality of Data with Neural Networks\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Geoffrey E. Hinton, Ruslan R. Salakhutdinov\n\nYear: 2006\n\nVenue: Science\n\nType: journal\n\nLane: Autoencoders and Latent Variables\n\nCitation count: 26567\n\nDOI: 10.1126/science.1127647\n\nTags: autoencoders, dimensionality reduction, deep learning, representation learning\n\nAbstract metadata: Shows how deep autoencoder networks can learn compact nonlinear representations for dimensionality reduction.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Geoffrey E. Hinton",
+        "Ruslan R. Salakhutdinov"
+      ],
+      "year": 2006,
+      "venue": "Science",
+      "paperType": "journal",
+      "lane": "Autoencoders and Latent Variables",
+      "citationCount": 26567,
+      "tags": [
+        "autoencoders",
+        "dimensionality reduction",
+        "deep learning",
+        "representation learning"
+      ],
+      "doi": "10.1126/science.1127647"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "kingma-2013-vae",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::kingma-2013-vae",
+    "title": "Auto-Encoding Variational Bayes",
+    "description": "Introduces the variational autoencoder framework and the reparameterization trick for scalable inference in latent-variable models.",
+    "category": "Machine Learning",
+    "sectionTitle": "Autoencoders and Latent Variables",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://arxiv.org/abs/1312.6114",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Auto-Encoding Variational Bayes\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Diederik P. Kingma, Max Welling\n\nYear: 2013\n\nVenue: arXiv\n\nType: preprint\n\nLane: Autoencoders and Latent Variables\n\nCitation count: 51663\n\nDOI: 10.48550/arXiv.1312.6114\n\nTags: VAE, variational inference, generative models, latent variables\n\nAbstract metadata: Introduces the variational autoencoder framework and the reparameterization trick for scalable inference in latent-variable models.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Diederik P. Kingma",
+        "Max Welling"
+      ],
+      "year": 2013,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Autoencoders and Latent Variables",
+      "citationCount": 51663,
+      "tags": [
+        "VAE",
+        "variational inference",
+        "generative models",
+        "latent variables"
+      ],
+      "doi": "10.48550/arXiv.1312.6114"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "bengio-2013-representation-learning-review",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::bengio-2013-representation-learning-review",
+    "title": "Representation Learning: A Review and New Perspectives",
+    "description": "Surveys representation learning methods and explains why learned features are central to modern machine learning systems.",
+    "category": "Machine Learning",
+    "sectionTitle": "Representation Learning Foundations",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://ieeexplore.ieee.org/abstract/document/6472238/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Representation Learning: A Review and New Perspectives\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Yoshua Bengio, Aaron Courville, Pascal Vincent\n\nYear: 2013\n\nVenue: IEEE Transactions on Pattern Analysis and Machine Intelligence\n\nType: survey\n\nLane: Representation Learning Foundations\n\nCitation count: 19327\n\nDOI: 10.1109/TPAMI.2013.50\n\nTags: representation learning, deep learning, feature learning, survey\n\nAbstract metadata: Surveys representation learning methods and explains why learned features are central to modern machine learning systems.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Yoshua Bengio",
+        "Aaron Courville",
+        "Pascal Vincent"
+      ],
+      "year": 2013,
+      "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "paperType": "survey",
+      "lane": "Representation Learning Foundations",
+      "citationCount": 19327,
+      "tags": [
+        "representation learning",
+        "deep learning",
+        "feature learning",
+        "survey"
+      ],
+      "doi": "10.1109/TPAMI.2013.50"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "oord-2018-cpc",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::oord-2018-cpc",
+    "title": "Representation Learning with Contrastive Predictive Coding",
+    "description": "Introduces contrastive predictive coding as a self-supervised method for learning useful representations by predicting future latent observations.",
+    "category": "Machine Learning",
+    "sectionTitle": "Contrastive and Self-Supervised Learning",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://arxiv.org/abs/1807.03748",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Representation Learning with Contrastive Predictive Coding\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Aaron van den Oord, Yazhe Li, Oriol Vinyals\n\nYear: 2018\n\nVenue: arXiv\n\nType: preprint\n\nLane: Contrastive and Self-Supervised Learning\n\nCitation count: 13726\n\nDOI: 10.48550/arXiv.1807.03748\n\nTags: CPC, contrastive learning, self-supervised learning, representation learning\n\nAbstract metadata: Introduces contrastive predictive coding as a self-supervised method for learning useful representations by predicting future latent observations.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Aaron van den Oord",
+        "Yazhe Li",
+        "Oriol Vinyals"
+      ],
+      "year": 2018,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Contrastive and Self-Supervised Learning",
+      "citationCount": 13726,
+      "tags": [
+        "CPC",
+        "contrastive learning",
+        "self-supervised learning",
+        "representation learning"
+      ],
+      "doi": "10.48550/arXiv.1807.03748"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "chen-2020-simclr",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::chen-2020-simclr",
+    "title": "A Simple Framework for Contrastive Learning of Visual Representations",
+    "description": "Introduces SimCLR, a simple contrastive learning framework for visual representation learning based on augmentations, projection heads, and large-batch contrastive objectives.",
+    "category": "Machine Learning",
+    "sectionTitle": "Contrastive and Self-Supervised Learning",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "http://proceedings.mlr.press/v119/chen20j.html",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: A Simple Framework for Contrastive Learning of Visual Representations\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Ting Chen, Simon Kornblith, Mohammad Norouzi, Geoffrey Hinton\n\nYear: 2020\n\nVenue: ICML\n\nType: conference\n\nLane: Contrastive and Self-Supervised Learning\n\nCitation count: 28782\n\nTags: SimCLR, contrastive learning, computer vision, self-supervised learning\n\nAbstract metadata: Introduces SimCLR, a simple contrastive learning framework for visual representation learning based on augmentations, projection heads, and large-batch contrastive objectives.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Ting Chen",
+        "Simon Kornblith",
+        "Mohammad Norouzi",
+        "Geoffrey Hinton"
+      ],
+      "year": 2020,
+      "venue": "ICML",
+      "paperType": "conference",
+      "lane": "Contrastive and Self-Supervised Learning",
+      "citationCount": 28782,
+      "tags": [
+        "SimCLR",
+        "contrastive learning",
+        "computer vision",
+        "self-supervised learning"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "he-2020-moco",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::he-2020-moco",
+    "title": "Momentum Contrast for Unsupervised Visual Representation Learning",
+    "description": "Introduces Momentum Contrast, a contrastive learning framework that uses a dynamic dictionary and momentum encoder for unsupervised visual representation learning.",
+    "category": "Machine Learning",
+    "sectionTitle": "Contrastive and Self-Supervised Learning",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "http://openaccess.thecvf.com/content_CVPR_2020/html/He_Momentum_Contrast_for_Unsupervised_Visual_Representation_Learning_CVPR_2020_paper.html",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Momentum Contrast for Unsupervised Visual Representation Learning\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, Ross Girshick\n\nYear: 2020\n\nVenue: CVPR\n\nType: conference\n\nLane: Contrastive and Self-Supervised Learning\n\nCitation count: 18281\n\nTags: MoCo, contrastive learning, computer vision, self-supervised learning\n\nAbstract metadata: Introduces Momentum Contrast, a contrastive learning framework that uses a dynamic dictionary and momentum encoder for unsupervised visual representation learning.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Kaiming He",
+        "Haoqi Fan",
+        "Yuxin Wu",
+        "Saining Xie",
+        "Ross Girshick"
+      ],
+      "year": 2020,
+      "venue": "CVPR",
+      "paperType": "conference",
+      "lane": "Contrastive and Self-Supervised Learning",
+      "citationCount": 18281,
+      "tags": [
+        "MoCo",
+        "contrastive learning",
+        "computer vision",
+        "self-supervised learning"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "grill-2020-byol",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::grill-2020-byol",
+    "title": "Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning",
+    "description": "Introduces BYOL, a self-supervised visual representation learning method that learns from two augmented views without requiring negative examples.",
+    "category": "Machine Learning",
+    "sectionTitle": "Contrastive and Self-Supervised Learning",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://proceedings.neurips.cc/paper/2020/hash/f3ada80d5c4ee70142b17b8192b2958e-Abstract.html",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Jean-Bastien Grill, Florian Strub, Florent Altché, Corentin Tallec\n\nYear: 2020\n\nVenue: NeurIPS\n\nType: conference\n\nLane: Contrastive and Self-Supervised Learning\n\nCitation count: 9760\n\nTags: BYOL, self-supervised learning, computer vision, representation learning\n\nAbstract metadata: Introduces BYOL, a self-supervised visual representation learning method that learns from two augmented views without requiring negative examples.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Jean-Bastien Grill",
+        "Florian Strub",
+        "Florent Altché",
+        "Corentin Tallec"
+      ],
+      "year": 2020,
+      "venue": "NeurIPS",
+      "paperType": "conference",
+      "lane": "Contrastive and Self-Supervised Learning",
+      "citationCount": 9760,
+      "tags": [
+        "BYOL",
+        "self-supervised learning",
+        "computer vision",
+        "representation learning"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "he-2022-mae",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::he-2022-mae",
+    "title": "Masked Autoencoders Are Scalable Vision Learners",
+    "description": "Introduces masked autoencoders for scalable self-supervised visual pretraining using asymmetric encoder-decoder architectures.",
+    "category": "Machine Learning",
+    "sectionTitle": "Masked and Multimodal Pretraining",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://openaccess.thecvf.com/content/CVPR2022/html/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.html",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Masked Autoencoders Are Scalable Vision Learners\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, Ross Girshick\n\nYear: 2022\n\nVenue: CVPR\n\nType: conference\n\nLane: Masked and Multimodal Pretraining\n\nCitation count: 13046\n\nTags: MAE, masked modeling, vision transformers, self-supervised learning\n\nAbstract metadata: Introduces masked autoencoders for scalable self-supervised visual pretraining using asymmetric encoder-decoder architectures.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Kaiming He",
+        "Xinlei Chen",
+        "Saining Xie",
+        "Yanghao Li",
+        "Piotr Dollár",
+        "Ross Girshick"
+      ],
+      "year": 2022,
+      "venue": "CVPR",
+      "paperType": "conference",
+      "lane": "Masked and Multimodal Pretraining",
+      "citationCount": 13046,
+      "tags": [
+        "MAE",
+        "masked modeling",
+        "vision transformers",
+        "self-supervised learning"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "radford-2021-clip",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::radford-2021-clip",
+    "title": "Learning Transferable Visual Models from Natural Language Supervision",
+    "description": "Introduces CLIP, a large-scale contrastive language-image pretraining approach that learns transferable visual representations from natural language supervision.",
+    "category": "Machine Learning",
+    "sectionTitle": "Masked and Multimodal Pretraining",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "http://proceedings.mlr.press/v139/radford21a",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Learning Transferable Visual Models from Natural Language Supervision\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Alec Radford, Jong Wook Kim, Chris Hallacy\n\nYear: 2021\n\nVenue: ICML\n\nType: conference\n\nLane: Masked and Multimodal Pretraining\n\nCitation count: 50764\n\nTags: CLIP, multimodal learning, contrastive learning, vision-language\n\nAbstract metadata: Introduces CLIP, a large-scale contrastive language-image pretraining approach that learns transferable visual representations from natural language supervision.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Alec Radford",
+        "Jong Wook Kim",
+        "Chris Hallacy"
+      ],
+      "year": 2021,
+      "venue": "ICML",
+      "paperType": "conference",
+      "lane": "Masked and Multimodal Pretraining",
+      "citationCount": 50764,
+      "tags": [
+        "CLIP",
+        "multimodal learning",
+        "contrastive learning",
+        "vision-language"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "tishby-2000-information-bottleneck",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::tishby-2000-information-bottleneck",
+    "title": "The Information Bottleneck Method",
+    "description": "Introduces the information bottleneck principle for extracting compressed representations that preserve information relevant to a target variable.",
+    "category": "Machine Learning",
+    "sectionTitle": "Information-Theoretic Foundations",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://arxiv.org/abs/physics/0004057",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: The Information Bottleneck Method\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Naftali Tishby, Fernando C. Pereira, William Bialek\n\nYear: 2000\n\nVenue: arXiv\n\nType: preprint\n\nLane: Information-Theoretic Foundations\n\nCitation count: 5045\n\nDOI: 10.48550/arXiv.physics/0004057\n\nTags: information bottleneck, information theory, representation learning, compression\n\nAbstract metadata: Introduces the information bottleneck principle for extracting compressed representations that preserve information relevant to a target variable.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Naftali Tishby",
+        "Fernando C. Pereira",
+        "William Bialek"
+      ],
+      "year": 2000,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Information-Theoretic Foundations",
+      "citationCount": 5045,
+      "tags": [
+        "information bottleneck",
+        "information theory",
+        "representation learning",
+        "compression"
+      ],
+      "doi": "10.48550/arXiv.physics/0004057"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "lecun-2015-deep-learning",
+    "parentId": "foundational-ml",
+    "chunkId": "paper::foundational-ml::lecun-2015-deep-learning",
+    "title": "Deep Learning",
+    "description": "Review article summarizing the foundations, progress, and impact of deep learning across representation learning, neural networks, speech, vision, and language tasks.",
+    "category": "Machine Learning",
+    "sectionTitle": "Representation Learning Foundations",
+    "url": "/papers/foundational-ml",
+    "externalUrl": "https://www.nature.com/articles/nature14539",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Deep Learning\n\nTopic: Foundational ML\n\nTopic category: Machine Learning\n\nAuthors: Yann LeCun, Yoshua Bengio, Geoffrey Hinton\n\nYear: 2015\n\nVenue: Nature\n\nType: survey\n\nLane: Representation Learning Foundations\n\nCitation count: 79000\n\nDOI: 10.1038/nature14539\n\nTags: deep learning, neural networks, representation learning, survey\n\nAbstract metadata: Review article summarizing the foundations, progress, and impact of deep learning across representation learning, neural networks, speech, vision, and language tasks.",
+    "metadata": {
+      "topicId": "foundational-ml",
+      "topicLabel": "Foundational ML",
+      "authors": [
+        "Yann LeCun",
+        "Yoshua Bengio",
+        "Geoffrey Hinton"
+      ],
+      "year": 2015,
+      "venue": "Nature",
+      "paperType": "survey",
+      "lane": "Representation Learning Foundations",
+      "citationCount": 79000,
+      "tags": [
+        "deep learning",
+        "neural networks",
+        "representation learning",
+        "survey"
+      ],
+      "doi": "10.1038/nature14539"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "lob-hft",
+    "chunkId": "paper_topic::lob-hft::overview",
+    "title": "Limit Order Books & HFT",
+    "description": "A literature map for limit order book forecasting, market microstructure signals, benchmark datasets, and deep learning architectures for high-frequency trading research.",
+    "category": "Financial ML",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/lob-hft",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Limit Order Books & HFT\n\nCategory: Financial ML\n\nSubtitle: LOB-HFT: limit order books, deep learning, and high-frequency market prediction\n\nDescription: A literature map for limit order book forecasting, market microstructure signals, benchmark datasets, and deep learning architectures for high-frequency trading research.\n\nIntro:\nThis topic starts from market microstructure and public datasets such as LOBSTER and FI-2010, then moves into CNN, LSTM, attention, transformer, normalization, and benchmark studies.\nThe map uses publication year on the horizontal axis and placeholder citation groups on the vertical axis so the visual structure reflects both chronology and impact class.\nThe right panel shows paper-level details and can later be extended with abstracts, notes, Zotero links, tags, or custom project annotations.\n\nMap intro: This map focuses on the LOB-HFT literature stream. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- LOBSTER: Limit Order Book Reconstruction System (2011)\n- Queue Imbalance as a One-Tick-Ahead Price Predictor in a Limit Order Book (2015)\n- Deep Learning for Limit Order Books (2016)\n- Benchmark dataset for mid-price forecasting of limit order book data with machine learning methods (2018)\n- Universal features of price formation in financial markets: perspectives from Deep Learning (2018)\n- Temporal Logistic Neural Bag-of-Features for Financial Time series Forecasting leveraging Limit Order Book Data (2019)\n- Feature Engineering for Mid-Price Prediction with Deep Learning (2019)\n- Forecasting jump arrivals in stock prices: new attention-based network architecture using limit order book data (2019)\n- DeepLOB: Deep Convolutional Neural Networks for Limit Order Books (2019)\n- Deep Adaptive Input Normalization for Time Series Forecasting (2020)\n- Using Deep Learning for price prediction by exploiting stationary limit order book features (2020)\n- Multi-scale Two-way Deep Neural Network for Stock Trend Prediction (2020)\n- DeepFolio: Convolutional Neural Networks for Portfolios with Limit Order Book Data (2020)\n- Benchmark Dataset for Short-Term Market Prediction of Limit Order Book in China Markets (2021)\n- Forecasting Financial Time Series Using Robust Deep Adaptive Input Normalization (2021)\n- High-Frequency Trading with Machine Learning Algorithms and Limit Order Book Data (2022)\n- Axial-LOB: High-Frequency Trading with Axial Attention (2022)\n- Reversible Instance Normalization for Accurate Time-Series Forecasting against Distribution Shift (2022)\n- Exploring the Advantages of Transformers for High-Frequency Trading (2023)\n- Dish-TS: A General Paradigm for Alleviating Distribution Shift in Time Series Forecasting (2023)\n- LOB-Based Deep Learning Models for Stock Price Trend Prediction: A Benchmark Study (2023)\n- Deep Limit Order Book Forecasting (2024)\n- Modeling of limit order book data with ordered fuzzy numbers (2024)\n- Lob-based deep learning models for stock price trend prediction: a benchmark study (2024)\n- HLOB-Information persistence and structure in limit order books (2025)\n- TLOB: A Novel Transformer Model with Dual Attention for Price Trend Prediction with Limit Order Book Data (2025)\n- LOB-Bench: Benchmarking Generative AI for Finance - an Application to Limit Order Book Data (2025)\n- Temporal Kolmogorov-Arnold Networks (T-KAN) for High-Frequency Limit Order Book Forecasting: Efficiency, Interpretability, and Alpha Decay (2026)",
+    "metadata": {
+      "subtitle": "LOB-HFT: limit order books, deep learning, and high-frequency market prediction",
+      "paperCount": 28
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "huang-polak-2011-lobster",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::huang-polak-2011-lobster",
+    "title": "LOBSTER: Limit Order Book Reconstruction System",
+    "description": "Introduces the LOBSTER reconstruction system for processing NASDAQ ITCH data into full limit order book states for research use.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Infrastructure",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://www.ssrn.com/abstract=1977207",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: LOBSTER: Limit Order Book Reconstruction System\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Ruihong Huang, Tomas Polak\n\nYear: 2011\n\nVenue: SSRN Electronic Journal\n\nType: system\n\nLane: Datasets and Infrastructure\n\nCitation count: 103\n\nDOI: 10.2139/ssrn.1977207\n\nTags: LOBSTER, dataset, reconstruction, infrastructure\n\nAbstract metadata: Introduces the LOBSTER reconstruction system for processing NASDAQ ITCH data into full limit order book states for research use.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Ruihong Huang",
+        "Tomas Polak"
+      ],
+      "year": 2011,
+      "venue": "SSRN Electronic Journal",
+      "paperType": "system",
+      "lane": "Datasets and Infrastructure",
+      "citationCount": 103,
+      "tags": [
+        "LOBSTER",
+        "dataset",
+        "reconstruction",
+        "infrastructure"
+      ],
+      "doi": "10.2139/ssrn.1977207"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "gould-bonart-2015-queue-imbalance",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::gould-bonart-2015-queue-imbalance",
+    "title": "Queue Imbalance as a One-Tick-Ahead Price Predictor in a Limit Order Book",
+    "description": "Studies queue imbalance as a short-horizon signal for one-tick-ahead mid-price movements in limit order books.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Microstructure",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://arxiv.org/abs/1512.03492",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Queue Imbalance as a One-Tick-Ahead Price Predictor in a Limit Order Book\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Martin D. Gould, Julius Bonart\n\nYear: 2015\n\nVenue: arXiv\n\nType: preprint\n\nLane: Market Microstructure\n\nCitation count: 68\n\nTags: queue imbalance, microstructure, prediction\n\nAbstract metadata: Studies queue imbalance as a short-horizon signal for one-tick-ahead mid-price movements in limit order books.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Martin D. Gould",
+        "Julius Bonart"
+      ],
+      "year": 2015,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Market Microstructure",
+      "citationCount": 68,
+      "tags": [
+        "queue imbalance",
+        "microstructure",
+        "prediction"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "sirignano-2016-deep-learning-lob",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::sirignano-2016-deep-learning-lob",
+    "title": "Deep Learning for Limit Order Books",
+    "description": "Early deep learning work for predicting price movements directly from limit order book states.",
+    "category": "Financial ML",
+    "sectionTitle": "Deep Learning Foundations",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://arxiv.org/abs/1601.01987",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Deep Learning for Limit Order Books\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Justin Sirignano\n\nYear: 2016\n\nVenue: arXiv\n\nType: preprint\n\nLane: Deep Learning Foundations\n\nCitation count: 218\n\nTags: deep learning, LOB, forecasting\n\nAbstract metadata: Early deep learning work for predicting price movements directly from limit order book states.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Justin Sirignano"
+      ],
+      "year": 2016,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Deep Learning Foundations",
+      "citationCount": 218,
+      "tags": [
+        "deep learning",
+        "LOB",
+        "forecasting"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "ntakaris-2018-fi2010-benchmark",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::ntakaris-2018-fi2010-benchmark",
+    "title": "Benchmark dataset for mid-price forecasting of limit order book data with machine learning methods",
+    "description": "Introduces the FI-2010 benchmark dataset and experimental protocol for mid-price forecasting with machine learning methods.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Infrastructure",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://onlinelibrary.wiley.com/doi/10.1002/for.2543",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Benchmark dataset for mid-price forecasting of limit order book data with machine learning methods\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Adamantios Ntakaris, Martin Magris, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2018\n\nVenue: Journal of Forecasting\n\nType: dataset\n\nLane: Datasets and Infrastructure\n\nCitation count: 210\n\nDOI: 10.1002/for.2543\n\nTags: FI-2010, benchmark, dataset, mid-price\n\nAbstract metadata: Introduces the FI-2010 benchmark dataset and experimental protocol for mid-price forecasting with machine learning methods.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Adamantios Ntakaris",
+        "Martin Magris",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2018,
+      "venue": "Journal of Forecasting",
+      "paperType": "dataset",
+      "lane": "Datasets and Infrastructure",
+      "citationCount": 210,
+      "tags": [
+        "FI-2010",
+        "benchmark",
+        "dataset",
+        "mid-price"
+      ],
+      "doi": "10.1002/for.2543"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "sirignano-cont-2018-universal-features",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::sirignano-cont-2018-universal-features",
+    "title": "Universal features of price formation in financial markets: perspectives from Deep Learning",
+    "description": "Uses large-scale deep learning on high-frequency data to argue for universal price formation patterns across equities.",
+    "category": "Financial ML",
+    "sectionTitle": "Deep Learning Foundations",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/1803.06917",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Universal features of price formation in financial markets: perspectives from Deep Learning\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Justin Sirignano, Rama Cont\n\nYear: 2018\n\nVenue: arXiv\n\nType: preprint\n\nLane: Deep Learning Foundations\n\nCitation count: 533\n\nDOI: 10.48550/arXiv.1803.06917\n\nTags: price formation, deep learning, universal features\n\nAbstract metadata: Uses large-scale deep learning on high-frequency data to argue for universal price formation patterns across equities.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Justin Sirignano",
+        "Rama Cont"
+      ],
+      "year": 2018,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Deep Learning Foundations",
+      "citationCount": 533,
+      "tags": [
+        "price formation",
+        "deep learning",
+        "universal features"
+      ],
+      "doi": "10.48550/arXiv.1803.06917"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "passalis-2019-logistic-bof",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::passalis-2019-logistic-bof",
+    "title": "Temporal Logistic Neural Bag-of-Features for Financial Time series Forecasting leveraging Limit Order Book Data",
+    "description": "Proposes a temporal logistic neural bag-of-features formulation for large-scale financial time series forecasting with LOB data.",
+    "category": "Financial ML",
+    "sectionTitle": "Representation and Feature Learning",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/1901.08280",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Temporal Logistic Neural Bag-of-Features for Financial Time series Forecasting leveraging Limit Order Book Data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Nikolaos Passalis, Anastasios Tefas, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2019\n\nVenue: arXiv\n\nType: preprint\n\nLane: Representation and Feature Learning\n\nCitation count: 43\n\nDOI: 10.48550/arXiv.1901.08280\n\nTags: bag of features, feature learning, LOB\n\nAbstract metadata: Proposes a temporal logistic neural bag-of-features formulation for large-scale financial time series forecasting with LOB data.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Nikolaos Passalis",
+        "Anastasios Tefas",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2019,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Representation and Feature Learning",
+      "citationCount": 43,
+      "tags": [
+        "bag of features",
+        "feature learning",
+        "LOB"
+      ],
+      "doi": "10.48550/arXiv.1901.08280"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "ntakaris-2019-feature-engineering",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::ntakaris-2019-feature-engineering",
+    "title": "Feature Engineering for Mid-Price Prediction with Deep Learning",
+    "description": "Compares handcrafted and learned feature sets for mid-price prediction and introduces online learning considerations.",
+    "category": "Financial ML",
+    "sectionTitle": "Representation and Feature Learning",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/1904.05384",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Feature Engineering for Mid-Price Prediction with Deep Learning\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Adamantios Ntakaris, Giorgio Mirone, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2019\n\nVenue: arXiv\n\nType: preprint\n\nLane: Representation and Feature Learning\n\nCitation count: 75\n\nDOI: 10.48550/arXiv.1904.05384\n\nTags: feature engineering, mid-price, deep learning\n\nAbstract metadata: Compares handcrafted and learned feature sets for mid-price prediction and introduces online learning considerations.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Adamantios Ntakaris",
+        "Giorgio Mirone",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2019,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Representation and Feature Learning",
+      "citationCount": 75,
+      "tags": [
+        "feature engineering",
+        "mid-price",
+        "deep learning"
+      ],
+      "doi": "10.48550/arXiv.1904.05384"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "makinen-2019-jump-arrivals-attention",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::makinen-2019-jump-arrivals-attention",
+    "title": "Forecasting jump arrivals in stock prices: new attention-based network architecture using limit order book data",
+    "description": "Uses attention-based architectures on LOB data to forecast jump arrivals in stock prices.",
+    "category": "Financial ML",
+    "sectionTitle": "Attention and Transformers",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://www.tandfonline.com/doi/full/10.1080/14697688.2019.1634277",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Forecasting jump arrivals in stock prices: new attention-based network architecture using limit order book data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Ymir Mäkinen, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2019\n\nVenue: Quantitative Finance\n\nType: journal\n\nLane: Attention and Transformers\n\nCitation count: 89\n\nDOI: 10.1080/14697688.2019.1634277\n\nTags: attention, jump prediction, LOB\n\nAbstract metadata: Uses attention-based architectures on LOB data to forecast jump arrivals in stock prices.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Ymir Mäkinen",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2019,
+      "venue": "Quantitative Finance",
+      "paperType": "journal",
+      "lane": "Attention and Transformers",
+      "citationCount": 89,
+      "tags": [
+        "attention",
+        "jump prediction",
+        "LOB"
+      ],
+      "doi": "10.1080/14697688.2019.1634277"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "zhang-2019-deeplob",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::zhang-2019-deeplob",
+    "title": "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books",
+    "description": "A landmark CNN-based architecture for limit order book forecasting that became one of the most cited deep learning baselines in the area.",
+    "category": "Financial ML",
+    "sectionTitle": "Deep Learning Foundations",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://dx.doi.org/10.1109/TSP.2019.2907260",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: DeepLOB: Deep Convolutional Neural Networks for Limit Order Books\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Zihao Zhang, Stefan Zohren, Stephen Roberts\n\nYear: 2019\n\nVenue: IEEE Transactions on Signal Processing\n\nType: journal\n\nLane: Deep Learning Foundations\n\nCitation count: 425\n\nDOI: 10.1109/TSP.2019.2907260\n\nTags: DeepLOB, CNN, LOB, baseline\n\nAbstract metadata: A landmark CNN-based architecture for limit order book forecasting that became one of the most cited deep learning baselines in the area.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Zihao Zhang",
+        "Stefan Zohren",
+        "Stephen Roberts"
+      ],
+      "year": 2019,
+      "venue": "IEEE Transactions on Signal Processing",
+      "paperType": "journal",
+      "lane": "Deep Learning Foundations",
+      "citationCount": 425,
+      "tags": [
+        "DeepLOB",
+        "CNN",
+        "LOB",
+        "baseline"
+      ],
+      "doi": "10.1109/TSP.2019.2907260"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "passalis-2020-dain",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::passalis-2020-dain",
+    "title": "Deep Adaptive Input Normalization for Time Series Forecasting",
+    "description": "Introduces DAIN, an adaptive normalization layer designed for non-stationary time series and validated on LOB forecasting.",
+    "category": "Financial ML",
+    "sectionTitle": "Normalization and Distribution Shift",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://ieeexplore.ieee.org/document/8936546/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Deep Adaptive Input Normalization for Time Series Forecasting\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Nikolaos Passalis, Anastasios Tefas, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2020\n\nVenue: IEEE Transactions on Neural Networks and Learning Systems\n\nType: journal\n\nLane: Normalization and Distribution Shift\n\nCitation count: 307\n\nDOI: 10.1109/TNNLS.2019.2944933\n\nTags: DAIN, normalization, distribution shift, time series\n\nAbstract metadata: Introduces DAIN, an adaptive normalization layer designed for non-stationary time series and validated on LOB forecasting.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Nikolaos Passalis",
+        "Anastasios Tefas",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2020,
+      "venue": "IEEE Transactions on Neural Networks and Learning Systems",
+      "paperType": "journal",
+      "lane": "Normalization and Distribution Shift",
+      "citationCount": 307,
+      "tags": [
+        "DAIN",
+        "normalization",
+        "distribution shift",
+        "time series"
+      ],
+      "doi": "10.1109/TNNLS.2019.2944933"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "tsantekidis-2020-stationary-features",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::tsantekidis-2020-stationary-features",
+    "title": "Using Deep Learning for price prediction by exploiting stationary limit order book features",
+    "description": "Builds stationary feature representations for LOB data and evaluates CNN, LSTM, and hybrid CNN-LSTM models.",
+    "category": "Financial ML",
+    "sectionTitle": "Representation and Feature Learning",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://linkinghub.elsevier.com/retrieve/pii/S1568494620303410",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Using Deep Learning for price prediction by exploiting stationary limit order book features\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Avraam Tsantekidis, Nikolaos Passalis, Anastasios Tefas, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis\n\nYear: 2020\n\nVenue: Applied Soft Computing\n\nType: journal\n\nLane: Representation and Feature Learning\n\nCitation count: 159\n\nDOI: 10.1016/j.asoc.2020.106401\n\nTags: stationary features, CNN, LSTM, feature representation\n\nAbstract metadata: Builds stationary feature representations for LOB data and evaluates CNN, LSTM, and hybrid CNN-LSTM models.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Avraam Tsantekidis",
+        "Nikolaos Passalis",
+        "Anastasios Tefas",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis"
+      ],
+      "year": 2020,
+      "venue": "Applied Soft Computing",
+      "paperType": "journal",
+      "lane": "Representation and Feature Learning",
+      "citationCount": 159,
+      "tags": [
+        "stationary features",
+        "CNN",
+        "LSTM",
+        "feature representation"
+      ],
+      "doi": "10.1016/j.asoc.2020.106401"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "liu-2020-mtdnn",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::liu-2020-mtdnn",
+    "title": "Multi-scale Two-way Deep Neural Network for Stock Trend Prediction",
+    "description": "Proposes a multi-scale two-way deep model and reports strong performance on FI-2010 and CSI-2016.",
+    "category": "Financial ML",
+    "sectionTitle": "Multi-scale and Temporal Modeling",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://www.ijcai.org/proceedings/2020/628",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Multi-scale Two-way Deep Neural Network for Stock Trend Prediction\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Guang Liu, Yuzhao Mao, Qi Sun, Hailong Huang, Weiguo Gao, Xuan Li, Jianping Shen, Ruifan Li, Xiaojie Wang\n\nYear: 2020\n\nVenue: IJCAI\n\nType: conference\n\nLane: Multi-scale and Temporal Modeling\n\nCitation count: 71\n\nDOI: 10.24963/ijcai.2020/628\n\nTags: multi-scale, trend prediction, FI-2010\n\nAbstract metadata: Proposes a multi-scale two-way deep model and reports strong performance on FI-2010 and CSI-2016.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Guang Liu",
+        "Yuzhao Mao",
+        "Qi Sun",
+        "Hailong Huang",
+        "Weiguo Gao",
+        "Xuan Li",
+        "Jianping Shen",
+        "Ruifan Li",
+        "Xiaojie Wang"
+      ],
+      "year": 2020,
+      "venue": "IJCAI",
+      "paperType": "conference",
+      "lane": "Multi-scale and Temporal Modeling",
+      "citationCount": 71,
+      "tags": [
+        "multi-scale",
+        "trend prediction",
+        "FI-2010"
+      ],
+      "doi": "10.24963/ijcai.2020/628"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "sangadiev-2020-deepfolio",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::sangadiev-2020-deepfolio",
+    "title": "DeepFolio: Convolutional Neural Networks for Portfolios with Limit Order Book Data",
+    "description": "Extends LOB modeling toward portfolio allocation and crypto-asset rebalancing with deep learning architectures.",
+    "category": "Financial ML",
+    "sectionTitle": "Applications and Trading",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2008.12152",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: DeepFolio: Convolutional Neural Networks for Portfolios with Limit Order Book Data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Aiusha Sangadiev, Rodrigo Rivera-Castro, Kirill Stepanov, Andrey Poddubny, Kirill Bubenchikov, Nikita Bekezin, Polina Pilyugina, Evgeny Burnaev\n\nYear: 2020\n\nVenue: arXiv\n\nType: preprint\n\nLane: Applications and Trading\n\nCitation count: 7\n\nDOI: 10.48550/arXiv.2008.12152\n\nTags: portfolio, crypto, DeepFolio, applications\n\nAbstract metadata: Extends LOB modeling toward portfolio allocation and crypto-asset rebalancing with deep learning architectures.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Aiusha Sangadiev",
+        "Rodrigo Rivera-Castro",
+        "Kirill Stepanov",
+        "Andrey Poddubny",
+        "Kirill Bubenchikov",
+        "Nikita Bekezin",
+        "Polina Pilyugina",
+        "Evgeny Burnaev"
+      ],
+      "year": 2020,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Applications and Trading",
+      "citationCount": 7,
+      "tags": [
+        "portfolio",
+        "crypto",
+        "DeepFolio",
+        "applications"
+      ],
+      "doi": "10.48550/arXiv.2008.12152"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "huang-2021-china-benchmark",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::huang-2021-china-benchmark",
+    "title": "Benchmark Dataset for Short-Term Market Prediction of Limit Order Book in China Markets",
+    "description": "Introduces a large LOB benchmark dataset for China markets and provides evaluation and practical short-term strategy framing.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Infrastructure",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://pm-research.com/lookup/doi/10.3905/jfds.2021.1.074",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Benchmark Dataset for Short-Term Market Prediction of Limit Order Book in China Markets\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Charles Huang, Weifeng Ge, Hongsong Chou, Xin Du\n\nYear: 2021\n\nVenue: The Journal of Financial Data Science\n\nType: journal\n\nLane: Datasets and Infrastructure\n\nCitation count: 16\n\nDOI: 10.3905/jfds.2021.1.074\n\nTags: China markets, benchmark, VWAP, dataset\n\nAbstract metadata: Introduces a large LOB benchmark dataset for China markets and provides evaluation and practical short-term strategy framing.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Charles Huang",
+        "Weifeng Ge",
+        "Hongsong Chou",
+        "Xin Du"
+      ],
+      "year": 2021,
+      "venue": "The Journal of Financial Data Science",
+      "paperType": "journal",
+      "lane": "Datasets and Infrastructure",
+      "citationCount": 16,
+      "tags": [
+        "China markets",
+        "benchmark",
+        "VWAP",
+        "dataset"
+      ],
+      "doi": "10.3905/jfds.2021.1.074"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "passalis-2021-robust-dain",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::passalis-2021-robust-dain",
+    "title": "Forecasting Financial Time Series Using Robust Deep Adaptive Input Normalization",
+    "description": "Extends adaptive normalization ideas for robust financial forecasting under non-stationarity and distribution changes.",
+    "category": "Financial ML",
+    "sectionTitle": "Normalization and Distribution Shift",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://link.springer.com/10.1007/s11265-020-01624-0",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Forecasting Financial Time Series Using Robust Deep Adaptive Input Normalization\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Nikolaos Passalis, Juho Kanniainen, Moncef Gabbouj, Alexandros Iosifidis, Anastasios Tefas\n\nYear: 2021\n\nVenue: Journal of Signal Processing Systems\n\nType: journal\n\nLane: Normalization and Distribution Shift\n\nCitation count: 29\n\nDOI: 10.1007/s11265-020-01624-0\n\nTags: DAIN, robustness, non-stationarity\n\nAbstract metadata: Extends adaptive normalization ideas for robust financial forecasting under non-stationarity and distribution changes.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Nikolaos Passalis",
+        "Juho Kanniainen",
+        "Moncef Gabbouj",
+        "Alexandros Iosifidis",
+        "Anastasios Tefas"
+      ],
+      "year": 2021,
+      "venue": "Journal of Signal Processing Systems",
+      "paperType": "journal",
+      "lane": "Normalization and Distribution Shift",
+      "citationCount": 29,
+      "tags": [
+        "DAIN",
+        "robustness",
+        "non-stationarity"
+      ],
+      "doi": "10.1007/s11265-020-01624-0"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "mangat-2022-ml-hft",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::mangat-2022-ml-hft",
+    "title": "High-Frequency Trading with Machine Learning Algorithms and Limit Order Book Data",
+    "description": "Examines whether ML methods on LOBSTER-derived features lead to useful intraday trading signals after realistic considerations.",
+    "category": "Financial ML",
+    "sectionTitle": "Applications and Trading",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://www.aimspress.com/article/doi/10.3934/DSFE.2022022",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: High-Frequency Trading with Machine Learning Algorithms and Limit Order Book Data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Manveer Kaur Mangat, Erhard Reschenhofer, Thomas Stark, Christian Zwatz\n\nYear: 2022\n\nVenue: Data Science in Finance and Economics\n\nType: journal\n\nLane: Applications and Trading\n\nCitation count: 11\n\nDOI: 10.3934/DSFE.2022022\n\nTags: trading, LOBSTER, practicality, signals\n\nAbstract metadata: Examines whether ML methods on LOBSTER-derived features lead to useful intraday trading signals after realistic considerations.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Manveer Kaur Mangat",
+        "Erhard Reschenhofer",
+        "Thomas Stark",
+        "Christian Zwatz"
+      ],
+      "year": 2022,
+      "venue": "Data Science in Finance and Economics",
+      "paperType": "journal",
+      "lane": "Applications and Trading",
+      "citationCount": 11,
+      "tags": [
+        "trading",
+        "LOBSTER",
+        "practicality",
+        "signals"
+      ],
+      "doi": "10.3934/DSFE.2022022"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "kisiel-2022-axial-lob",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::kisiel-2022-axial-lob",
+    "title": "Axial-LOB: High-Frequency Trading with Axial Attention",
+    "description": "Introduces an axial attention architecture for LOB prediction to capture broader dependencies with efficient parameterization.",
+    "category": "Financial ML",
+    "sectionTitle": "Attention and Transformers",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2212.01807",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Axial-LOB: High-Frequency Trading with Axial Attention\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Damian Kisiel, Denise Gorse\n\nYear: 2022\n\nVenue: arXiv\n\nType: preprint\n\nLane: Attention and Transformers\n\nCitation count: 12\n\nDOI: 10.48550/arXiv.2212.01807\n\nTags: axial attention, transformer, HFT\n\nAbstract metadata: Introduces an axial attention architecture for LOB prediction to capture broader dependencies with efficient parameterization.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Damian Kisiel",
+        "Denise Gorse"
+      ],
+      "year": 2022,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Attention and Transformers",
+      "citationCount": 12,
+      "tags": [
+        "axial attention",
+        "transformer",
+        "HFT"
+      ],
+      "doi": "10.48550/arXiv.2212.01807"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "kim-2022-revin",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::kim-2022-revin",
+    "title": "Reversible Instance Normalization for Accurate Time-Series Forecasting against Distribution Shift",
+    "description": "A highly influential general time series normalization method relevant to LOB forecasting under distribution shift.",
+    "category": "Financial ML",
+    "sectionTitle": "Normalization and Distribution Shift",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://openreview.net/forum?id=cGDAkQo1C0p",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Reversible Instance Normalization for Accurate Time-Series Forecasting against Distribution Shift\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Taesung Kim, Jinhee Kim, Yunwon Tae, Cheonbok Park, Jang-Ho Choi, Jaegul Choo\n\nYear: 2022\n\nVenue: ICLR\n\nType: conference\n\nLane: Normalization and Distribution Shift\n\nCitation count: 1361\n\nTags: RevIN, normalization, distribution shift, time series\n\nAbstract metadata: A highly influential general time series normalization method relevant to LOB forecasting under distribution shift.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Taesung Kim",
+        "Jinhee Kim",
+        "Yunwon Tae",
+        "Cheonbok Park",
+        "Jang-Ho Choi",
+        "Jaegul Choo"
+      ],
+      "year": 2022,
+      "venue": "ICLR",
+      "paperType": "conference",
+      "lane": "Normalization and Distribution Shift",
+      "citationCount": 1361,
+      "tags": [
+        "RevIN",
+        "normalization",
+        "distribution shift",
+        "time series"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "barez-2023-transformers-hft",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::barez-2023-transformers-hft",
+    "title": "Exploring the Advantages of Transformers for High-Frequency Trading",
+    "description": "Explores transformer architectures for HFT tasks and positions them against prior LOB deep learning approaches.",
+    "category": "Financial ML",
+    "sectionTitle": "Attention and Transformers",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://arxiv.org/abs/2302.13850",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Exploring the Advantages of Transformers for High-Frequency Trading\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Fazl Barez, Paul Bilokon, Arthur Gervais, Nikita Lisitsyn\n\nYear: 2023\n\nVenue: arXiv\n\nType: preprint\n\nLane: Attention and Transformers\n\nCitation count: 11\n\nTags: transformers, HFT, sequence modeling\n\nAbstract metadata: Explores transformer architectures for HFT tasks and positions them against prior LOB deep learning approaches.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Fazl Barez",
+        "Paul Bilokon",
+        "Arthur Gervais",
+        "Nikita Lisitsyn"
+      ],
+      "year": 2023,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Attention and Transformers",
+      "citationCount": 11,
+      "tags": [
+        "transformers",
+        "HFT",
+        "sequence modeling"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "fan-2023-dish-ts",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::fan-2023-dish-ts",
+    "title": "Dish-TS: A General Paradigm for Alleviating Distribution Shift in Time Series Forecasting",
+    "description": "A general distribution-shift mitigation framework for time series that is relevant as a normalization and robustness reference.",
+    "category": "Financial ML",
+    "sectionTitle": "Normalization and Distribution Shift",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://arxiv.org/abs/2302.14829",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Dish-TS: A General Paradigm for Alleviating Distribution Shift in Time Series Forecasting\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Wei Fan, Pengyang Wang, Dongkun Wang, Dongjie Wang, Yuanchun Zhou, Yanjie Fu\n\nYear: 2023\n\nVenue: arXiv\n\nType: preprint\n\nLane: Normalization and Distribution Shift\n\nCitation count: 179\n\nTags: distribution shift, time series, robustness\n\nAbstract metadata: A general distribution-shift mitigation framework for time series that is relevant as a normalization and robustness reference.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Wei Fan",
+        "Pengyang Wang",
+        "Dongkun Wang",
+        "Dongjie Wang",
+        "Yuanchun Zhou",
+        "Yanjie Fu"
+      ],
+      "year": 2023,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Normalization and Distribution Shift",
+      "citationCount": 179,
+      "tags": [
+        "distribution shift",
+        "time series",
+        "robustness"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "prata-2023-lob-benchmark",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::prata-2023-lob-benchmark",
+    "title": "LOB-Based Deep Learning Models for Stock Price Trend Prediction: A Benchmark Study",
+    "description": "Benchmarks fifteen LOB-based deep learning models and highlights weak real-world robustness when exposed to new data.",
+    "category": "Financial ML",
+    "sectionTitle": "Benchmarks and Evaluation",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2308.01915",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: LOB-Based Deep Learning Models for Stock Price Trend Prediction: A Benchmark Study\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Matteo Prata, Giuseppe Masi, Leonardo Berti, Viviana Arrigoni, Andrea Coletta, Irene Cannistraci, Svitlana Vyetrenko, Paola Velardi, Novella Bartolini\n\nYear: 2023\n\nVenue: arXiv\n\nType: preprint\n\nLane: Benchmarks and Evaluation\n\nCitation count: 41\n\nDOI: 10.48550/arXiv.2308.01915\n\nTags: benchmark, generalization, LOBCAST, evaluation\n\nAbstract metadata: Benchmarks fifteen LOB-based deep learning models and highlights weak real-world robustness when exposed to new data.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Matteo Prata",
+        "Giuseppe Masi",
+        "Leonardo Berti",
+        "Viviana Arrigoni",
+        "Andrea Coletta",
+        "Irene Cannistraci",
+        "Svitlana Vyetrenko",
+        "Paola Velardi",
+        "Novella Bartolini"
+      ],
+      "year": 2023,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Benchmarks and Evaluation",
+      "citationCount": 41,
+      "tags": [
+        "benchmark",
+        "generalization",
+        "LOBCAST",
+        "evaluation"
+      ],
+      "doi": "10.48550/arXiv.2308.01915"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "briola-2024-deep-lob-forecasting",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::briola-2024-deep-lob-forecasting",
+    "title": "Deep Limit Order Book Forecasting",
+    "description": "Studies LOB predictability across heterogeneous NASDAQ stocks and emphasizes operational evaluation beyond standard ML metrics.",
+    "category": "Financial ML",
+    "sectionTitle": "Benchmarks and Evaluation",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2403.09267",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Deep Limit Order Book Forecasting\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Antonio Briola, Silvia Bartolucci, Tomaso Aste\n\nYear: 2024\n\nVenue: arXiv\n\nType: preprint\n\nLane: Benchmarks and Evaluation\n\nCitation count: 6\n\nDOI: 10.48550/arXiv.2403.09267\n\nTags: evaluation, forecasting, LOBFrame\n\nAbstract metadata: Studies LOB predictability across heterogeneous NASDAQ stocks and emphasizes operational evaluation beyond standard ML metrics.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Antonio Briola",
+        "Silvia Bartolucci",
+        "Tomaso Aste"
+      ],
+      "year": 2024,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Benchmarks and Evaluation",
+      "citationCount": 6,
+      "tags": [
+        "evaluation",
+        "forecasting",
+        "LOBFrame"
+      ],
+      "doi": "10.48550/arXiv.2403.09267"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "marszalek-2024-ordered-fuzzy",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::marszalek-2024-ordered-fuzzy",
+    "title": "Modeling of limit order book data with ordered fuzzy numbers",
+    "description": "Proposes ordered fuzzy numbers as an alternative LOB representation and evaluates them with DeepLOB under perturbations.",
+    "category": "Financial ML",
+    "sectionTitle": "Representation and Feature Learning",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://linkinghub.elsevier.com/retrieve/pii/S1568494624003296",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Modeling of limit order book data with ordered fuzzy numbers\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Adam Marszałek, Tadeusz Burczyński\n\nYear: 2024\n\nVenue: Applied Soft Computing\n\nType: journal\n\nLane: Representation and Feature Learning\n\nCitation count: 6\n\nDOI: 10.1016/j.asoc.2024.111555\n\nTags: ordered fuzzy numbers, representation, robustness\n\nAbstract metadata: Proposes ordered fuzzy numbers as an alternative LOB representation and evaluates them with DeepLOB under perturbations.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Adam Marszałek",
+        "Tadeusz Burczyński"
+      ],
+      "year": 2024,
+      "venue": "Applied Soft Computing",
+      "paperType": "journal",
+      "lane": "Representation and Feature Learning",
+      "citationCount": 6,
+      "tags": [
+        "ordered fuzzy numbers",
+        "representation",
+        "robustness"
+      ],
+      "doi": "10.1016/j.asoc.2024.111555"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "prata-2024-air-benchmark",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::prata-2024-air-benchmark",
+    "title": "Lob-based deep learning models for stock price trend prediction: a benchmark study",
+    "description": "Journal version of the benchmark study on LOB deep learning models, robustness, and generalization limits.",
+    "category": "Financial ML",
+    "sectionTitle": "Benchmarks and Evaluation",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://link.springer.com/10.1007/s10462-024-10715-4",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Lob-based deep learning models for stock price trend prediction: a benchmark study\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Matteo Prata, Giuseppe Masi, Leonardo Berti, Viviana Arrigoni, Andrea Coletta, Irene Cannistraci, Svitlana Vyetrenko, Paola Velardi, Novella Bartolini\n\nYear: 2024\n\nVenue: Artificial Intelligence Review\n\nType: journal\n\nLane: Benchmarks and Evaluation\n\nCitation count: 41\n\nDOI: 10.1007/s10462-024-10715-4\n\nTags: benchmark, review, generalization\n\nAbstract metadata: Journal version of the benchmark study on LOB deep learning models, robustness, and generalization limits.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Matteo Prata",
+        "Giuseppe Masi",
+        "Leonardo Berti",
+        "Viviana Arrigoni",
+        "Andrea Coletta",
+        "Irene Cannistraci",
+        "Svitlana Vyetrenko",
+        "Paola Velardi",
+        "Novella Bartolini"
+      ],
+      "year": 2024,
+      "venue": "Artificial Intelligence Review",
+      "paperType": "journal",
+      "lane": "Benchmarks and Evaluation",
+      "citationCount": 41,
+      "tags": [
+        "benchmark",
+        "review",
+        "generalization"
+      ],
+      "doi": "10.1007/s10462-024-10715-4"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "briola-2025-hlob",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::briola-2025-hlob",
+    "title": "HLOB-Information persistence and structure in limit order books",
+    "description": "Introduces HLOB, a large-scale model that integrates information filtering structure and analyzes persistence across horizons.",
+    "category": "Financial ML",
+    "sectionTitle": "Deep Learning Foundations",
+    "url": "/papers/lob-hft",
+    "externalUrl": "https://linkinghub.elsevier.com/retrieve/pii/S0957417424029452",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: HLOB-Information persistence and structure in limit order books\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Antonio Briola, Silvia Bartolucci, Tomaso Aste\n\nYear: 2025\n\nVenue: Expert Systems with Applications\n\nType: journal\n\nLane: Deep Learning Foundations\n\nCitation count: 21\n\nDOI: 10.1016/j.eswa.2024.126078\n\nTags: HLOB, information filtering, deep learning\n\nAbstract metadata: Introduces HLOB, a large-scale model that integrates information filtering structure and analyzes persistence across horizons.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Antonio Briola",
+        "Silvia Bartolucci",
+        "Tomaso Aste"
+      ],
+      "year": 2025,
+      "venue": "Expert Systems with Applications",
+      "paperType": "journal",
+      "lane": "Deep Learning Foundations",
+      "citationCount": 21,
+      "tags": [
+        "HLOB",
+        "information filtering",
+        "deep learning"
+      ],
+      "doi": "10.1016/j.eswa.2024.126078"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "berti-2025-tlob",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::berti-2025-tlob",
+    "title": "TLOB: A Novel Transformer Model with Dual Attention for Price Trend Prediction with Limit Order Book Data",
+    "description": "Introduces a dual-attention transformer for LOB trend prediction and discusses horizon bias, predictability decay, and transaction cost realism.",
+    "category": "Financial ML",
+    "sectionTitle": "Attention and Transformers",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2502.15757",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: TLOB: A Novel Transformer Model with Dual Attention for Price Trend Prediction with Limit Order Book Data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Leonardo Berti, Gjergji Kasneci\n\nYear: 2025\n\nVenue: arXiv\n\nType: preprint\n\nLane: Attention and Transformers\n\nCitation count: 6\n\nDOI: 10.48550/arXiv.2502.15757\n\nTags: TLOB, transformer, dual attention, trend prediction\n\nAbstract metadata: Introduces a dual-attention transformer for LOB trend prediction and discusses horizon bias, predictability decay, and transaction cost realism.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Leonardo Berti",
+        "Gjergji Kasneci"
+      ],
+      "year": 2025,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Attention and Transformers",
+      "citationCount": 6,
+      "tags": [
+        "TLOB",
+        "transformer",
+        "dual attention",
+        "trend prediction"
+      ],
+      "doi": "10.48550/arXiv.2502.15757"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "nagy-2025-lob-bench",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::nagy-2025-lob-bench",
+    "title": "LOB-Bench: Benchmarking Generative AI for Finance - an Application to Limit Order Book Data",
+    "description": "Introduces a benchmark for evaluating generative AI on LOBSTER-format order-by-order data with distributional and market impact metrics.",
+    "category": "Financial ML",
+    "sectionTitle": "Benchmarks and Evaluation",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2502.09172",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: LOB-Bench: Benchmarking Generative AI for Finance - an Application to Limit Order Book Data\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Peer Nagy, Sascha Frey, Kang Li, Bidipta Sarkar, Svitlana Vyetrenko, Stefan Zohren, Ani Calinescu, Jakob Foerster\n\nYear: 2025\n\nVenue: arXiv\n\nType: preprint\n\nLane: Benchmarks and Evaluation\n\nCitation count: 8\n\nDOI: 10.48550/arXiv.2502.09172\n\nTags: generative AI, benchmark, LOBSTER, evaluation\n\nAbstract metadata: Introduces a benchmark for evaluating generative AI on LOBSTER-format order-by-order data with distributional and market impact metrics.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Peer Nagy",
+        "Sascha Frey",
+        "Kang Li",
+        "Bidipta Sarkar",
+        "Svitlana Vyetrenko",
+        "Stefan Zohren",
+        "Ani Calinescu",
+        "Jakob Foerster"
+      ],
+      "year": 2025,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Benchmarks and Evaluation",
+      "citationCount": 8,
+      "tags": [
+        "generative AI",
+        "benchmark",
+        "LOBSTER",
+        "evaluation"
+      ],
+      "doi": "10.48550/arXiv.2502.09172"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "makinde-2026-t-kan",
+    "parentId": "lob-hft",
+    "chunkId": "paper::lob-hft::makinde-2026-t-kan",
+    "title": "Temporal Kolmogorov-Arnold Networks (T-KAN) for High-Frequency Limit Order Book Forecasting: Efficiency, Interpretability, and Alpha Decay",
+    "description": "Recent work that replaces fixed linear weights in LSTM-style sequence modeling with learnable spline-based KAN components for LOB forecasting.",
+    "category": "Financial ML",
+    "sectionTitle": "Deep Learning Foundations",
+    "url": "/papers/lob-hft",
+    "externalUrl": "http://arxiv.org/abs/2601.02310",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Temporal Kolmogorov-Arnold Networks (T-KAN) for High-Frequency Limit Order Book Forecasting: Efficiency, Interpretability, and Alpha Decay\n\nTopic: Limit Order Books & HFT\n\nTopic category: Financial ML\n\nAuthors: Ahmad Makinde\n\nYear: 2026\n\nVenue: arXiv\n\nType: preprint\n\nLane: Deep Learning Foundations\n\nCitation count: 0\n\nDOI: 10.48550/arXiv.2601.02310\n\nTags: KAN, interpretability, alpha decay, HFT\n\nAbstract metadata: Recent work that replaces fixed linear weights in LSTM-style sequence modeling with learnable spline-based KAN components for LOB forecasting.",
+    "metadata": {
+      "topicId": "lob-hft",
+      "topicLabel": "Limit Order Books & HFT",
+      "authors": [
+        "Ahmad Makinde"
+      ],
+      "year": 2026,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Deep Learning Foundations",
+      "citationCount": 0,
+      "tags": [
+        "KAN",
+        "interpretability",
+        "alpha decay",
+        "HFT"
+      ],
+      "doi": "10.48550/arXiv.2601.02310"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "real-estate-forecasting",
+    "chunkId": "paper_topic::real-estate-forecasting::overview",
+    "title": "Real Estate Forecasting",
+    "description": "A literature map for real estate forecasting and appraisal across index construction, macroeconomic drivers, sentiment, multimodal fusion, and satellite-based contextual modeling.",
+    "category": "Financial ML",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/real-estate-forecasting",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Real Estate Forecasting\n\nCategory: Financial ML\n\nSubtitle: Indices, macro drivers, urban ML, multimodal fusion, and satellite-informed forecasting\n\nDescription: A literature map for real estate forecasting and appraisal across index construction, macroeconomic drivers, sentiment, multimodal fusion, and satellite-based contextual modeling.\n\nIntro:\nThis topic combines classical real estate forecasting and property price index research with modern machine learning, multimodal appraisal, and spatiotemporal urban modeling.\nThe curated set excludes implementation-only software citations and focuses on domain papers, methodological works that are directly relevant, surveys, and datasets that shape the research narrative.\nIt is designed to support work on sub-city or index-level forecasting, multimodal context fusion, sentiment-driven signals, macro variables, and built-up area proxies derived from remote sensing.\n\nMap intro: This map focuses on real estate forecasting and appraisal literature. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- Evaluating Alternative Methods of Forecasting House Prices: A Post-Crisis Reassessment (2010)\n- Forecasting future trends in Dubai housing market by using Box-Jenkins autoregressive integrated moving average (2011)\n- Relationship between residential property price index and macroeconomic indicators in Dubai housing market (2012)\n- Construction of property price indices: temporal aggregation and accuracy of various index methods (2013)\n- Forecasting the U.S. real house price index (2015)\n- Missing the Mark: House Price Index Accuracy and Mortgage Credit Modeling (2016)\n- Construction and Application of Property Price Indices (2018)\n- An Integrated Model for Urban Subregion House Price Forecasting: A Multi-source Data Perspective (2019)\n- Mapping and Monitoring Urban Environment through Sentinel-1 SAR Data: A Case Study in the Veneto Region (Italy) (2020)\n- The Importance of Economic Variables on London Real Estate Market: A Random Forest Approach (2020)\n- A Comparison of Multi-View Learning Strategies for Satellite Image-Based Real Estate Appraisal (2021)\n- MugRep: A Multi-Task Hierarchical Graph Representation Learning Framework for Real Estate Appraisal (2021)\n- Modeling Real Estate Dynamics Using Temporal Encoding (2021)\n- The effect of sentiment on commercial real estate returns: investor and occupier perspectives (2021)\n- Experimental research on the impact of interest rate on real estate market transactions (2022)\n- Sentinel-1 and Sentinel-2 Data Fusion for Urban Change Detection Using a Dual Stream U-Net (2022)\n- Interest rates and real estate prices: a panel study (2023)\n- Built-up area mapping using Sentinel-1 SAR data (2023)\n- Spatio-temporal change detection of built-up areas with Sentinel-1 SAR data using random forest classification for Arnavutköy Istanbul (2023)\n- AI-Based on Machine Learning Methods for Urban Real Estate Prediction: A Systematic Survey (2024)\n- Foundations and Trends in Multimodal Machine Learning: Principles, Challenges, and Open Questions (2024)\n- A Multi-Modal Deep Learning Based Approach for House Price Prediction (2024)\n- The US monetary conditions and Dubai's real estate market: twist or tango? (2024)\n- Comparative analysis of machine learning algorithms for predicting Dubai property prices (2024)\n- Extraction of Built-Up Areas Using Sentinel-1 and Sentinel-2 Data with Automated Training Data Sampling and Label Noise Robust Cross-Fusion Neural Networks (2024)\n- Multimodal Machine Learning for Real Estate Appraisal: A Comprehensive Survey (2025)\n- HouseTS: A Large-Scale, Multimodal Spatiotemporal U.S. Housing Dataset (2025)\n- Financial asset price prediction with graph neural network-based temporal deep learning models (2025)\n- Multi-Context Real Estate Market Prediction (2025)\n- A Real Estate Price Index Forecasting Scheme Based on Online News Sentiment Analysis (2025)\n- Research on sentiment index and real estate demand forecasting based on BERT-BiLSTM and ADL-MIDAS models (2025)",
+    "metadata": {
+      "subtitle": "Indices, macro drivers, urban ML, multimodal fusion, and satellite-informed forecasting",
+      "paperCount": 31
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "larson-2010-house-price-forecasting",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::larson-2010-house-price-forecasting",
+    "title": "Evaluating Alternative Methods of Forecasting House Prices: A Post-Crisis Reassessment",
+    "description": "Compares alternative house price forecasting models and highlights the value of theory-driven multivariate models over purely univariate approaches.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://ssrn.com/abstract=1709647",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Evaluating Alternative Methods of Forecasting House Prices: A Post-Crisis Reassessment\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: William D. Larson\n\nYear: 2010\n\nVenue: SSRN\n\nType: report\n\nLane: Market Forecasting and Indices\n\nCitation count: 11\n\nDOI: 10.2139/ssrn.1709647\n\nTags: house prices, forecasting, post-crisis, econometrics\n\nAbstract metadata: Compares alternative house price forecasting models and highlights the value of theory-driven multivariate models over purely univariate approaches.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "William D. Larson"
+      ],
+      "year": 2010,
+      "venue": "SSRN",
+      "paperType": "report",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 11,
+      "tags": [
+        "house prices",
+        "forecasting",
+        "post-crisis",
+        "econometrics"
+      ],
+      "doi": "10.2139/ssrn.1709647"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "hepsen-2011-dubai-arima",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::hepsen-2011-dubai-arima",
+    "title": "Forecasting future trends in Dubai housing market by using Box-Jenkins autoregressive integrated moving average",
+    "description": "Forecasts future trends in the Dubai housing market using ARIMA and focuses on identifying rises, falls, and turning points in the series.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://www.emerald.com/ijhma/article/4/3/210-223/127611",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Forecasting future trends in Dubai housing market by using Box-Jenkins autoregressive integrated moving average\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Ali Hepşen, Metin Vatansever\n\nYear: 2011\n\nVenue: International Journal of Housing Markets and Analysis\n\nType: journal\n\nLane: Market Forecasting and Indices\n\nCitation count: 48\n\nDOI: 10.1108/17538271111153004\n\nTags: Dubai, ARIMA, housing market, forecasting\n\nAbstract metadata: Forecasts future trends in the Dubai housing market using ARIMA and focuses on identifying rises, falls, and turning points in the series.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Ali Hepşen",
+        "Metin Vatansever"
+      ],
+      "year": 2011,
+      "venue": "International Journal of Housing Markets and Analysis",
+      "paperType": "journal",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 48,
+      "tags": [
+        "Dubai",
+        "ARIMA",
+        "housing market",
+        "forecasting"
+      ],
+      "doi": "10.1108/17538271111153004"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "hepsen-2012-dubai-macro",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::hepsen-2012-dubai-macro",
+    "title": "Relationship between residential property price index and macroeconomic indicators in Dubai housing market",
+    "description": "Examines the relationship between Dubai residential property price indices and macroeconomic indicators.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.tandfonline.com",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Relationship between residential property price index and macroeconomic indicators in Dubai housing market\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Ali Hepşen, Metin Vatansever\n\nYear: 2012\n\nVenue: International Journal of Strategic Property Management\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 32\n\nTags: Dubai, property index, macroeconomics, housing market\n\nAbstract metadata: Examines the relationship between Dubai residential property price indices and macroeconomic indicators.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Ali Hepşen",
+        "Metin Vatansever"
+      ],
+      "year": 2012,
+      "venue": "International Journal of Strategic Property Management",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 32,
+      "tags": [
+        "Dubai",
+        "property index",
+        "macroeconomics",
+        "housing market"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "owusu-2013-index-methods",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::owusu-2013-index-methods",
+    "title": "Construction of property price indices: temporal aggregation and accuracy of various index methods",
+    "description": "Studies the construction of property price indices and the effects of temporal aggregation and methodology on index accuracy.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.emerald.com",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Construction of property price indices: temporal aggregation and accuracy of various index methods\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Anthony Owusu-Ansah\n\nYear: 2013\n\nVenue: Property Management\n\nType: journal\n\nLane: Market Forecasting and Indices\n\nCitation count: 19\n\nTags: price index, property markets, temporal aggregation, accuracy\n\nAbstract metadata: Studies the construction of property price indices and the effects of temporal aggregation and methodology on index accuracy.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Anthony Owusu-Ansah"
+      ],
+      "year": 2013,
+      "venue": "Property Management",
+      "paperType": "journal",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 19,
+      "tags": [
+        "price index",
+        "property markets",
+        "temporal aggregation",
+        "accuracy"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "plakandaras-2015-us-house-price-index",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::plakandaras-2015-us-house-price-index",
+    "title": "Forecasting the U.S. real house price index",
+    "description": "Forecasts the U.S. real house price index and compares alternative econometric forecasting approaches.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://linkinghub.elsevier.com/retrieve/pii/S0264999314004143",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Forecasting the U.S. real house price index\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Vasilios Plakandaras, Rangan Gupta, Periklis Gogas, Theophilos Papadimitriou\n\nYear: 2015\n\nVenue: Economic Modelling\n\nType: journal\n\nLane: Market Forecasting and Indices\n\nCitation count: 181\n\nDOI: 10.1016/j.econmod.2014.10.050\n\nTags: U.S., house price index, forecasting, economics\n\nAbstract metadata: Forecasts the U.S. real house price index and compares alternative econometric forecasting approaches.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Vasilios Plakandaras",
+        "Rangan Gupta",
+        "Periklis Gogas",
+        "Theophilos Papadimitriou"
+      ],
+      "year": 2015,
+      "venue": "Economic Modelling",
+      "paperType": "journal",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 181,
+      "tags": [
+        "U.S.",
+        "house price index",
+        "forecasting",
+        "economics"
+      ],
+      "doi": "10.1016/j.econmod.2014.10.050"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "bogin-2016-missing-the-mark",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::bogin-2016-missing-the-mark",
+    "title": "Missing the Mark: House Price Index Accuracy and Mortgage Credit Modeling",
+    "description": "Shows that localized house price indices improve predictive accuracy and mortgage credit modeling compared with more aggregated indices.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://ssrn.com/abstract=3416895",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Missing the Mark: House Price Index Accuracy and Mortgage Credit Modeling\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Alexander Bogin, William M. Doerner, William Larson\n\nYear: 2016\n\nVenue: FHFA Working Paper\n\nType: report\n\nLane: Market Forecasting and Indices\n\nCitation count: 16\n\nDOI: 10.2139/ssrn.3416895\n\nTags: house price indices, mortgage credit, local indices, FHFA\n\nAbstract metadata: Shows that localized house price indices improve predictive accuracy and mortgage credit modeling compared with more aggregated indices.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Alexander Bogin",
+        "William M. Doerner",
+        "William Larson"
+      ],
+      "year": 2016,
+      "venue": "FHFA Working Paper",
+      "paperType": "report",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 16,
+      "tags": [
+        "house price indices",
+        "mortgage credit",
+        "local indices",
+        "FHFA"
+      ],
+      "doi": "10.2139/ssrn.3416895"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "owusu-2018-property-price-indices-book",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::owusu-2018-property-price-indices-book",
+    "title": "Construction and Application of Property Price Indices",
+    "description": "Book-length treatment of methods for constructing and applying property price indices.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Forecasting and Indices",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.1201/9781315102085",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Construction and Application of Property Price Indices\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Anthony Owusu-Ansah\n\nYear: 2018\n\nVenue: Routledge\n\nType: book\n\nLane: Market Forecasting and Indices\n\nCitation count: 60\n\nDOI: 10.1201/9781315102085\n\nTags: price index, book, property markets, methodology\n\nAbstract metadata: Book-length treatment of methods for constructing and applying property price indices.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Anthony Owusu-Ansah"
+      ],
+      "year": 2018,
+      "venue": "Routledge",
+      "paperType": "book",
+      "lane": "Market Forecasting and Indices",
+      "citationCount": 60,
+      "tags": [
+        "price index",
+        "book",
+        "property markets",
+        "methodology"
+      ],
+      "doi": "10.1201/9781315102085"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "ge-2019-urban-subregion-forecasting",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::ge-2019-urban-subregion-forecasting",
+    "title": "An Integrated Model for Urban Subregion House Price Forecasting: A Multi-source Data Perspective",
+    "description": "Introduces a multi-source framework for fine-grained urban subregion house price forecasting with richer spatial, social, and economic signals.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://ieeexplore.ieee.org/document/8970751/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: An Integrated Model for Urban Subregion House Price Forecasting: A Multi-source Data Perspective\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Chuancai Ge, Yang Wang, Xike Xie, Hengchang Liu, Zhengyang Zhou\n\nYear: 2019\n\nVenue: IEEE ICDM\n\nType: conference\n\nLane: Appraisal and Urban ML\n\nCitation count: 19\n\nDOI: 10.1109/ICDM.2019.00123\n\nTags: urban subregion, forecasting, multi-source data, housing\n\nAbstract metadata: Introduces a multi-source framework for fine-grained urban subregion house price forecasting with richer spatial, social, and economic signals.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Chuancai Ge",
+        "Yang Wang",
+        "Xike Xie",
+        "Hengchang Liu",
+        "Zhengyang Zhou"
+      ],
+      "year": 2019,
+      "venue": "IEEE ICDM",
+      "paperType": "conference",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 19,
+      "tags": [
+        "urban subregion",
+        "forecasting",
+        "multi-source data",
+        "housing"
+      ],
+      "doi": "10.1109/ICDM.2019.00123"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "semenzato-2020-sentinel1-urban-monitoring",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::semenzato-2020-sentinel1-urban-monitoring",
+    "title": "Mapping and Monitoring Urban Environment through Sentinel-1 SAR Data: A Case Study in the Veneto Region (Italy)",
+    "description": "Uses Sentinel-1 SAR imagery to extract urban footprint indicators that are relevant for urban monitoring and development analysis.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.mdpi.com/2220-9964/9/6/375",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Mapping and Monitoring Urban Environment through Sentinel-1 SAR Data: A Case Study in the Veneto Region (Italy)\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Andrea Semenzato, Salvatore Eugenio Pappalardo, Daniele Codato, Umberto Trivelloni, Silvano De Zorzi, Sabrina Ferrari, Massimo De Marchi, Matteo Massironi\n\nYear: 2020\n\nVenue: ISPRS International Journal of Geo-Information\n\nType: journal\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 34\n\nDOI: 10.3390/ijgi9060375\n\nTags: Sentinel-1, SAR, urban footprint, remote sensing\n\nAbstract metadata: Uses Sentinel-1 SAR imagery to extract urban footprint indicators that are relevant for urban monitoring and development analysis.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Andrea Semenzato",
+        "Salvatore Eugenio Pappalardo",
+        "Daniele Codato",
+        "Umberto Trivelloni",
+        "Silvano De Zorzi",
+        "Sabrina Ferrari",
+        "Massimo De Marchi",
+        "Matteo Massironi"
+      ],
+      "year": 2020,
+      "venue": "ISPRS International Journal of Geo-Information",
+      "paperType": "journal",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 34,
+      "tags": [
+        "Sentinel-1",
+        "SAR",
+        "urban footprint",
+        "remote sensing"
+      ],
+      "doi": "10.3390/ijgi9060375"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "levantesi-2020-london-rf",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::levantesi-2020-london-rf",
+    "title": "The Importance of Economic Variables on London Real Estate Market: A Random Forest Approach",
+    "description": "Uses random forests to study the local economic variables that shape real estate market evolution in London.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.mdpi.com/2227-9091/8/4/112",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: The Importance of Economic Variables on London Real Estate Market: A Random Forest Approach\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Susanna Levantesi, Gabriella Piscopo\n\nYear: 2020\n\nVenue: Risks\n\nType: journal\n\nLane: Appraisal and Urban ML\n\nCitation count: 73\n\nDOI: 10.3390/risks8040112\n\nTags: London, random forest, economic variables, real estate\n\nAbstract metadata: Uses random forests to study the local economic variables that shape real estate market evolution in London.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Susanna Levantesi",
+        "Gabriella Piscopo"
+      ],
+      "year": 2020,
+      "venue": "Risks",
+      "paperType": "journal",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 73,
+      "tags": [
+        "London",
+        "random forest",
+        "economic variables",
+        "real estate"
+      ],
+      "doi": "10.3390/risks8040112"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "kucklick-2021-satellite-appraisal",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::kucklick-2021-satellite-appraisal",
+    "title": "A Comparison of Multi-View Learning Strategies for Satellite Image-Based Real Estate Appraisal",
+    "description": "Compares multi-view learning strategies that combine tabular and satellite image data for real estate appraisal.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://arxiv.org/abs/2105.04984",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: A Comparison of Multi-View Learning Strategies for Satellite Image-Based Real Estate Appraisal\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Jan-Peter Kucklick, Oliver Müller\n\nYear: 2021\n\nVenue: arXiv\n\nType: preprint\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 12\n\nDOI: 10.48550/arXiv.2105.04984\n\nTags: satellite imagery, multi-view learning, real estate appraisal, multimodal\n\nAbstract metadata: Compares multi-view learning strategies that combine tabular and satellite image data for real estate appraisal.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Jan-Peter Kucklick",
+        "Oliver Müller"
+      ],
+      "year": 2021,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 12,
+      "tags": [
+        "satellite imagery",
+        "multi-view learning",
+        "real estate appraisal",
+        "multimodal"
+      ],
+      "doi": "10.48550/arXiv.2105.04984"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "zhang-2021-mugrep",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::zhang-2021-mugrep",
+    "title": "MugRep: A Multi-Task Hierarchical Graph Representation Learning Framework for Real Estate Appraisal",
+    "description": "Introduces a multi-task graph representation framework for real estate appraisal with transaction dynamics and community structure.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://arxiv.org/abs/2107.05180",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: MugRep: A Multi-Task Hierarchical Graph Representation Learning Framework for Real Estate Appraisal\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Weijia Zhang, Hao Liu, Lijun Zha, Hengshu Zhu, Ji Liu, Dejing Dou, Hui Xiong\n\nYear: 2021\n\nVenue: KDD\n\nType: conference\n\nLane: Appraisal and Urban ML\n\nCitation count: 41\n\nDOI: 10.1145/3447548.3467187\n\nTags: graph learning, real estate appraisal, multi-task, urban data\n\nAbstract metadata: Introduces a multi-task graph representation framework for real estate appraisal with transaction dynamics and community structure.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Weijia Zhang",
+        "Hao Liu",
+        "Lijun Zha",
+        "Hengshu Zhu",
+        "Ji Liu",
+        "Dejing Dou",
+        "Hui Xiong"
+      ],
+      "year": 2021,
+      "venue": "KDD",
+      "paperType": "conference",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 41,
+      "tags": [
+        "graph learning",
+        "real estate appraisal",
+        "multi-task",
+        "urban data"
+      ],
+      "doi": "10.1145/3447548.3467187"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "jiang-2021-temporal-encoding-real-estate",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::jiang-2021-temporal-encoding-real-estate",
+    "title": "Modeling Real Estate Dynamics Using Temporal Encoding",
+    "description": "Uses temporal encoding to model real estate dynamics and improve predictive performance in housing market prediction settings.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://dl.acm.org/doi/10.1145/3474717.3484254",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Modeling Real Estate Dynamics Using Temporal Encoding\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Chen Jiang, Jingjing Li, Wenlu Wang, Wei-Shinn Ku\n\nYear: 2021\n\nVenue: ACM SIGSPATIAL\n\nType: conference\n\nLane: Appraisal and Urban ML\n\nCitation count: 15\n\nDOI: 10.1145/3474717.3484254\n\nTags: temporal encoding, real estate dynamics, housing prediction, spatiotemporal\n\nAbstract metadata: Uses temporal encoding to model real estate dynamics and improve predictive performance in housing market prediction settings.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Chen Jiang",
+        "Jingjing Li",
+        "Wenlu Wang",
+        "Wei-Shinn Ku"
+      ],
+      "year": 2021,
+      "venue": "ACM SIGSPATIAL",
+      "paperType": "conference",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 15,
+      "tags": [
+        "temporal encoding",
+        "real estate dynamics",
+        "housing prediction",
+        "spatiotemporal"
+      ],
+      "doi": "10.1145/3474717.3484254"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "cheung-2021-cre-sentiment",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::cheung-2021-cre-sentiment",
+    "title": "The effect of sentiment on commercial real estate returns: investor and occupier perspectives",
+    "description": "Examines how investor and occupier sentiment influence commercial real estate returns in both short-run and long-run dynamics.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://www.emerald.com/jpif/article/39/6/561-589/235479",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: The effect of sentiment on commercial real estate returns: investor and occupier perspectives\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Ka Shing Cheung, Joshua Lee\n\nYear: 2021\n\nVenue: Journal of Property Investment and Finance\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 5\n\nDOI: 10.1108/JPIF-01-2020-0010\n\nTags: sentiment, commercial real estate, returns, behavioral\n\nAbstract metadata: Examines how investor and occupier sentiment influence commercial real estate returns in both short-run and long-run dynamics.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Ka Shing Cheung",
+        "Joshua Lee"
+      ],
+      "year": 2021,
+      "venue": "Journal of Property Investment and Finance",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 5,
+      "tags": [
+        "sentiment",
+        "commercial real estate",
+        "returns",
+        "behavioral"
+      ],
+      "doi": "10.1108/JPIF-01-2020-0010"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "chen-2022-interest-rate-transactions",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::chen-2022-interest-rate-transactions",
+    "title": "Experimental research on the impact of interest rate on real estate market transactions",
+    "description": "Studies the impact of interest rate changes on real estate market transactions.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://onlinelibrary.wiley.com",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Experimental research on the impact of interest rate on real estate market transactions\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Chang Chen, Haoyu Zhai, Zhiruo Wang, Shen Ma, Jie Sun, Chengliang Wu, Yang Zhang\n\nYear: 2022\n\nVenue: Discrete Dynamics in Nature and Society\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 26\n\nTags: interest rates, transactions, real estate market, macro\n\nAbstract metadata: Studies the impact of interest rate changes on real estate market transactions.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Chang Chen",
+        "Haoyu Zhai",
+        "Zhiruo Wang",
+        "Shen Ma",
+        "Jie Sun",
+        "Chengliang Wu",
+        "Yang Zhang"
+      ],
+      "year": 2022,
+      "venue": "Discrete Dynamics in Nature and Society",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 26,
+      "tags": [
+        "interest rates",
+        "transactions",
+        "real estate market",
+        "macro"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "hafner-2022-s1-s2-fusion",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::hafner-2022-s1-s2-fusion",
+    "title": "Sentinel-1 and Sentinel-2 Data Fusion for Urban Change Detection Using a Dual Stream U-Net",
+    "description": "Combines Sentinel-1 and Sentinel-2 data for urban change detection, relevant for built environment and urban evolution signals.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://ieeexplore.ieee.org/document/9570476/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Sentinel-1 and Sentinel-2 Data Fusion for Urban Change Detection Using a Dual Stream U-Net\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Sebastian Hafner, Andrea Nascetti, Hossein Azizpour, Yifang Ban\n\nYear: 2022\n\nVenue: IEEE Geoscience and Remote Sensing Letters\n\nType: journal\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 78\n\nDOI: 10.1109/LGRS.2021.3119856\n\nTags: Sentinel-1, Sentinel-2, data fusion, urban change detection\n\nAbstract metadata: Combines Sentinel-1 and Sentinel-2 data for urban change detection, relevant for built environment and urban evolution signals.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Sebastian Hafner",
+        "Andrea Nascetti",
+        "Hossein Azizpour",
+        "Yifang Ban"
+      ],
+      "year": 2022,
+      "venue": "IEEE Geoscience and Remote Sensing Letters",
+      "paperType": "journal",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 78,
+      "tags": [
+        "Sentinel-1",
+        "Sentinel-2",
+        "data fusion",
+        "urban change detection"
+      ],
+      "doi": "10.1109/LGRS.2021.3119856"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "vonlanthen-2023-interest-rates-real-estate",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::vonlanthen-2023-interest-rates-real-estate",
+    "title": "Interest rates and real estate prices: a panel study",
+    "description": "Panel evidence on the relationship between interest rates and real estate prices.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.1186/s41937-023-00111-1",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Interest rates and real estate prices: a panel study\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Joël Vonlanthen\n\nYear: 2023\n\nVenue: Swiss Journal of Economics and Statistics\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 29\n\nTags: interest rates, real estate prices, panel study, macroeconomics\n\nAbstract metadata: Panel evidence on the relationship between interest rates and real estate prices.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Joël Vonlanthen"
+      ],
+      "year": 2023,
+      "venue": "Swiss Journal of Economics and Statistics",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 29,
+      "tags": [
+        "interest rates",
+        "real estate prices",
+        "panel study",
+        "macroeconomics"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "verma-2023-built-up-s1",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::verma-2023-built-up-s1",
+    "title": "Built-up area mapping using Sentinel-1 SAR data",
+    "description": "Studies built-up area mapping with Sentinel-1 SAR data, relevant as a spatial context signal for housing and urban forecasting.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://linkinghub.elsevier.com/retrieve/pii/S0924271623002009",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Built-up area mapping using Sentinel-1 SAR data\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Abhinav Verma, Avik Bhattacharya, Subhadip Dey, Carlos López-Martínez, Paolo Gamba\n\nYear: 2023\n\nVenue: ISPRS Journal of Photogrammetry and Remote Sensing\n\nType: journal\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 24\n\nDOI: 10.1016/j.isprsjprs.2023.07.019\n\nTags: built-up mapping, Sentinel-1, SAR, urban context\n\nAbstract metadata: Studies built-up area mapping with Sentinel-1 SAR data, relevant as a spatial context signal for housing and urban forecasting.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Abhinav Verma",
+        "Avik Bhattacharya",
+        "Subhadip Dey",
+        "Carlos López-Martínez",
+        "Paolo Gamba"
+      ],
+      "year": 2023,
+      "venue": "ISPRS Journal of Photogrammetry and Remote Sensing",
+      "paperType": "journal",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 24,
+      "tags": [
+        "built-up mapping",
+        "Sentinel-1",
+        "SAR",
+        "urban context"
+      ],
+      "doi": "10.1016/j.isprsjprs.2023.07.019"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "makineci-2023-istanbul-builtup",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::makineci-2023-istanbul-builtup",
+    "title": "Spatio-temporal change detection of built-up areas with Sentinel-1 SAR data using random forest classification for Arnavutköy Istanbul",
+    "description": "Uses Sentinel-1 SAR and random forest classification to analyze spatio-temporal built-up area change in Istanbul.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.28948/ngumuh.1203301",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Spatio-temporal change detection of built-up areas with Sentinel-1 SAR data using random forest classification for Arnavutköy Istanbul\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Hasan Bilgehan Makineci\n\nYear: 2023\n\nVenue: Niğde Ömer Halisdemir Üniversitesi Mühendislik Bilimleri Dergisi\n\nType: journal\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 6\n\nDOI: 10.28948/ngumuh.1203301\n\nTags: Istanbul, built-up areas, Sentinel-1, change detection\n\nAbstract metadata: Uses Sentinel-1 SAR and random forest classification to analyze spatio-temporal built-up area change in Istanbul.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Hasan Bilgehan Makineci"
+      ],
+      "year": 2023,
+      "venue": "Niğde Ömer Halisdemir Üniversitesi Mühendislik Bilimleri Dergisi",
+      "paperType": "journal",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 6,
+      "tags": [
+        "Istanbul",
+        "built-up areas",
+        "Sentinel-1",
+        "change detection"
+      ],
+      "doi": "10.28948/ngumuh.1203301"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "tekouabou-2024-urban-real-estate-survey",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::tekouabou-2024-urban-real-estate-survey",
+    "title": "AI-Based on Machine Learning Methods for Urban Real Estate Prediction: A Systematic Survey",
+    "description": "Systematic survey of machine learning methods for urban real estate prediction.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Surveys",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.1007/s11831-023-10010-5",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: AI-Based on Machine Learning Methods for Urban Real Estate Prediction: A Systematic Survey\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Stephane C. K. Tekouabou, Ștefan Cristian Gherghina, Eric Desire Kameni, Youssef Filali, Khalil Idrissi Gartoumi\n\nYear: 2024\n\nVenue: Archives of Computational Methods in Engineering\n\nType: survey\n\nLane: Datasets and Surveys\n\nCitation count: 66\n\nDOI: 10.1007/s11831-023-10010-5\n\nTags: survey, urban real estate, machine learning, prediction\n\nAbstract metadata: Systematic survey of machine learning methods for urban real estate prediction.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Stephane C. K. Tekouabou",
+        "Ștefan Cristian Gherghina",
+        "Eric Desire Kameni",
+        "Youssef Filali",
+        "Khalil Idrissi Gartoumi"
+      ],
+      "year": 2024,
+      "venue": "Archives of Computational Methods in Engineering",
+      "paperType": "survey",
+      "lane": "Datasets and Surveys",
+      "citationCount": 66,
+      "tags": [
+        "survey",
+        "urban real estate",
+        "machine learning",
+        "prediction"
+      ],
+      "doi": "10.1007/s11831-023-10010-5"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "liang-2024-multimodal-foundations",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::liang-2024-multimodal-foundations",
+    "title": "Foundations and Trends in Multimodal Machine Learning: Principles, Challenges, and Open Questions",
+    "description": "A broad multimodal machine learning survey that is relevant to real estate forecasting work using text, imagery, and structured data together.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Surveys",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://dl.acm.org/doi/10.1145/3656580",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Foundations and Trends in Multimodal Machine Learning: Principles, Challenges, and Open Questions\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Paul Pu Liang, Amir Zadeh, Louis-Philippe Morency\n\nYear: 2024\n\nVenue: ACM Computing Surveys\n\nType: survey\n\nLane: Datasets and Surveys\n\nCitation count: 443\n\nDOI: 10.1145/3656580\n\nTags: multimodal learning, survey, foundations, fusion\n\nAbstract metadata: A broad multimodal machine learning survey that is relevant to real estate forecasting work using text, imagery, and structured data together.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Paul Pu Liang",
+        "Amir Zadeh",
+        "Louis-Philippe Morency"
+      ],
+      "year": 2024,
+      "venue": "ACM Computing Surveys",
+      "paperType": "survey",
+      "lane": "Datasets and Surveys",
+      "citationCount": 443,
+      "tags": [
+        "multimodal learning",
+        "survey",
+        "foundations",
+        "fusion"
+      ],
+      "doi": "10.1145/3656580"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "hasan-2024-multimodal-house-price",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::hasan-2024-multimodal-house-price",
+    "title": "A Multi-Modal Deep Learning Based Approach for House Price Prediction",
+    "description": "Proposes a multimodal deep learning framework using attributes, text, images, and geospatial neighborhood signals for house price prediction.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://arxiv.org/abs/2409.05335",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: A Multi-Modal Deep Learning Based Approach for House Price Prediction\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Md Hasebul Hasan, Md Abid Jahan, Mohammed Eunus Ali, Yuan-Fang Li, Timos Sellis\n\nYear: 2024\n\nVenue: arXiv\n\nType: preprint\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 9\n\nDOI: 10.48550/arXiv.2409.05335\n\nTags: multimodal, house price prediction, text, images, geospatial\n\nAbstract metadata: Proposes a multimodal deep learning framework using attributes, text, images, and geospatial neighborhood signals for house price prediction.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Md Hasebul Hasan",
+        "Md Abid Jahan",
+        "Mohammed Eunus Ali",
+        "Yuan-Fang Li",
+        "Timos Sellis"
+      ],
+      "year": 2024,
+      "venue": "arXiv",
+      "paperType": "preprint",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 9,
+      "tags": [
+        "multimodal",
+        "house price prediction",
+        "text",
+        "images",
+        "geospatial"
+      ],
+      "doi": "10.48550/arXiv.2409.05335"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "rashad-2024-us-monetary-dubai",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::rashad-2024-us-monetary-dubai",
+    "title": "The US monetary conditions and Dubai's real estate market: twist or tango?",
+    "description": "Studies how U.S. monetary conditions affect Dubai's housing sector through mortgage cost and exchange rate channels.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://www.emerald.com/ijhma/article/17/5/1225-1242/1225266",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: The US monetary conditions and Dubai's real estate market: twist or tango?\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Ahmed Shoukry Rashad, Mahmoud Farghally\n\nYear: 2024\n\nVenue: International Journal of Housing Markets and Analysis\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 6\n\nDOI: 10.1108/IJHMA-03-2023-0035\n\nTags: Dubai, U.S. monetary conditions, housing demand, macro\n\nAbstract metadata: Studies how U.S. monetary conditions affect Dubai's housing sector through mortgage cost and exchange rate channels.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Ahmed Shoukry Rashad",
+        "Mahmoud Farghally"
+      ],
+      "year": 2024,
+      "venue": "International Journal of Housing Markets and Analysis",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 6,
+      "tags": [
+        "Dubai",
+        "U.S. monetary conditions",
+        "housing demand",
+        "macro"
+      ],
+      "doi": "10.1108/IJHMA-03-2023-0035"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "elnaeem-2024-dubai-ml-comparison",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::elnaeem-2024-dubai-ml-comparison",
+    "title": "Comparative analysis of machine learning algorithms for predicting Dubai property prices",
+    "description": "Compares several machine learning algorithms for predicting Dubai property prices and discusses performance trade-offs.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.frontiersin.org/articles/10.3389/fams.2024.1327376/full",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Comparative analysis of machine learning algorithms for predicting Dubai property prices\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Abdulsalam Elnaeem Balila, Ani Bin Shabri\n\nYear: 2024\n\nVenue: Frontiers in Applied Mathematics and Statistics\n\nType: journal\n\nLane: Appraisal and Urban ML\n\nCitation count: 18\n\nDOI: 10.3389/fams.2024.1327376\n\nTags: Dubai, property prices, machine learning, comparative study\n\nAbstract metadata: Compares several machine learning algorithms for predicting Dubai property prices and discusses performance trade-offs.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Abdulsalam Elnaeem Balila",
+        "Ani Bin Shabri"
+      ],
+      "year": 2024,
+      "venue": "Frontiers in Applied Mathematics and Statistics",
+      "paperType": "journal",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 18,
+      "tags": [
+        "Dubai",
+        "property prices",
+        "machine learning",
+        "comparative study"
+      ],
+      "doi": "10.3389/fams.2024.1327376"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "li-2024-built-up-cross-fusion",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::li-2024-built-up-cross-fusion",
+    "title": "Extraction of Built-Up Areas Using Sentinel-1 and Sentinel-2 Data with Automated Training Data Sampling and Label Noise Robust Cross-Fusion Neural Networks",
+    "description": "Presents a large-scale built-up area extraction framework using Sentinel-1 and Sentinel-2 data and cross-fusion neural networks.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.ssrn.com/abstract=4903268",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Extraction of Built-Up Areas Using Sentinel-1 and Sentinel-2 Data with Automated Training Data Sampling and Label Noise Robust Cross-Fusion Neural Networks\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Yu Li, Patrick Matgen, Marco Chini\n\nYear: 2024\n\nVenue: SSRN\n\nType: preprint\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 8\n\nDOI: 10.2139/ssrn.4903268\n\nTags: built-up extraction, Sentinel-1, Sentinel-2, cross-fusion, urban\n\nAbstract metadata: Presents a large-scale built-up area extraction framework using Sentinel-1 and Sentinel-2 data and cross-fusion neural networks.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Yu Li",
+        "Patrick Matgen",
+        "Marco Chini"
+      ],
+      "year": 2024,
+      "venue": "SSRN",
+      "paperType": "preprint",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 8,
+      "tags": [
+        "built-up extraction",
+        "Sentinel-1",
+        "Sentinel-2",
+        "cross-fusion",
+        "urban"
+      ],
+      "doi": "10.2139/ssrn.4903268"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "huang-2025-real-estate-survey",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::huang-2025-real-estate-survey",
+    "title": "Multimodal Machine Learning for Real Estate Appraisal: A Comprehensive Survey",
+    "description": "Survey of multimodal machine learning for real estate appraisal, focused on modalities, fusion strategies, evaluation, and future directions.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Surveys",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://arxiv.org/abs/2503.22119",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Multimodal Machine Learning for Real Estate Appraisal: A Comprehensive Survey\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Chenya Huang, Zhidong Li, Fang Chen, Bin Liang\n\nYear: 2025\n\nVenue: arXiv\n\nType: survey\n\nLane: Datasets and Surveys\n\nCitation count: 6\n\nDOI: 10.48550/arXiv.2503.22119\n\nTags: survey, real estate appraisal, multimodal, fusion\n\nAbstract metadata: Survey of multimodal machine learning for real estate appraisal, focused on modalities, fusion strategies, evaluation, and future directions.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Chenya Huang",
+        "Zhidong Li",
+        "Fang Chen",
+        "Bin Liang"
+      ],
+      "year": 2025,
+      "venue": "arXiv",
+      "paperType": "survey",
+      "lane": "Datasets and Surveys",
+      "citationCount": 6,
+      "tags": [
+        "survey",
+        "real estate appraisal",
+        "multimodal",
+        "fusion"
+      ],
+      "doi": "10.48550/arXiv.2503.22119"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "wang-2025-housets",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::wang-2025-housets",
+    "title": "HouseTS: A Large-Scale, Multimodal Spatiotemporal U.S. Housing Dataset",
+    "description": "Introduces a large multimodal U.S. housing dataset with spatiotemporal depth and standardized baselines for long-horizon prediction.",
+    "category": "Financial ML",
+    "sectionTitle": "Datasets and Surveys",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "http://arxiv.org/abs/2506.00765",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: HouseTS: A Large-Scale, Multimodal Spatiotemporal U.S. Housing Dataset\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Shengkun Wang, Yanshen Sun, Fanglan Chen, Linhan Wang, Naren Ramakrishnan, Chang-Tien Lu, Yinlin Chen\n\nYear: 2025\n\nVenue: arXiv\n\nType: dataset\n\nLane: Datasets and Surveys\n\nCitation count: 0\n\nDOI: 10.48550/arXiv.2506.00765\n\nTags: HouseTS, dataset, multimodal, housing, spatiotemporal\n\nAbstract metadata: Introduces a large multimodal U.S. housing dataset with spatiotemporal depth and standardized baselines for long-horizon prediction.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Shengkun Wang",
+        "Yanshen Sun",
+        "Fanglan Chen",
+        "Linhan Wang",
+        "Naren Ramakrishnan",
+        "Chang-Tien Lu",
+        "Yinlin Chen"
+      ],
+      "year": 2025,
+      "venue": "arXiv",
+      "paperType": "dataset",
+      "lane": "Datasets and Surveys",
+      "citationCount": 0,
+      "tags": [
+        "HouseTS",
+        "dataset",
+        "multimodal",
+        "housing",
+        "spatiotemporal"
+      ],
+      "doi": "10.48550/arXiv.2506.00765"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "uygun-2025-gnn-asset-prices",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::uygun-2025-gnn-asset-prices",
+    "title": "Financial asset price prediction with graph neural network-based temporal deep learning models",
+    "description": "Temporal GNN forecasting work outside real estate but relevant as a methodological graph-temporal reference for multi-entity price prediction.",
+    "category": "Financial ML",
+    "sectionTitle": "Appraisal and Urban ML",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.1007/s00521-025-11586-8",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Financial asset price prediction with graph neural network-based temporal deep learning models\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Yasin Uygun, Emre Sefer\n\nYear: 2025\n\nVenue: Neural Computing and Applications\n\nType: journal\n\nLane: Appraisal and Urban ML\n\nCitation count: 14\n\nDOI: 10.1007/s00521-025-11586-8\n\nTags: graph neural networks, temporal forecasting, method reference\n\nAbstract metadata: Temporal GNN forecasting work outside real estate but relevant as a methodological graph-temporal reference for multi-entity price prediction.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Yasin Uygun",
+        "Emre Sefer"
+      ],
+      "year": 2025,
+      "venue": "Neural Computing and Applications",
+      "paperType": "journal",
+      "lane": "Appraisal and Urban ML",
+      "citationCount": 14,
+      "tags": [
+        "graph neural networks",
+        "temporal forecasting",
+        "method reference"
+      ],
+      "doi": "10.1007/s00521-025-11586-8"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "arat-2025-multi-context-real-estate",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::arat-2025-multi-context-real-estate",
+    "title": "Multi-Context Real Estate Market Prediction",
+    "description": "Combines multiple contexts including satellite imagery, sentiment, and macro signals for real estate market prediction.",
+    "category": "Financial ML",
+    "sectionTitle": "Multimodal and Satellite-Based Methods",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://doi.org/10.1109/SIU66497.2025.11112013",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Multi-Context Real Estate Market Prediction\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Barış Arat, Hasan Fehmi Ateş, Emre Sefer\n\nYear: 2025\n\nVenue: SIU\n\nType: conference\n\nLane: Multimodal and Satellite-Based Methods\n\nCitation count: 1\n\nDOI: 10.1109/SIU66497.2025.11112013\n\nTags: real estate forecasting, satellite imagery, news sentiment, multimodal\n\nAbstract metadata: Combines multiple contexts including satellite imagery, sentiment, and macro signals for real estate market prediction.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Barış Arat",
+        "Hasan Fehmi Ateş",
+        "Emre Sefer"
+      ],
+      "year": 2025,
+      "venue": "SIU",
+      "paperType": "conference",
+      "lane": "Multimodal and Satellite-Based Methods",
+      "citationCount": 1,
+      "tags": [
+        "real estate forecasting",
+        "satellite imagery",
+        "news sentiment",
+        "multimodal"
+      ],
+      "doi": "10.1109/SIU66497.2025.11112013"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "xu-2025-news-sentiment-index",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::xu-2025-news-sentiment-index",
+    "title": "A Real Estate Price Index Forecasting Scheme Based on Online News Sentiment Analysis",
+    "description": "Builds a real estate sentiment index from online news and uses it to forecast housing price indices.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.mdpi.com/2079-8954/13/1/42",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: A Real Estate Price Index Forecasting Scheme Based on Online News Sentiment Analysis\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Tao Xu, Yingying Zhao, Jie Yu\n\nYear: 2025\n\nVenue: Systems\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 3\n\nDOI: 10.3390/systems13010042\n\nTags: news sentiment, price index forecasting, housing market, BERT\n\nAbstract metadata: Builds a real estate sentiment index from online news and uses it to forecast housing price indices.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Tao Xu",
+        "Yingying Zhao",
+        "Jie Yu"
+      ],
+      "year": 2025,
+      "venue": "Systems",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 3,
+      "tags": [
+        "news sentiment",
+        "price index forecasting",
+        "housing market",
+        "BERT"
+      ],
+      "doi": "10.3390/systems13010042"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "chen-2025-sentiment-demand-forecasting",
+    "parentId": "real-estate-forecasting",
+    "chunkId": "paper::real-estate-forecasting::chen-2025-sentiment-demand-forecasting",
+    "title": "Research on sentiment index and real estate demand forecasting based on BERT-BiLSTM and ADL-MIDAS models",
+    "description": "Forecasts real estate demand using sentiment indices and mixed-frequency macro-style modeling.",
+    "category": "Financial ML",
+    "sectionTitle": "Macroeconomic and Sentiment Drivers",
+    "url": "/papers/real-estate-forecasting",
+    "externalUrl": "https://www.nature.com/articles/s41598-025-16153-8",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Research on sentiment index and real estate demand forecasting based on BERT-BiLSTM and ADL-MIDAS models\n\nTopic: Real Estate Forecasting\n\nTopic category: Financial ML\n\nAuthors: Mengkai Chen, Jun Wang, Feilong Zhao, Gaopeng Jiang\n\nYear: 2025\n\nVenue: Scientific Reports\n\nType: journal\n\nLane: Macroeconomic and Sentiment Drivers\n\nCitation count: 2\n\nDOI: 10.1038/s41598-025-16153-8\n\nTags: sentiment index, real estate demand, forecasting, MIDAS\n\nAbstract metadata: Forecasts real estate demand using sentiment indices and mixed-frequency macro-style modeling.",
+    "metadata": {
+      "topicId": "real-estate-forecasting",
+      "topicLabel": "Real Estate Forecasting",
+      "authors": [
+        "Mengkai Chen",
+        "Jun Wang",
+        "Feilong Zhao",
+        "Gaopeng Jiang"
+      ],
+      "year": 2025,
+      "venue": "Scientific Reports",
+      "paperType": "journal",
+      "lane": "Macroeconomic and Sentiment Drivers",
+      "citationCount": 2,
+      "tags": [
+        "sentiment index",
+        "real estate demand",
+        "forecasting",
+        "MIDAS"
+      ],
+      "doi": "10.1038/s41598-025-16153-8"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "volatility-risk-modeling",
+    "chunkId": "paper_topic::volatility-risk-modeling::overview",
+    "title": "Volatility & Risk Modeling",
+    "description": "A focused literature map for volatility and risk modeling, starting from realized volatility measurement and tail risk pricing.",
+    "category": "Financial ML",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/volatility-risk-modeling",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Volatility & Risk Modeling\n\nCategory: Financial ML\n\nSubtitle: Realized volatility, tail risk, and market risk forecasting\n\nDescription: A focused literature map for volatility and risk modeling, starting from realized volatility measurement and tail risk pricing.\n\nIntro:\nThis topic starts with two foundational papers on realized volatility forecasting and tail risk pricing.\nThe goal is to connect market risk modeling research with the papers that shaped volatility measurement, downside risk estimation, and asset pricing.\nAdditional volatility, downside risk, and asset pricing papers can later be added under the same structure.\n\nMap intro: This map focuses on volatility and risk modeling papers.\n\nPapers:\n- Modeling and Forecasting Realized Volatility (2003)\n- Tail Risk and Asset Prices (2014)",
+    "metadata": {
+      "subtitle": "Realized volatility, tail risk, and market risk forecasting",
+      "paperCount": 2
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "andersen-2003-realized-volatility",
+    "parentId": "volatility-risk-modeling",
+    "chunkId": "paper::volatility-risk-modeling::andersen-2003-realized-volatility",
+    "title": "Modeling and Forecasting Realized Volatility",
+    "description": "How high-frequency intraday returns can be used to construct nonparametric realized volatility measures, and why long-memory models applied to these measures dramatically improve out-of-sample forecasting of asset return volatility across multiple horizons.",
+    "category": "Financial ML",
+    "sectionTitle": "Volatility Forecasting",
+    "url": "/papers/volatility-risk-modeling",
+    "externalUrl": "https://doi.org/placeholder-andersen-2003",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Modeling and Forecasting Realized Volatility\n\nTopic: Volatility & Risk Modeling\n\nTopic category: Financial ML\n\nAuthors: Torben G. Andersen, Tim Bollerslev, Francis X. Diebold, Paul Labys\n\nYear: 2003\n\nVenue: Econometrica\n\nType: journal\n\nLane: Volatility Forecasting\n\nCitation count: 5367\n\nDOI: placeholder-andersen-2003\n\nTags: realized volatility, high frequency, forecasting, econometrics\n\nAbstract metadata: How high-frequency intraday returns can be used to construct nonparametric realized volatility measures, and why long-memory models applied to these measures dramatically improve out-of-sample forecasting of asset return volatility across multiple horizons.",
+    "metadata": {
+      "topicId": "volatility-risk-modeling",
+      "topicLabel": "Volatility & Risk Modeling",
+      "authors": [
+        "Torben G. Andersen",
+        "Tim Bollerslev",
+        "Francis X. Diebold",
+        "Paul Labys"
+      ],
+      "year": 2003,
+      "venue": "Econometrica",
+      "paperType": "journal",
+      "lane": "Volatility Forecasting",
+      "citationCount": 5367,
+      "tags": [
+        "realized volatility",
+        "high frequency",
+        "forecasting",
+        "econometrics"
+      ],
+      "doi": "placeholder-andersen-2003"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "kelly-2014-tail-risk-asset-prices",
+    "parentId": "volatility-risk-modeling",
+    "chunkId": "paper::volatility-risk-modeling::kelly-2014-tail-risk-asset-prices",
+    "title": "Tail Risk and Asset Prices",
+    "description": "How to measure tail risk when extreme events are too rare to estimate from aggregate data and why a cross-sectional approach using individual stock crashes predicts market returns, prices risk, and forecasts real economic downturns.",
+    "category": "Financial ML",
+    "sectionTitle": "Tail Risk and Asset Pricing",
+    "url": "/papers/volatility-risk-modeling",
+    "externalUrl": "https://www.jstor.org/stable/24466856",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Tail Risk and Asset Prices\n\nTopic: Volatility & Risk Modeling\n\nTopic category: Financial ML\n\nAuthors: Bryan Kelly, Hao Jiang\n\nYear: 2014\n\nVenue: The Review of Financial Studies\n\nType: journal\n\nLane: Tail Risk and Asset Pricing\n\nCitation count: 1082\n\nDOI: placeholder-kelly-2014\n\nTags: tail risk, asset pricing, crashes, market returns\n\nAbstract metadata: How to measure tail risk when extreme events are too rare to estimate from aggregate data and why a cross-sectional approach using individual stock crashes predicts market returns, prices risk, and forecasts real economic downturns.",
+    "metadata": {
+      "topicId": "volatility-risk-modeling",
+      "topicLabel": "Volatility & Risk Modeling",
+      "authors": [
+        "Bryan Kelly",
+        "Hao Jiang"
+      ],
+      "year": 2014,
+      "venue": "The Review of Financial Studies",
+      "paperType": "journal",
+      "lane": "Tail Risk and Asset Pricing",
+      "citationCount": 1082,
+      "tags": [
+        "tail risk",
+        "asset pricing",
+        "crashes",
+        "market returns"
+      ],
+      "doi": "placeholder-kelly-2014"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "cryptocurrency",
+    "chunkId": "paper_topic::cryptocurrency::overview",
+    "title": "Cryptocurrency",
+    "description": "A literature map for cryptocurrency research, starting with Bitcoin valuation, monetary fragility, stablecoin flows, market manipulation, and crypto market structure.",
+    "category": "Financial ML",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/cryptocurrency",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Cryptocurrency\n\nCategory: Financial ML\n\nSubtitle: Bitcoin, stablecoins, market structure, fragility, and crypto asset pricing\n\nDescription: A literature map for cryptocurrency research, starting with Bitcoin valuation, monetary fragility, stablecoin flows, market manipulation, and crypto market structure.\n\nIntro:\nThis topic starts with foundational cryptocurrency finance papers focused on Bitcoin, monetary fragility, stablecoin-linked flows, and market manipulation questions.\nThe initial set is intentionally small and can later expand into crypto market microstructure, on-chain analytics, asset pricing, DeFi risk, stablecoin design, and exchange behavior.\nThe map is designed to support a compact reading path for understanding cryptocurrency markets from both financial economics and empirical market structure perspectives.\n\nMap intro: This map focuses on cryptocurrency literature. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- Bitcoin, Currencies, and Fragility (2021)\n- Is Bitcoin Really Untethered? (2020)",
+    "metadata": {
+      "subtitle": "Bitcoin, stablecoins, market structure, fragility, and crypto asset pricing",
+      "paperCount": 2
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "taleb-2021-bitcoin-fragility",
+    "parentId": "cryptocurrency",
+    "chunkId": "paper::cryptocurrency::taleb-2021-bitcoin-fragility",
+    "title": "Bitcoin, Currencies, and Fragility",
+    "description": "Analyzes Bitcoin through the lens of currencies, valuation, fragility, and monetary robustness.",
+    "category": "Financial ML",
+    "sectionTitle": "Bitcoin and Monetary Fragility",
+    "url": "/papers/cryptocurrency",
+    "externalUrl": "https://doi.org/10.1080/14697688.2021.1952702",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Bitcoin, Currencies, and Fragility\n\nTopic: Cryptocurrency\n\nTopic category: Financial ML\n\nAuthors: Nassim Nicholas Taleb\n\nYear: 2021\n\nVenue: Quantitative Finance\n\nType: journal\n\nLane: Bitcoin and Monetary Fragility\n\nCitation count: 0\n\nDOI: 10.1080/14697688.2021.1952702\n\nTags: Bitcoin, currencies, fragility, valuation\n\nAbstract metadata: Analyzes Bitcoin through the lens of currencies, valuation, fragility, and monetary robustness.",
+    "metadata": {
+      "topicId": "cryptocurrency",
+      "topicLabel": "Cryptocurrency",
+      "authors": [
+        "Nassim Nicholas Taleb"
+      ],
+      "year": 2021,
+      "venue": "Quantitative Finance",
+      "paperType": "journal",
+      "lane": "Bitcoin and Monetary Fragility",
+      "citationCount": 0,
+      "tags": [
+        "Bitcoin",
+        "currencies",
+        "fragility",
+        "valuation"
+      ],
+      "doi": "10.1080/14697688.2021.1952702"
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "griffin-shams-2020-bitcoin-untethered",
+    "parentId": "cryptocurrency",
+    "chunkId": "paper::cryptocurrency::griffin-shams-2020-bitcoin-untethered",
+    "title": "Is Bitcoin Really Untethered?",
+    "description": "Studies whether Tether-related flows were associated with Bitcoin price movements during the cryptocurrency boom.",
+    "category": "Financial ML",
+    "sectionTitle": "Market Manipulation and Stablecoins",
+    "url": "/papers/cryptocurrency",
+    "externalUrl": "https://doi.org/10.1111/jofi.12903",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Is Bitcoin Really Untethered?\n\nTopic: Cryptocurrency\n\nTopic category: Financial ML\n\nAuthors: John M. Griffin, Amin Shams\n\nYear: 2020\n\nVenue: The Journal of Finance\n\nType: journal\n\nLane: Market Manipulation and Stablecoins\n\nCitation count: 0\n\nDOI: 10.1111/jofi.12903\n\nTags: Bitcoin, Tether, stablecoins, market manipulation\n\nAbstract metadata: Studies whether Tether-related flows were associated with Bitcoin price movements during the cryptocurrency boom.",
+    "metadata": {
+      "topicId": "cryptocurrency",
+      "topicLabel": "Cryptocurrency",
+      "authors": [
+        "John M. Griffin",
+        "Amin Shams"
+      ],
+      "year": 2020,
+      "venue": "The Journal of Finance",
+      "paperType": "journal",
+      "lane": "Market Manipulation and Stablecoins",
+      "citationCount": 0,
+      "tags": [
+        "Bitcoin",
+        "Tether",
+        "stablecoins",
+        "market manipulation"
+      ],
+      "doi": "10.1111/jofi.12903"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "information-retrieval-search",
+    "chunkId": "paper_topic::information-retrieval-search::overview",
+    "title": "Information Retrieval and Search",
+    "description": "A compact reading path for search and information retrieval, starting with classical indexing and retrieval models, then moving into practical search engines and modern neural ranking.",
+    "category": "Open Access Books",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/information-retrieval-search",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Information Retrieval and Search\n\nCategory: Open Access Books\n\nSubtitle: Classical IR, search engines, ranking, neural retrieval, and transformer based text ranking\n\nDescription: A compact reading path for search and information retrieval, starting with classical indexing and retrieval models, then moving into practical search engines and modern neural ranking.\n\nIntro:\nThis topic combines the main information retrieval and search books into one reading path.\nStart with classical IR concepts, then move into search engine implementation, and finally study transformer based ranking and dense retrieval.\nThis path is useful for semantic search, vector search, RAG retrieval, search evaluation, and production search system design.\n\nMap intro: This map focuses on open access information retrieval and search books. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- Introduction to Information Retrieval (2009)\n- Search Engines: Information Retrieval in Practice (2015)\n- Pretrained Transformers for Text Ranking: BERT and Beyond (2021)",
+    "metadata": {
+      "subtitle": "Classical IR, search engines, ranking, neural retrieval, and transformer based text ranking",
+      "paperCount": 3
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "manning-raghavan-schuetze-2009-ir",
+    "parentId": "information-retrieval-search",
+    "chunkId": "paper::information-retrieval-search::manning-raghavan-schuetze-2009-ir",
+    "title": "Introduction to Information Retrieval",
+    "description": "A foundational information retrieval textbook covering indexing, retrieval models, evaluation, text classification, clustering, web search, and link analysis. It is a strong starting point for understanding classical IR before moving into neural retrieval.",
+    "category": "Open Access Books",
+    "sectionTitle": "Classical Information Retrieval",
+    "url": "/papers/information-retrieval-search",
+    "externalUrl": "https://nlp.stanford.edu/IR-book/pdf/irbookonlinereading.pdf",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Introduction to Information Retrieval\n\nTopic: Information Retrieval and Search\n\nTopic category: Open Access Books\n\nAuthors: Christopher D. Manning, Prabhakar Raghavan, Hinrich Schutze\n\nYear: 2009\n\nVenue: Cambridge University Press, online edition\n\nType: book\n\nLane: Classical Information Retrieval\n\nCitation count: 0\n\nTags: information retrieval, indexing, ranking, search, evaluation\n\nAbstract metadata: A foundational information retrieval textbook covering indexing, retrieval models, evaluation, text classification, clustering, web search, and link analysis. It is a strong starting point for understanding classical IR before moving into neural retrieval.",
+    "metadata": {
+      "topicId": "information-retrieval-search",
+      "topicLabel": "Information Retrieval and Search",
+      "authors": [
+        "Christopher D. Manning",
+        "Prabhakar Raghavan",
+        "Hinrich Schutze"
+      ],
+      "year": 2009,
+      "venue": "Cambridge University Press, online edition",
+      "paperType": "book",
+      "lane": "Classical Information Retrieval",
+      "citationCount": 0,
+      "tags": [
+        "information retrieval",
+        "indexing",
+        "ranking",
+        "search",
+        "evaluation"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "croft-metzler-strohman-2015-search-engines-ir-practice",
+    "parentId": "information-retrieval-search",
+    "chunkId": "paper::information-retrieval-search::croft-metzler-strohman-2015-search-engines-ir-practice",
+    "title": "Search Engines: Information Retrieval in Practice",
+    "description": "A practical search engine book focused on information retrieval models and the implementation choices behind search engine components. It is useful for connecting IR theory to real search system design.",
+    "category": "Open Access Books",
+    "sectionTitle": "Search Engine Systems",
+    "url": "/papers/information-retrieval-search",
+    "externalUrl": "https://ciir.cs.umass.edu/downloads/SEIRiP.pdf",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Search Engines: Information Retrieval in Practice\n\nTopic: Information Retrieval and Search\n\nTopic category: Open Access Books\n\nAuthors: W. Bruce Croft, Donald Metzler, Trevor Strohman\n\nYear: 2015\n\nVenue: Free online edition\n\nType: book\n\nLane: Search Engine Systems\n\nCitation count: 0\n\nTags: search engines, information retrieval, ranking, indexing, systems\n\nAbstract metadata: A practical search engine book focused on information retrieval models and the implementation choices behind search engine components. It is useful for connecting IR theory to real search system design.",
+    "metadata": {
+      "topicId": "information-retrieval-search",
+      "topicLabel": "Information Retrieval and Search",
+      "authors": [
+        "W. Bruce Croft",
+        "Donald Metzler",
+        "Trevor Strohman"
+      ],
+      "year": 2015,
+      "venue": "Free online edition",
+      "paperType": "book",
+      "lane": "Search Engine Systems",
+      "citationCount": 0,
+      "tags": [
+        "search engines",
+        "information retrieval",
+        "ranking",
+        "indexing",
+        "systems"
+      ],
+      "doi": ""
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "lin-nogueira-yates-2021-transformers-ranking",
+    "parentId": "information-retrieval-search",
+    "chunkId": "paper::information-retrieval-search::lin-nogueira-yates-2021-transformers-ranking",
+    "title": "Pretrained Transformers for Text Ranking: BERT and Beyond",
+    "description": "A modern survey of transformer based text ranking. It covers multi-stage reranking, dense retrieval, long document handling, and the effectiveness versus efficiency tradeoff in neural search systems.",
+    "category": "Open Access Books",
+    "sectionTitle": "Neural Ranking and Dense Retrieval",
+    "url": "/papers/information-retrieval-search",
+    "externalUrl": "https://arxiv.org/pdf/2010.06467",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: Pretrained Transformers for Text Ranking: BERT and Beyond\n\nTopic: Information Retrieval and Search\n\nTopic category: Open Access Books\n\nAuthors: Jimmy Lin, Rodrigo Nogueira, Andrew Yates\n\nYear: 2021\n\nVenue: Synthesis Lectures on Human Language Technologies, arXiv preproduction version\n\nType: survey\n\nLane: Neural Ranking and Dense Retrieval\n\nCitation count: 0\n\nDOI: 10.48550/arXiv.2010.06467\n\nTags: transformers, BERT, text ranking, dense retrieval, reranking\n\nAbstract metadata: A modern survey of transformer based text ranking. It covers multi-stage reranking, dense retrieval, long document handling, and the effectiveness versus efficiency tradeoff in neural search systems.",
+    "metadata": {
+      "topicId": "information-retrieval-search",
+      "topicLabel": "Information Retrieval and Search",
+      "authors": [
+        "Jimmy Lin",
+        "Rodrigo Nogueira",
+        "Andrew Yates"
+      ],
+      "year": 2021,
+      "venue": "Synthesis Lectures on Human Language Technologies, arXiv preproduction version",
+      "paperType": "survey",
+      "lane": "Neural Ranking and Dense Retrieval",
+      "citationCount": 0,
+      "tags": [
+        "transformers",
+        "BERT",
+        "text ranking",
+        "dense retrieval",
+        "reranking"
+      ],
+      "doi": "10.48550/arXiv.2010.06467"
+    }
+  },
+  {
+    "sourceType": "paper_topic",
+    "sourceId": "databases-big-data-systems",
+    "chunkId": "paper_topic::databases-big-data-systems::overview",
+    "title": "Databases and Big Data Systems",
+    "description": "A database and big data systems reading path focused on the storage, modeling, and distributed processing concepts behind analytics and machine learning infrastructure.",
+    "category": "Open Access Books",
+    "sectionTitle": "Topic overview",
+    "url": "/papers/databases-big-data-systems",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper topic\n\nTopic: Databases and Big Data Systems\n\nCategory: Open Access Books\n\nSubtitle: Relational concepts, big data systems, distributed storage, data processing, and database models\n\nDescription: A database and big data systems reading path focused on the storage, modeling, and distributed processing concepts behind analytics and machine learning infrastructure.\n\nIntro:\nThis topic supports the database and data systems side of machine learning infrastructure.\nIt is useful for understanding storage systems, distributed processing, data modeling, document stores, graph databases, and lakehouse style architectures.\nThe first entry is broad and can later be extended with dedicated SQL, database systems, and distributed systems books.\n\nMap intro: This map focuses on open access database and big data systems books. Horizontal position reflects publication year and vertical bands reflect placeholder citation groups.\n\nPapers:\n- The Big Data Textbook: From Clay Tablets to Lakehouses (2026)",
+    "metadata": {
+      "subtitle": "Relational concepts, big data systems, distributed storage, data processing, and database models",
+      "paperCount": 1
+    }
+  },
+  {
+    "sourceType": "paper",
+    "sourceId": "fourny-2026-big-data-textbook",
+    "parentId": "databases-big-data-systems",
+    "chunkId": "paper::databases-big-data-systems::fourny-2026-big-data-textbook",
+    "title": "The Big Data Textbook: From Clay Tablets to Lakehouses",
+    "description": "A broad big data textbook based on ETH Zurich lectures. It covers cloud storage, distributed file systems, wide column stores, data modeling, MapReduce, Spark, document stores, graph databases, data cubes, and related database system concepts.",
+    "category": "Open Access Books",
+    "sectionTitle": "Big Data and Database Systems",
+    "url": "/papers/databases-big-data-systems",
+    "externalUrl": "https://ghislainfourny.github.io/big-data-textbook/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Paper\n\nPaper: The Big Data Textbook: From Clay Tablets to Lakehouses\n\nTopic: Databases and Big Data Systems\n\nTopic category: Open Access Books\n\nAuthors: Ghislain Fourny\n\nYear: 2026\n\nVenue: ETH Zurich teaching material, free online version\n\nType: book\n\nLane: Big Data and Database Systems\n\nCitation count: 0\n\nTags: big data, databases, distributed systems, Spark, data modeling\n\nAbstract metadata: A broad big data textbook based on ETH Zurich lectures. It covers cloud storage, distributed file systems, wide column stores, data modeling, MapReduce, Spark, document stores, graph databases, data cubes, and related database system concepts.",
+    "metadata": {
+      "topicId": "databases-big-data-systems",
+      "topicLabel": "Databases and Big Data Systems",
+      "authors": [
+        "Ghislain Fourny"
+      ],
+      "year": 2026,
+      "venue": "ETH Zurich teaching material, free online version",
+      "paperType": "book",
+      "lane": "Big Data and Database Systems",
+      "citationCount": 0,
+      "tags": [
+        "big data",
+        "databases",
+        "distributed systems",
+        "Spark",
+        "data modeling"
+      ],
+      "doi": ""
+    }
+  }
+]

@@ -1,0 +1,31 @@
+from models.app_settings import AppSettings
+
+
+SETTINGS_ID = 1
+
+
+def get_settings(db):
+    """Return the singleton settings row, creating it with defaults if absent."""
+    row = db.query(AppSettings).filter(AppSettings.id == SETTINGS_ID).first()
+    if row is None:
+        # InScien is local-only; the legacy provider column is unused but kept for the
+        # existing schema. Marked "local" for honesty.
+        row = AppSettings(id=SETTINGS_ID, llm_provider="local")
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+# Only these fields may be written from the API (local-only: no provider / no cloud key).
+_UPDATABLE = {"display_name", "llm_model", "ollama_base_url"}
+
+
+def update_settings(db, fields):
+    row = get_settings(db)
+    for key, value in fields.items():
+        if key in _UPDATABLE:
+            setattr(row, key, value)
+    db.commit()
+    db.refresh(row)
+    return row

@@ -1,0 +1,159 @@
+{
+  "id": "sebastian-raschka-machine-learning",
+  "name": "Machine Learning with Sebastian Raschka",
+  "href": "/courses/sebastian-raschka-machine-learning",
+  "category": "Machine Learning",
+  "desc": "Machine learning lecture series by Sebastian Raschka covering machine learning fundamentals, nearest neighbors, Python, NumPy, scikit-learn, decision trees, ensemble methods, model evaluation, confidence intervals, cross-validation, statistical tests, and performance metrics.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: What is Machine Learning",
+      "parts": [
+        {"id": "L01.1", "title": "Course overview", "videoId": "OgK8JFjkSto"},
+        {"id": "L01.2", "title": "What is Machine Learning", "videoId": "z7RT6aAt_10"},
+        {"id": "L01.3", "title": "Categories of Machine Learning", "videoId": "07Qum_mpEL0"},
+        {"id": "L01.4", "title": "Notation", "videoId": "fBEEplblFlg"},
+        {"id": "L01.5", "title": "ML application", "videoId": "3j87BZCqF2c"},
+        {"id": "L01.6", "title": "ML motivation", "videoId": "WW0U3tFhzes"}
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Nearest Neighbor Methods",
+      "parts": [
+        {"id": "L02.1", "title": "Introduction to NN", "videoId": "-8ok7PuQEAk"},
+        {"id": "L02.2", "title": "Nearest neighbor decision boundary", "videoId": "zJH0qmrU-rA"},
+        {"id": "L02.3", "title": "K-nearest neighbors", "videoId": "9dawNcG_ue8"},
+        {"id": "L02.4", "title": "Big O of K-nearest neighbors", "videoId": "563R7CUxNzA"},
+        {"id": "L02.5", "title": "Improving k-nearest neighbors", "videoId": "nPFvo6T_O1w"},
+        {"id": "L02.6", "title": "K-nearest neighbors in Python", "videoId": "PtjeiDpHss8"}
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Optional Python Overview",
+      "parts": [
+        {"id": "L03.1", "title": "Python overview", "videoId": "MIvB1ZUDA-o"},
+        {"id": "L03.2", "title": "Python setup", "videoId": "DCvIUzW4154"},
+        {"id": "L03.3", "title": "Running Python code", "videoId": "CiEYCQ4pFJs"}
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Scientific Computing in Python",
+      "parts": [
+        {"id": "L04.1", "title": "Intro to NumPy", "videoId": "I8vRP4GVs_E"},
+        {"id": "L04.2", "title": "NumPy Array Construction and Indexing", "videoId": "X9Ioj6BUT38"},
+        {"id": "L04.3", "title": "NumPy Array Math and Universal Functions", "videoId": "VuaQKtygva4"},
+        {"id": "L04.4", "title": "NumPy Broadcasting", "videoId": "FQ-IhRHZ_fA"},
+        {"id": "L04.5", "title": "NumPy Advanced Indexing -- Memory Views and Copies", "videoId": "2tP_Hn5uw9I"},
+        {"id": "L04.6", "title": "NumPy Random Number Generators", "videoId": "gVlLnQU9pPc"},
+        {"id": "L04.7", "title": "Reshaping NumPy Arrays", "videoId": "4fqPkg1jYVs"},
+        {"id": "L04.8", "title": "NumPy Comparison Operators and Masks", "videoId": "ff0R9rR-yDI"},
+        {"id": "L04.9", "title": "NumPy Linear Algebra Basics", "videoId": "JgXLoBvRALA"},
+        {"id": "L04.10", "title": "Matplotlib", "videoId": "VmU8XBht1-U"}
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Machine Learning with Scikit-Learn",
+      "parts": [
+        {"id": "L05.1", "title": "Reading a Dataset from a Tabular Text File", "videoId": "Vj3OnmufdjA"},
+        {"id": "L05.2", "title": "Basic data handling", "videoId": "a1JrNuLsmh4"},
+        {"id": "L05.3", "title": "Object Oriented Programming & Python Classes", "videoId": "Zrb-xhqPZF4"},
+        {"id": "L05.4", "title": "Intro to Scikit-learn", "videoId": "dpoN3eJgROM"},
+        {"id": "L05.5", "title": "Scikit-learn Transformer API", "videoId": "gQvVlkEn1hk"},
+        {"id": "L05.6", "title": "Scikit-learn Pipelines", "videoId": "MuPmbW0ln6g"}
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Decision Trees",
+      "parts": [
+        {"id": "L06.1", "title": "Intro to Decision Trees", "videoId": "3vZo0ApLz0A"},
+        {"id": "L06.2", "title": "Recursive algorithms & Big-O", "videoId": "hA43n9w0ImQ"},
+        {"id": "L06.3", "title": "Types of decision trees", "videoId": "z2n8kHXkwtM"},
+        {"id": "L06.4", "title": "Splitting criteria", "videoId": "a-SIt_X0_oY"},
+        {"id": "L06.5", "title": "Gini & Entropy versus misclassification error", "videoId": "cLWZVinpAu0"},
+        {"id": "L06.6", "title": "Improvements & dealing with overfitting", "videoId": "Joxm04J1Cqg"},
+        {"id": "L06.7", "title": "Code Example Implementing Decision Trees in Scikit-Learn", "videoId": "z9FfOo9qDh4"}
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Ensemble Methods",
+      "parts": [
+        {"id": "L07.1", "title": "Intro to ensemble methods", "videoId": "wVRidHbwLB0"},
+        {"id": "L07.2", "title": "Majority Voting", "videoId": "EFk21H6Q1ew"},
+        {"id": "L07.3", "title": "Bagging", "videoId": "pWSULhaZlQM"},
+        {"id": "L07.4", "title": "Boosting and AdaBoost", "videoId": "LxcGKNV5-p4"},
+        {"id": "L07.5", "title": "Gradient Boosting", "videoId": "zblsrxc7XpM"},
+        {"id": "L07.6", "title": "Random Forests", "videoId": "r5C3TUIw6Zk"},
+        {"id": "L07.7", "title": "Stacking", "videoId": "8T2emza6g80"}
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Model Evaluation Part 1",
+      "parts": [
+        {"id": "L08.1", "title": "Intro to overfitting and underfitting", "videoId": "v-7w6hWQ3FM"},
+        {"id": "L08.2", "title": "Intuition behind bias and variance", "videoId": "DCk-p6MsiWA"},
+        {"id": "L08.3", "title": "Bias-Variance Decomposition of the Squared Error", "videoId": "r25dWiyDPQA"},
+        {"id": "L08.4", "title": "Bias and Variance vs Overfitting and Underfitting", "videoId": "R13lpnXVtXo"},
+        {"id": "L08.5", "title": "Bias-Variance Decomposition of the 0/1 Loss", "videoId": "IvHZ4-yd5is"},
+        {"id": "L08.6", "title": "Different Uses of the Term \"Bias\"", "videoId": "AzKP6gQVoTI"}
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Model Evaluation 2: Confidence Intervals",
+      "parts": [
+        {"id": "L09.1", "title": "Introduction", "videoId": "77V4VJJDPWw"},
+        {"id": "L09.2", "title": "Holdout Evaluation", "videoId": "miq_7lZgguE"},
+        {"id": "L09.3", "title": "Holdout Model Selection", "videoId": "KKErl_UtF2M"},
+        {"id": "L09.4", "title": "ML Confidence Intervals via Normal Approximation", "videoId": "jsvBxkvTyQg"},
+        {"id": "L09.5", "title": "Resampling and Repeated Holdout", "videoId": "1whfIOoPTlk"},
+        {"id": "L09.6", "title": "Bootstrap Confidence Intervals", "videoId": "jTva3x3Rd0s"},
+        {"id": "L09.7", "title": "The .632 and .632+ Bootstrap methods", "videoId": "wb4_dEmhhgU"}
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Model Evaluation 3",
+      "parts": [
+        {"id": "L10.1", "title": "Cross-validation Lecture Overview", "videoId": "bcpWY251pkM"},
+        {"id": "L10.2", "title": "Hyperparameters", "videoId": "4zuIPwnQVdM"},
+        {"id": "L10.3", "title": "K-fold CV for Model Evaluation", "videoId": "ivVeqv4oShk"},
+        {"id": "L10.4", "title": "K-fold CV for Model Evaluation -- Code Examples", "videoId": "GkqJLZKGFWU"},
+        {"id": "L10.5", "title": "K-fold CV for Model Selection", "videoId": "0fueKIB76Rk"},
+        {"id": "L10.6", "title": "K-fold CV for Model Evaluation -- Code Examples", "videoId": "EqQ-Sb15CT8"},
+        {"id": "L10.7", "title": "K-fold CV 1-Standard Error Method", "videoId": "eODaLDEPtxY"},
+        {"id": "L10.8", "title": "K-fold CV 1-Standard Error Method -- Code Example", "videoId": "bs1rvv4B-ck"}
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Model Evaluation Part 4",
+      "parts": [
+        {"id": "L11.1", "title": "Lecture Overview", "videoId": "oTSVEWC1-E0"},
+        {"id": "L11.2", "title": "McNemar's Test for Pairwise Classifier Comparison", "videoId": "nzznkiW8ulk"},
+        {"id": "L11.3", "title": "Multiple Pairwise Comparisons", "videoId": "cMILHEJ6JN4"},
+        {"id": "L11.4", "title": "Statistical Tests for Algorithm Comparison", "videoId": "hh3CR64otvE"},
+        {"id": "L11.5", "title": "Nested CV for Algorithm Selection", "videoId": "XXFLFWHP9Nc"},
+        {"id": "L11.6", "title": "Nested CV for Algorithm Selection Code Example", "videoId": "nuIqwnsrnH0"}
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Model Evaluation 5: Performance Metrics",
+      "parts": [
+        {"id": "L12.0", "title": "Lecture Overview", "videoId": "pGc0Ow0RpOM"},
+        {"id": "L12.1", "title": "Confusion Matrix", "videoId": "07dtryhNGms"},
+        {"id": "L12.2", "title": "Precision, Recall, and F1 Score", "videoId": "yEw9oDdJkT0"},
+        {"id": "L12.3", "title": "Balanced Accuracy", "videoId": "eSo2wvx-gTc"},
+        {"id": "L12.4", "title": "Receiver Operating Characteristic", "videoId": "GdSEkiArM3k"},
+        {"id": "L12.5", "title": "Extending Binary Metric to Multiclass Problems", "videoId": "K8-GOT_RtuA"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1218 @@
+{
+  "id": "uc-berkeley-cs186-intro-to-db-systems",
+  "name": "UC Berkeley CS186: Introduction to Database Systems",
+  "href": "/courses/uc-berkeley-cs186-intro-to-db-systems",
+  "category": "Computer Science",
+  "source": "UC Berkeley",
+  "desc": "UC Berkeley CS186 Introduction to Database Systems lecture playlist covering database system concepts, SQL, storage architecture, files, records, indexing, B+ trees, buffer management, relational operators, external sorting and hashing, query execution, and joins.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: Introduction",
+      "parts": [
+        {
+          "id": "L01.1",
+          "title": "Lecture 1 Part 1 Intro and Why",
+          "videoId": "j-iq40QBJy8"
+        },
+        {
+          "id": "L01.2",
+          "title": "Lecture 1 Part 2 What",
+          "videoId": "D_a2DNSEOa8"
+        },
+        {
+          "id": "L01.3",
+          "title": "Lecture 1 Part 3 Who",
+          "videoId": "Q8OEPEu4GVY"
+        },
+        {
+          "id": "L01.4",
+          "title": "Lecture 1 Part 4 How",
+          "videoId": "P6A1OM4X924"
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: SQL I",
+      "parts": [
+        {
+          "id": "L02.1",
+          "title": "SQL 1 Clip 1",
+          "videoId": "8Uxt9scWJBY"
+        },
+        {
+          "id": "L02.2",
+          "title": "SQL 1 Clip 2",
+          "videoId": "Q-dxGaR3fH0"
+        },
+        {
+          "id": "L02.3",
+          "title": "SQL 1 Clip 3",
+          "videoId": "6b5VdxHE4Fw"
+        },
+        {
+          "id": "L02.4",
+          "title": "SQL 1 Clip 4",
+          "videoId": "r-4Xj2Fz6MQ"
+        },
+        {
+          "id": "L02.5",
+          "title": "SQL 1 Clip 5",
+          "videoId": "n2tuTtgkSlI"
+        },
+        {
+          "id": "L02.6",
+          "title": "SQL 1 Clip 6 7",
+          "videoId": "br5J8MsduJo"
+        }
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: SQL II",
+      "parts": [
+        {
+          "id": "L03.1",
+          "title": "SQL II 1 4",
+          "videoId": "YWBJMGibSbs"
+        },
+        {
+          "id": "L03.2",
+          "title": "SQL II 6 10",
+          "videoId": "sWfV3VwG_4Y"
+        },
+        {
+          "id": "L03.3",
+          "title": "SQL II 11 12",
+          "videoId": "bGp6HPLdNow"
+        },
+        {
+          "id": "L03.4",
+          "title": "SQL II 13 15 slides",
+          "videoId": "z8WSsQw6cdU"
+        },
+        {
+          "id": "L03.5",
+          "title": "SQL II 17 21",
+          "videoId": "EBE_Pzn3yLw"
+        },
+        {
+          "id": "L03.6",
+          "title": "SQL II 23 28",
+          "videoId": "PD8dIic-5IE"
+        },
+        {
+          "id": "L03.7",
+          "title": "SQL II 30 34",
+          "videoId": "awEiyu1BZS0"
+        },
+        {
+          "id": "L03.8",
+          "title": "SQL II 35",
+          "videoId": "O2W6EffRxr4"
+        },
+        {
+          "id": "L03.9",
+          "title": "SQL II 37 39",
+          "videoId": "kwCO_UOW020"
+        },
+        {
+          "id": "L03.10",
+          "title": "SQL II 41 46",
+          "videoId": "2roiOPJ9BxI"
+        },
+        {
+          "id": "L03.11",
+          "title": "SQL II 48 53",
+          "videoId": "GTdiC7y4GnE"
+        },
+        {
+          "id": "L03.12",
+          "title": "SQL II 55 56",
+          "videoId": "rVgfGC_KwSE"
+        },
+        {
+          "id": "L03.13",
+          "title": "SQL II 58 66",
+          "videoId": "wTdfbRuJbps"
+        },
+        {
+          "id": "L03.14",
+          "title": "SQL II 68 69",
+          "videoId": "ySjx1KDdMIs"
+        }
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Architecture and Storage",
+      "parts": [
+        {
+          "id": "L04.1",
+          "title": "Lec 4 Part 1 Architecture",
+          "videoId": "GCN5aw1LyoE"
+        },
+        {
+          "id": "L04.2",
+          "title": "Lec 4 Part 2 Storage Hierarchy",
+          "videoId": "d3bsAeo0e8U"
+        },
+        {
+          "id": "L04.3",
+          "title": "Lec 4 Part 3 Components of a Disk",
+          "videoId": "ytbNbAc2nxs"
+        },
+        {
+          "id": "L04.4",
+          "title": "Lec 4 Part 4 Flash",
+          "videoId": "AKGWUqcTkxY"
+        },
+        {
+          "id": "L04.5",
+          "title": "Lec 4 Part 5 Storage Pragmatics and Trends",
+          "videoId": "3upzZuD0cN0"
+        },
+        {
+          "id": "L04.6",
+          "title": "Lec 4 Part 6 Disk Space Management",
+          "videoId": "Rnko94riyyI"
+        }
+      ]
+    },
+    {
+      "id": "L04A",
+      "title": "Lecture 4.5: Files, Pages, and Records",
+      "parts": [
+        {
+          "id": "L04A.1",
+          "title": "Lec 4 5 Part 1 Files",
+          "videoId": "XXGmqV1gIug"
+        },
+        {
+          "id": "L04A.2",
+          "title": "Lec 4 5 Part 2 Pages for Fixed Length",
+          "videoId": "z26fEmCYdIQ"
+        },
+        {
+          "id": "L04A.3",
+          "title": "Lec 4 5 Part 3 Pages for Variable Length",
+          "videoId": "SCETMNSHGis"
+        },
+        {
+          "id": "L04A.4",
+          "title": "Lec 4 5 Part 4 Record Layout",
+          "videoId": "gcQgJMRr60Y"
+        },
+        {
+          "id": "L04A.5",
+          "title": "Lec 4 5 Part 5 Summary",
+          "videoId": "ZOOM4wxUpjU"
+        }
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Indexing and Access Paths",
+      "parts": [
+        {
+          "id": "L05.1",
+          "title": "Lecture 5 Part 1 Review and Goals",
+          "videoId": "1_Tel7Kk694"
+        },
+        {
+          "id": "L05.2",
+          "title": "Lec 5 Part 2 Model and Assumptions",
+          "videoId": "6ny970JMrVc"
+        },
+        {
+          "id": "L05.3",
+          "title": "Lec 5 Part 3 Scan",
+          "videoId": "EiC1tbDHzmY"
+        },
+        {
+          "id": "L05.4",
+          "title": "Lec 5 Part 4 Equality",
+          "videoId": "CFJXoGujBAg"
+        },
+        {
+          "id": "L05.5",
+          "title": "Lec 5 Part 5 Range Search",
+          "videoId": "YfMdk1XwwDQ"
+        },
+        {
+          "id": "L05.6",
+          "title": "Lec 5 Part 6 Insert",
+          "videoId": "AuHsraGwwNI"
+        },
+        {
+          "id": "L05.7",
+          "title": "Lec 5 Part 7 Delete",
+          "videoId": "mzSZIUqYVHw"
+        },
+        {
+          "id": "L05.8",
+          "title": "Lec 5 Part 8 Summary",
+          "videoId": "mCWoRwLYPYA"
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Trees, ISAM, and B+ Trees",
+      "parts": [
+        {
+          "id": "L06.1",
+          "title": "Lec 6 Part 1 Intro to Indexes",
+          "videoId": "NcuORWy48Qk"
+        },
+        {
+          "id": "L06.2",
+          "title": "Lec 6 Part 2 High Fan out Search Tree",
+          "videoId": "gZSi5uw8yeA"
+        },
+        {
+          "id": "L06.3",
+          "title": "Lec 6 Part 3 Search and Insertion in ISAM",
+          "videoId": "MNLXQgAqtwo"
+        },
+        {
+          "id": "L06.4",
+          "title": "Lecture 6 Part 4 B+ Tree Intro",
+          "videoId": "xeyE8tiVzbw"
+        },
+        {
+          "id": "L06.5",
+          "title": "Lecture 6 Part 5",
+          "videoId": "_baknMPhyrE"
+        },
+        {
+          "id": "L06.6",
+          "title": "Lecture 6 Part 6",
+          "videoId": "iQ1lmTnZOT8"
+        },
+        {
+          "id": "L06.7",
+          "title": "Lecture 6 Part 7",
+          "videoId": "E8jwdsBGaBs"
+        },
+        {
+          "id": "L06.8",
+          "title": "Lecture 6 Part 8 B+ Tree Deletion",
+          "videoId": "3dvarZJpjCc"
+        },
+        {
+          "id": "L06.9",
+          "title": "Lecture 6 Part 9 (OLD)",
+          "videoId": "eCG0vUD2CcQ"
+        },
+        {
+          "id": "L06.10",
+          "title": "Lecture 6 Part 10",
+          "videoId": "xn0h8nCSjWg"
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Indexes and Query Support",
+      "parts": [
+        {
+          "id": "L07.1",
+          "title": "Lec 7 Part 1 Lecture Introduction",
+          "videoId": "hSEWD2XIcL4"
+        },
+        {
+          "id": "L07.2",
+          "title": "Lec 7 Part 2 Query Support Overview",
+          "videoId": "Lvx6XjvijAA"
+        },
+        {
+          "id": "L07.3",
+          "title": "Lec 7 Part 3 Composite Search Keys in One Dimension",
+          "videoId": "D7sHW_YlbEw"
+        },
+        {
+          "id": "L07.4",
+          "title": "Lec 7 Part 4 Three Alternatives for Data Entry Storage",
+          "videoId": "4aCkt3yeiiU"
+        },
+        {
+          "id": "L07.5",
+          "title": "Lec 7 Part 5 Clustered vs Unclustered Indexes",
+          "videoId": "HauoKagBM_c"
+        },
+        {
+          "id": "L07.6",
+          "title": "Lec 7 Part 6 Variable Length Keys: Occupancy and Compression",
+          "videoId": "3RO4xCuFxmU"
+        },
+        {
+          "id": "L07.7",
+          "title": "Lec 7 Part 7 Clustered B+ Tree Cost Model",
+          "videoId": "Wo1s65uEfuQ"
+        },
+        {
+          "id": "L07.8",
+          "title": "Lec 7 Part 8 Lecture Summary",
+          "videoId": "zKddAhruquw"
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Buffer Management",
+      "parts": [
+        {
+          "id": "L08.1",
+          "title": "Lec 8 Part 1 Intro to Buffer Management",
+          "videoId": "qOO0HGVToYA"
+        },
+        {
+          "id": "L08.2",
+          "title": "Lec 8 Part 2 Mapping Pages",
+          "videoId": "6gHKFYgsWLQ"
+        },
+        {
+          "id": "L08.3",
+          "title": "Lec 8 Part 3 Dirty Pages",
+          "videoId": "DdltpiIw47E"
+        },
+        {
+          "id": "L08.4",
+          "title": "Lec 8 Part 4 Buf Mgr State",
+          "videoId": "e_-_SCTcI70"
+        },
+        {
+          "id": "L08.5",
+          "title": "Lec 8 Part 5 Page Replacement",
+          "videoId": "NHp0nGW3aAg"
+        },
+        {
+          "id": "L08.6",
+          "title": "Lec 8 Part 6 LRU",
+          "videoId": "Uj_UOxZwBNQ"
+        },
+        {
+          "id": "L08.7",
+          "title": "Lec 8 Part 7 Clock",
+          "videoId": "gjLywr7GbLU"
+        },
+        {
+          "id": "L08.8",
+          "title": "Lec 8 Part 8 LRU and Sequential Flooding",
+          "videoId": "cESKTl12Ulg"
+        },
+        {
+          "id": "L08.9",
+          "title": "Lec 8 Part 9 MRU and Repeated Scans",
+          "videoId": "bwTrNL_xKdw"
+        },
+        {
+          "id": "L08.10",
+          "title": "Lec8 Part 10 Additional Topics",
+          "videoId": "QNUKYlZybUI"
+        },
+        {
+          "id": "L08.11",
+          "title": "Lec 8 Part 11 Summary",
+          "videoId": "iy3biqeEXhI"
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Relational Operators",
+      "parts": [
+        {
+          "id": "L09.1",
+          "title": "Lec 9 Part 1 Intro",
+          "videoId": "XheS2VwfUTM"
+        },
+        {
+          "id": "L09.2",
+          "title": "Lec 9 Part 2 Unary Operators",
+          "videoId": "JMqR2-EujuY"
+        },
+        {
+          "id": "L09.3",
+          "title": "Lec 9 Part 3 Set Operators",
+          "videoId": "mOxK4x3LSow"
+        },
+        {
+          "id": "L09.4",
+          "title": "Lec 9 Part 4 Joins",
+          "videoId": "jftR-zw8xWE"
+        },
+        {
+          "id": "L09.5",
+          "title": "Lec 9 Part 5 GroupBy and Summary",
+          "videoId": "jvBc2GEZC34"
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: External Sorting and Hashing",
+      "parts": [
+        {
+          "id": "L10.1",
+          "title": "Lec 10 Part 1 Out of Core Algs",
+          "videoId": "yookWzvnic0"
+        },
+        {
+          "id": "L10.2",
+          "title": "Lec 10 Part 2 Double Buffering",
+          "videoId": "qdeBmEnv_bI"
+        },
+        {
+          "id": "L10.3",
+          "title": "Lec 10 Part 3 Sort Hash Specs",
+          "videoId": "_bzEa68lxnA"
+        },
+        {
+          "id": "L10.4",
+          "title": "Lec 10 Part 4 Two Way Sorting",
+          "videoId": "hRgrnQU-uJ4"
+        },
+        {
+          "id": "L10.5",
+          "title": "Lecture 9 Part 5 External Sort (Old)",
+          "videoId": "xNf2LoPi0Pc"
+        },
+        {
+          "id": "L10.6",
+          "title": "Lec 9 Part 6 External Hashing (Old)",
+          "videoId": "sxYb0NLxo0k"
+        },
+        {
+          "id": "L10.7",
+          "title": "Lec 9 Part 7 Recursive Partitioning for External Hash (Old)",
+          "videoId": "P_XfoEYwQ6w"
+        },
+        {
+          "id": "L10.8",
+          "title": "Lec 9 Part 8 Sort Hash Duality (Old)",
+          "videoId": "XBj2UzWoT8c"
+        },
+        {
+          "id": "L10.9",
+          "title": "Lec 10 Part 9 parallel hashing",
+          "videoId": "4Zv4rYhCPQs"
+        },
+        {
+          "id": "L10.10",
+          "title": "Lec 10 Part 10 parallel sort",
+          "videoId": "HDvJ259TncU"
+        },
+        {
+          "id": "L10.11",
+          "title": "Lec 10 Part 11 Sort v Hash",
+          "videoId": "5TvveH6bgEo"
+        },
+        {
+          "id": "L10.12",
+          "title": "Lec 10 Part 12 Summary",
+          "videoId": "Pm58kIR4EQE"
+        }
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Query Execution and Joins",
+      "parts": [
+        {
+          "id": "L11.1",
+          "title": "Lecture 11 Part 1 Intro and Select",
+          "videoId": "1qZeNZvEgGg"
+        },
+        {
+          "id": "L11.2",
+          "title": "Lecture 11 Part 2 HeapScan and Sort Iterators",
+          "videoId": "HNMctECJmQM"
+        },
+        {
+          "id": "L11.3",
+          "title": "Lecture 11 Part 3 Group By Iterator",
+          "videoId": "ZRR6iJL1Ej0"
+        },
+        {
+          "id": "L11.4",
+          "title": "Lecture 11 Part 4 Cost Model for Subsequent Analysis",
+          "videoId": "9xt_DLDC6Gg"
+        },
+        {
+          "id": "L11.5",
+          "title": "Lecture 11 Part 5 Nested Loops Join (Old)",
+          "videoId": "qkxJ46KiDZQ"
+        },
+        {
+          "id": "L11.6",
+          "title": "Lecture 11 Part 6 Index Nested Loops Join (Old)",
+          "videoId": "Y3t-cDXXMkU"
+        },
+        {
+          "id": "L11.7",
+          "title": "Lecture 11 Part 7 Sort Merge Join",
+          "videoId": "jiWCPJtDE2c"
+        },
+        {
+          "id": "L11.8",
+          "title": "Lecture 11 Part 8 Sort Merge Cost and a Refinement (Old)",
+          "videoId": "ih8Sc-utxaY"
+        },
+        {
+          "id": "L11.9",
+          "title": "Lec 11 Part 9",
+          "videoId": "SYJJxmoLVIY"
+        },
+        {
+          "id": "L11.10",
+          "title": "Lecture 11 Part 10",
+          "videoId": "gQaMmO757Eo"
+        },
+        {
+          "id": "L11.11",
+          "title": "Lecture 11 Part 11 Hash Join Costs",
+          "videoId": "Ue4u1Sm1AqA"
+        },
+        {
+          "id": "L11.12",
+          "title": "Lecture 11 Part 12 Conclusion",
+          "videoId": "DeA8AbUgCb8"
+        }
+      ]
+    },
+    {
+  "id": "L12",
+  "title": "Lecture 12: Query Optimization Rules",
+  "parts": [
+    {
+      "id": "L12.3",
+      "title": "Lecture 12 Part 3 Algebra Equivalences",
+      "videoId": "jpJ5hFrYRkc"
+    },
+    {
+      "id": "L12.4",
+      "title": "Lecture 12 Part 4 Heuristics",
+      "videoId": "HYrYD-MT_AE"
+    },
+    {
+      "id": "L12.5",
+      "title": "Lecture 12 Part 5 Physical Equivalences",
+      "videoId": "jcklfge_r0g"
+    },
+    {
+      "id": "L12.6",
+      "title": "Lecture 12 Part 6 Running Example",
+      "videoId": "24I7jA5i6-E"
+    },
+    {
+      "id": "L12.7",
+      "title": "Lecture 12 Part 7 Selection Pushdown",
+      "videoId": "La6fOe01Bz8"
+    },
+    {
+      "id": "L12.8",
+      "title": "Lecture 12 Par 8 Join Orders",
+      "videoId": "B4gTQQMiSHw"
+    },
+    {
+      "id": "L12.9",
+      "title": "Lecture 12 Part 9 Join Algs",
+      "videoId": "Joe5WOf56Tw"
+    },
+    {
+      "id": "L12.10",
+      "title": "Lecture 12 Part 10 Projection Pushdown",
+      "videoId": "3xzM5n6T4rQ"
+    },
+    {
+      "id": "L12.11",
+      "title": "Lecture 12 Part 11 Indexes",
+      "videoId": "ompHRopixGY"
+    },
+    {
+      "id": "L12.12",
+      "title": "Lecture 12 Part 12 Conclusion",
+      "videoId": "MCPv3AKLAMc"
+    }
+  ]
+},
+{
+  "id": "L13",
+  "title": "Lecture 13: Query Optimization",
+  "parts": [
+    {
+      "id": "L13.1",
+      "title": "Lecture 13 Part 1 Introduction",
+      "videoId": "blcV7LBbzwg"
+    },
+    {
+      "id": "L13.2",
+      "title": "Lecture 13 Part 2 Background Query Blocks and Physical Properties",
+      "videoId": "JRC2phOFrzk"
+    },
+    {
+      "id": "L13.3",
+      "title": "Lecture 13 Part 3 Plan Space",
+      "videoId": "XrbfEgH_J00"
+    },
+    {
+      "id": "L13.4",
+      "title": "Lecture 13 Part 4 Selectivity Estimation",
+      "videoId": "ya4iHo6btOw"
+    },
+    {
+      "id": "L13.5",
+      "title": "Lecture 13 Part 5 Selectivity in More Depth",
+      "videoId": "FUhUbj6krNI"
+    },
+    {
+      "id": "L13.6",
+      "title": "Lecture 13 Part 6 Using Histograms for Selectivity Estimation",
+      "videoId": "alW9AaTI6DI"
+    },
+    {
+      "id": "L13.7",
+      "title": "Lecture 13 Part 7 Selectivity for Join Queries",
+      "videoId": "Zz0FT5n0PPw"
+    },
+    {
+      "id": "L13.8",
+      "title": "Lecture 13 Part 8 Summary of Cost Estimation",
+      "videoId": "vesbDZGch64"
+    },
+    {
+      "id": "L13.9",
+      "title": "Lecture 13 Part 9 Single Table Plans",
+      "videoId": "8t018yrntg4"
+    },
+    {
+      "id": "L13.10",
+      "title": "Lecture 13 Part 10 Dynamic Programming",
+      "videoId": "xcFPevsi4qs"
+    },
+    {
+      "id": "L13.11",
+      "title": "Lecture 13 Part 11 Example Query",
+      "videoId": "KrxyG44Walw"
+    },
+    {
+      "id": "L13.12",
+      "title": "Lecture 13 Part 12 Summary of Query Optimization",
+      "videoId": "R7xmypIke8g"
+    }
+  ]
+},
+{
+  "id": "L14",
+  "title": "Lecture 14: Parallel Query Execution",
+  "parts": [
+    {
+      "id": "L14.1",
+      "title": "Intro to Parallelism",
+      "videoId": "QpqwKdzikFs"
+    },
+    {
+      "id": "L14.2",
+      "title": "A Bit of History",
+      "videoId": "EGFO7mpJQoY"
+    },
+    {
+      "id": "L14.3",
+      "title": "Parallel Architectures and Software Structures",
+      "videoId": "HKJeW5lfdaI"
+    },
+    {
+      "id": "L14.4",
+      "title": "Kinds of Query Parallelism",
+      "videoId": "ZazzP2r724k"
+    },
+    {
+      "id": "L14.5",
+      "title": "Parallel Data Acceess",
+      "videoId": "IzLRLMUlCIU"
+    },
+    {
+      "id": "L14.6",
+      "title": "Parallel Hash Join",
+      "videoId": "QCTyOLvzR88"
+    },
+    {
+      "id": "L14.7",
+      "title": "Parallel Sort-Merge Join",
+      "videoId": "zDj72vqypks"
+    },
+    {
+      "id": "L14.8",
+      "title": "Parallel Grouping/Aggregation",
+      "videoId": "UgsGSHa_eiU"
+    },
+    {
+      "id": "L14.9",
+      "title": "Symmetric Hash Join",
+      "videoId": "jveohy_qhHU"
+    },
+    {
+      "id": "L14.10",
+      "title": "One-Sided and Broadcast Join Patterns",
+      "videoId": "98p8O8ccVjc"
+    },
+    {
+      "id": "L14.11",
+      "title": "Summary of Parallel Query Execution",
+      "videoId": "VMD2XLLxCkU"
+    }
+  ]
+},
+{
+  "id": "L18",
+  "title": "Lecture 18: Transactions",
+  "parts": [
+    {
+      "id": "L18.1",
+      "title": "Lec 18 Part 1 Intro to Transactions",
+      "videoId": "F7iVHszHjI8"
+    },
+    {
+      "id": "L18.2",
+      "title": "Lec 18 Part 2 Examples and Problems",
+      "videoId": "dQhfOgNvYlg"
+    },
+    {
+      "id": "L18.3",
+      "title": "Lec 18 Part 3 The Transaction Model",
+      "videoId": "nGebG8JuDyY"
+    },
+    {
+      "id": "L18.4",
+      "title": "Lect 18 Part 4 ACID Properties of Transactions",
+      "videoId": "M-1iTZWHXUY"
+    },
+    {
+      "id": "L18.5",
+      "title": "Lec 18 Part 5 Serializability",
+      "videoId": "YFXABIEXO04"
+    },
+    {
+      "id": "L18.6",
+      "title": "Lec 18 Part 6 Conflict Serializability",
+      "videoId": "h8Xzy6DANzw"
+    },
+    {
+      "id": "L18.7",
+      "title": "Lec 18 Part 7 Conflict Dependency Graphs",
+      "videoId": "V27Myhkj4Mg"
+    },
+    {
+      "id": "L18.8",
+      "title": "Lecture 18 Part 8 View Serializability",
+      "videoId": "_voIH5W3NGE"
+    }
+  ]
+},
+{
+  "id": "L19",
+  "title": "Lecture 19: Concurrency Control",
+  "parts": [
+    {
+      "id": "L19.1",
+      "title": "Lecture 19 Part 01 Two Phase Locking",
+      "videoId": "A6GDLuJgPRc"
+    },
+    {
+      "id": "L19.2",
+      "title": "Lecture 19 Part 2 Strict 2PL",
+      "videoId": "zM2oOoDt1nY"
+    },
+    {
+      "id": "L19.3",
+      "title": "Lecture 19 Part 3 Concurrency Examples",
+      "videoId": "mHjQKT3lUYU"
+    },
+    {
+      "id": "L19.4",
+      "title": "Lecture 19 Part 04 Lock Manager Implementation",
+      "videoId": "GM3dym5ktI0"
+    },
+    {
+      "id": "L19.5",
+      "title": "Lecture 19 Part 5 Deadlock Scenarios and Prevention",
+      "videoId": "EgpsqS94Wm4"
+    },
+    {
+      "id": "L19.6",
+      "title": "Lecture 19 Part 6 Deadlock Avoidance",
+      "videoId": "xbMqNpW5VKQ"
+    },
+    {
+      "id": "L19.7",
+      "title": "Lecture 19 Part 7 Deadlock Detection and Resolution",
+      "videoId": "3TrMyTuooHU"
+    },
+    {
+      "id": "L19.8",
+      "title": "Lecture 19 Part 8 Intro to Multigranularity Locking",
+      "videoId": "k8V7tK2RvoE"
+    },
+    {
+      "id": "L19.9",
+      "title": "Lecture 19 Part 9 Intent Locks and Hierarchical Lock Protocol",
+      "videoId": "URnDqCyxqJw"
+    },
+    {
+      "id": "L19.10",
+      "title": "Lecture 19 Part 10 FYI: Index Latching and Phantoms",
+      "videoId": "_1Uk2ZzpmSc"
+    },
+    {
+      "id": "L19.11",
+      "title": "Lecture 19 Part 11 Conclusion",
+      "videoId": "x-lXLrLDS3I"
+    }
+  ]
+},
+{
+  "id": "L16",
+  "title": "Lecture 16: Database Design",
+  "parts": [
+    {
+      "id": "L16.1",
+      "title": "Lecture 16 Introduction",
+      "videoId": "kAyXG89p2-o"
+    },
+    {
+      "id": "L16.2",
+      "title": "Lecture 16 Part 2 Overview of DB Design",
+      "videoId": "LWYU_G6tivQ"
+    },
+    {
+      "id": "L16.3",
+      "title": "Lecture 16 Part 3 Data Models and Relational Levels of Abstraction",
+      "videoId": "pBHIgaFdF04"
+    },
+    {
+      "id": "L16.4",
+      "title": "Lecture 16 Part 4 Data Independence",
+      "videoId": "FsxVsBZ7V30"
+    },
+    {
+      "id": "L16.6",
+      "title": "Lecture 16 Part 6 Basics of Entities and Relationships",
+      "videoId": "mTy6x2PZ8eY"
+    },
+    {
+      "id": "L16.7",
+      "title": "Lecture 16 Part 7 Key and Participation Constraints",
+      "videoId": "NBGNRf-k3rY"
+    },
+    {
+      "id": "L16.8",
+      "title": "Lecture 16 Part 8 Weak Entities",
+      "videoId": "8L-PKidIH-U"
+    },
+    {
+      "id": "L16.9",
+      "title": "Lecture 16 Part 9 Alternative Notation and Terminology",
+      "videoId": "DMi4i8f-MuI"
+    },
+    {
+      "id": "L16.10",
+      "title": "Lecture 16 Part 10 Binary vs Ternary Relationships",
+      "videoId": "7ZRCUH-a2s0"
+    },
+    {
+      "id": "L16.11",
+      "title": "Lecture 16 Part 11 Aggregation and Ternary Relationships",
+      "videoId": "DGTFHDJdG5Y"
+    },
+    {
+      "id": "L16.12",
+      "title": "Lecture 16 Part 12 Entities vs Attributes",
+      "videoId": "zM971CsLJC4"
+    },
+    {
+      "id": "L16.13",
+      "title": "Lecture 16 Part 13 Entities vs Relationships",
+      "videoId": "g91NSAqG18s"
+    },
+    {
+      "id": "L16.14",
+      "title": "Lecture 16 Part 14 Converting ER to Relational",
+      "videoId": "XhVS97buHi8"
+    },
+    {
+      "id": "L16.15",
+      "title": "Lecture 16 Part 15 Translating Weak Entity Sets",
+      "videoId": "5aXtpYjdLw0"
+    },
+    {
+      "id": "L16.16",
+      "title": "Lecture 16 part 16 Summary",
+      "videoId": "hU-nk8Ueg_E"
+    }
+  ]
+},
+{
+  "id": "L17",
+  "title": "Lecture 17: Functional Dependencies and Normal Forms",
+  "parts": [
+    {
+      "id": "L17.1",
+      "title": "Lecture 17 Part 1 Functional Dependencies",
+      "videoId": "wJ8UBBItM1Q"
+    },
+    {
+      "id": "L17.2",
+      "title": "Lecture 17 Part 2 Anomalies",
+      "videoId": "sProsk_Np_Q"
+    },
+    {
+      "id": "L17.3",
+      "title": "Lecture 17 Part 3 Armstrongs Axioms",
+      "videoId": "rB9ISweGWK4"
+    },
+    {
+      "id": "L17.4",
+      "title": "Lecture 17 Part 4 Attribute Closures (Old)",
+      "videoId": "96NAOs-KMfM"
+    },
+    {
+      "id": "L17.5",
+      "title": "Lecture 17 Part 5 BCNF and other Normal Forms",
+      "videoId": "hxEb-0MrhS4"
+    },
+    {
+      "id": "L17.6",
+      "title": "Lecture 17 Part 6 Lossless Join Decompositions",
+      "videoId": "CSqsjqLnfVo"
+    },
+    {
+      "id": "L17.8",
+      "title": "Lecture 17 Part 8 Conclusion",
+      "videoId": "AEgDXFyPQLg"
+    }
+  ]
+},
+{
+  "id": "L15",
+  "title": "Lecture 15: Text Search",
+  "parts": [
+    {
+      "id": "L15.1",
+      "title": "Lecture 15 Part 1 Intro to Text Search",
+      "videoId": "x0QWnxNN7Gk"
+    },
+    {
+      "id": "L15.2",
+      "title": "Lecture 15 Part 2 Bag of Words",
+      "videoId": "ual86HUWlDA"
+    },
+    {
+      "id": "L15.3",
+      "title": "Lecture 15 Part 3 Inverted Files and Single-Term Queries",
+      "videoId": "UncyP1g09ok"
+    },
+    {
+      "id": "L15.4",
+      "title": "Lecture 15 Part 4 Inverted Indexes and Boolean Logic",
+      "videoId": "XhvgBEnA3e8"
+    },
+    {
+      "id": "L15.5",
+      "title": "Lecture 15 Part 5 Phrase Queries and Content Results",
+      "videoId": "NDJyzkWFf1o"
+    },
+    {
+      "id": "L15.6",
+      "title": "Lecture 15 Part 6 Updating Text Indexes",
+      "videoId": "yJr0smrt9cU"
+    },
+    {
+      "id": "L15.7",
+      "title": "Lecture 15 Part 7 Text Search Summary",
+      "videoId": "XQrk6Zvdfkc"
+    }
+  ]
+},
+{
+  "id": "L21",
+  "title": "Lecture 21: Information Retrieval and Web Search",
+  "parts": [
+    {
+      "id": "L21.1",
+      "title": "Lecture 21 1 Cosine Similarity",
+      "videoId": "3VsaLblELP0"
+    },
+    {
+      "id": "L21.2",
+      "title": "Lecture 21 2 TFxIDF",
+      "videoId": "37-c2lk29ac"
+    },
+    {
+      "id": "L21.3",
+      "title": "Lecture 21 3 Precision and Recall",
+      "videoId": "wf-vQ_ExM4I"
+    },
+    {
+      "id": "L21.10",
+      "title": "Lecture 21 10 Conclusion",
+      "videoId": "WnnGofuiUDM"
+    },
+    {
+      "id": "L21.4",
+      "title": "Lecture 21 4 Parallelization and Zipf Distributions",
+      "videoId": "FNhJXpcc3I4"
+    },
+    {
+      "id": "L21.5",
+      "title": "Lecture 21 5 n-grams, q-grams and other tricks",
+      "videoId": "r6Gx5cDxLc4"
+    },
+    {
+      "id": "L21.6",
+      "title": "Lecture 21 6 PageRank",
+      "videoId": "skmXwdtqWNs"
+    },
+    {
+      "id": "L21.7",
+      "title": "Lecture 21 7 Notes from the Real World",
+      "videoId": "N5I6tzAUkDg"
+    },
+    {
+      "id": "L21.8",
+      "title": "Lecture 21 8 Webcrawler Intro",
+      "videoId": "j5-TDYyb_HE"
+    },
+    {
+      "id": "L21.9",
+      "title": "Lecture 21 9 Webcrawler Refinements",
+      "videoId": "UiAt6HrWK_Y"
+    }
+  ]
+},
+{
+  "id": "L20",
+  "title": "Lecture 20: Recovery",
+  "parts": [
+    {
+      "id": "L20.1",
+      "title": "Lecture 20 Part 1 Recovery Intro",
+      "videoId": "kFvujZ7MXVY"
+    },
+    {
+      "id": "L20.2",
+      "title": "Lecture 20 Part 2 Need for Atomicity and Durability, SQL support for Transactions",
+      "videoId": "ESNhOko5QME"
+    },
+    {
+      "id": "L20.3",
+      "title": "Lecture 20 Part 3 Strawman Solution",
+      "videoId": "0RKZXKWgABM"
+    },
+    {
+      "id": "L20.4",
+      "title": "Lecture 20 Part 4 STEAL / NO FORCE, UNDO and REDO",
+      "videoId": "gma8_w2HmDc"
+    },
+    {
+      "id": "L20.5",
+      "title": "Lecture 20 Part 5 Intro to Write-Ahead Logging",
+      "videoId": "ixDvm9qw2JA"
+    },
+    {
+      "id": "L20.8",
+      "title": "Lecture 20 Part 8: ARIES Logging",
+      "videoId": "G8bW1mUlWc8"
+    },
+    {
+      "id": "L20.7",
+      "title": "Lecture 20 Part 7: ARIES Logging Simple Case (Old)",
+      "videoId": "G8bW1mUlWc8"
+    },
+    {
+      "id": "L20.8a",
+      "title": "Lecture 20 Part 8 ARIES Abort and Checkpointing (Old)",
+      "videoId": "UG8Qvl_n4Xg"
+    },
+    {
+      "id": "L20.9",
+      "title": "Lecture 20 Part 9 ARIES Recovery: Overview and Analysis Phase (Old)",
+      "videoId": "BUZYxLyzy6A"
+    },
+    {
+      "id": "L20.13",
+      "title": "Lecture 20 Part 13: ARIES Recovery, REDO Phase",
+      "videoId": "p3THpcj7pi4"
+    },
+    {
+      "id": "L20.11",
+      "title": "Lecture 20 Part 11: ARIES Recovery, UNDO Phase (Old)",
+      "videoId": "jWgHiCCmx98"
+    },
+    {
+      "id": "L20.15",
+      "title": "Lecture 20 Part 15: Example Scenarios, Additional FAQs",
+      "videoId": "DT1qrblURq4"
+    },
+    {
+      "id": "L20.16",
+      "title": "Lecture 20 Part 16: Recovery Conclusion",
+      "videoId": "SWzHOJZZ-T4"
+    }
+  ]
+},
+{
+  "id": "L22",
+  "title": "Lecture 22: Distributed Transactions",
+  "parts": [
+    {
+      "id": "L22.1",
+      "title": "Lecture 22 Part 1 Introduction to Distributed Transactions",
+      "videoId": "PaMDNhVD-0U"
+    },
+    {
+      "id": "L22.2",
+      "title": "Lecture 22 Part 2 Distributed Locking",
+      "videoId": "_V87_wpYQbI"
+    },
+    {
+      "id": "L22.3",
+      "title": "Lecture 22 Part 3 Distributed Deadlock Detection",
+      "videoId": "r0SN0GstUkY"
+    },
+    {
+      "id": "L22.4",
+      "title": "Lecture 22 Part 4 Intro to Distributed Commit",
+      "videoId": "PKBP1IbgWM8"
+    },
+    {
+      "id": "L22.5",
+      "title": "Lecture 22 Part 5 Simple 2PC: Messaging Only",
+      "videoId": "fALKL1I6fDw"
+    },
+    {
+      "id": "L22.6",
+      "title": "Lecture 22 Part 6 Full 2PC Including Logging (Presumed Abort)",
+      "videoId": "oIbMIu8sCEI"
+    },
+    {
+      "id": "L22.7",
+      "title": "Lecture 22 Part 7 The Recovery Processes",
+      "videoId": "muGZV3Z0HeM"
+    },
+    {
+      "id": "L22.8",
+      "title": "Lecture 22 Part 8 2PC, Locking and Availability",
+      "videoId": "zISxxutpD7A"
+    },
+    {
+      "id": "L22.9",
+      "title": "Lecture 22 Part 9: Summary of Distributed Transactions",
+      "videoId": "0ZFHXJXf5k4"
+    }
+  ]
+  }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "id": "big-data-for-engineers-eth-zurich-spring-2026",
+  "name": "Big Data for Engineers",
+  "href": "/courses/big-data-for-engineers-eth-zurich-spring-2026",
+  "category": "Computer Science",
+  "source": "ETH Zurich",
+  "desc": "Big Data for Engineers lecture series by Ghislain Fourny from ETH Zurich Spring 2026, covering big data systems, cloud storage, distributed file systems, syntax, wide column stores, data models, MapReduce, Spark, large-scale performance, document stores, and querying trees.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: Introduction",
+      "parts": [
+        {
+          "id": "L01.1",
+          "title": "Introduction (1/2)",
+          "videoId": "T6VBDgUwAN0"
+        },
+        {
+          "id": "L01.2",
+          "title": "Introduction (2/2)",
+          "videoId": "wS6LGp2Qqf8"
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Lessons Learned",
+      "parts": [
+        {
+          "id": "L02.1",
+          "title": "Lessons Learned (1/2)",
+          "videoId": "Hsno4gqOFnk"
+        },
+        {
+          "id": "L02.2",
+          "title": "Lessons Learned (2/2)",
+          "videoId": "efYHb8q0LII"
+        }
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Cloud Storage",
+      "parts": [
+        {
+          "id": "L03.1",
+          "title": "Cloud Storage (1/3)",
+          "videoId": "IURKTz8PO34"
+        },
+        {
+          "id": "L03.2",
+          "title": "Cloud Storage (2/3)",
+          "videoId": "F2SbLFUgdtg"
+        },
+        {
+          "id": "L03.3",
+          "title": "Cloud Storage (3/3)",
+          "videoId": "y5c0bzMLAoA"
+        }
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Distributed File Systems",
+      "parts": [
+        {
+          "id": "L04.1",
+          "title": "Distributed File Systems (1/3)",
+          "videoId": "A9HnOyGqChI"
+        },
+        {
+          "id": "L04.2",
+          "title": "Distributed File Systems (2/3)",
+          "videoId": "DKTIodn6vIQ"
+        },
+        {
+          "id": "L04.3",
+          "title": "Distributed File Systems (3/3)",
+          "videoId": "3V2MvlyG5Y0"
+        }
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Syntax",
+      "parts": [
+        {
+          "id": "L05.1",
+          "title": "Syntax (1/2)",
+          "videoId": "HjZbiF9aubA"
+        },
+        {
+          "id": "L05.2",
+          "title": "Syntax (2/2)",
+          "videoId": "zDQlY0-51nE"
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Wide Column Stores",
+      "parts": [
+        {
+          "id": "L06.1",
+          "title": "Wide Column Stores (1/3)",
+          "videoId": "Ew9xgTD7DPY"
+        },
+        {
+          "id": "L06.2",
+          "title": "Wide Column Stores (2/3)",
+          "videoId": "X2T68xcVgIo"
+        },
+        {
+          "id": "L06.3",
+          "title": "Wide Column Stores (3/3)",
+          "videoId": "FrMzWydS8-I"
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Data Models",
+      "parts": [
+        {
+          "id": "L07.1",
+          "title": "Data Models (1/4)",
+          "videoId": "Uq8Ai3f2G3Q"
+        },
+        {
+          "id": "L07.2",
+          "title": "Data Models (2/4)",
+          "videoId": "-YBx-Vh1RvA"
+        },
+        {
+          "id": "L07.3",
+          "title": "Data Models (3/4)",
+          "videoId": "MELqjI2AS2I"
+        },
+        {
+          "id": "L07.4",
+          "title": "Data Models (4/4)",
+          "videoId": "HZpVDy_-Eyw"
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: MapReduce",
+      "parts": [
+        {
+          "id": "L08.1",
+          "title": "MapReduce (1/3)",
+          "videoId": "2KdsSrcxAKY"
+        },
+        {
+          "id": "L08.2",
+          "title": "MapReduce (2/3)",
+          "videoId": "-e_qQBIzQ0U"
+        },
+        {
+          "id": "L08.3",
+          "title": "MapReduce (3/3)",
+          "videoId": "ppRFuah6jGA"
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Spark",
+      "parts": [
+        {
+          "id": "L09.1",
+          "title": "Spark (1/3)",
+          "videoId": "kwKHBSzk7ts"
+        },
+        {
+          "id": "L09.2",
+          "title": "Spark (2/3)",
+          "videoId": "kwKHBSzk7ts"
+        },
+        {
+          "id": "L09.3",
+          "title": "Spark (3/3)",
+          "videoId": "AXtQg1ujW-8"
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Performance at Large Scales",
+      "parts": [
+        {
+          "id": "L10.1",
+          "title": "Performance at Large Scales (1/2)",
+          "videoId": "2YezovJMiqU"
+        },
+        {
+          "id": "L10.2",
+          "title": "Performance at Large Scales (2/2)",
+          "videoId": "q6L5iXiB4vY"
+        }
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Document Stores",
+      "parts": [
+        {
+          "id": "L11.1",
+          "title": "Document Stores (1/3)",
+          "videoId": "ofRasqlnvLM"
+        },
+        {
+          "id": "L11.2",
+          "title": "Document Stores (2/3)",
+          "videoId": "eZoRA3Tmtrc"
+        },
+        {
+          "id": "L11.3",
+          "title": "Document Stores (3/3)",
+          "videoId": "zOWUdj97grM"
+        }
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Querying Trees",
+      "parts": [
+        {
+          "id": "L12.1",
+          "title": "Querying Trees (1/3)",
+          "videoId": "kMANdikS2t0"
+        },
+        {
+          "id": "L12.2",
+          "title": "Querying Trees (2/3)",
+          "videoId": "X3U12uRkNTU"
+        },
+        {
+          "id": "L12.3",
+          "title": "Querying Trees (3/3)",
+          "videoId": "Tfe6thqgZ78"
+        }
+      ]
+    }
+  ]
+}

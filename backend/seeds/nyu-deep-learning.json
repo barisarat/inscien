@@ -1,0 +1,240 @@
+{
+  "id": "nyu-deep-learning",
+  "name": "NYU Deep Learning",
+  "href": "/courses/nyu-deep-learning",
+  "category": "Machine Learning",
+  "desc": "Deep learning lecture series by Alfredo Canziani covering neural networks, backpropagation, PyTorch, convolutional networks, recurrent networks, energy-based models, autoencoders, variational inference, attention, transformers, graph neural networks, planning, control, and self-supervised learning.",
+  "lectures": [
+    {
+      "id": "L01",
+      "title": "Lecture 1: History and resources",
+      "parts": [
+        {"id": "L01.1", "title": "History and resources", "videoId": "mTtDfKgLm54"}
+      ]
+    },
+    {
+      "id": "L01L",
+      "title": "Lecture 1 Lab: Gradient descent and the backpropagation algorithm",
+      "parts": [
+        {"id": "L01L.1", "title": "Gradient descent and the backpropagation algorithm", "videoId": "nTlCqaL7fCY"}
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Neural nets: rotation and squashing",
+      "parts": [
+        {"id": "L02.1", "title": "Neural nets: rotation and squashing", "videoId": "0TdAmZUMj2k"}
+      ]
+    },
+    {
+      "id": "L02L",
+      "title": "Lecture 2 Lab: Modules and architectures",
+      "parts": [
+        {"id": "L02L.1", "title": "Modules and architectures", "videoId": "IYQN3i7dJIQ"}
+      ]
+    },
+    {
+      "id": "L03",
+      "title": "Lecture 3: Tools, classification with neural nets, PyTorch implementation",
+      "parts": [
+        {"id": "L03.1", "title": "Tools, classification with neural nets, PyTorch implementation", "videoId": "EyKiYVwrdjE"}
+      ]
+    },
+    {
+      "id": "L03L",
+      "title": "Lecture 3 Lab: Parameter sharing: recurrent and convolutional nets",
+      "parts": [
+        {"id": "L03L.1", "title": "Parameter sharing: recurrent and convolutional nets", "videoId": "7dU3TFBJl-0"}
+      ]
+    },
+    {
+      "id": "L04L",
+      "title": "Lecture 4 Lab: ConvNet in practice",
+      "parts": [
+        {"id": "L04L.1", "title": "ConvNet in practice", "videoId": "-wz_vADGbtE"}
+      ]
+    },
+    {
+      "id": "L04.1",
+      "title": "Lecture 4.1: Natural signals properties and the convolution",
+      "parts": [
+        {"id": "L04.1.1", "title": "Natural signals properties and the convolution", "videoId": "KvvNkE2vQVk"}
+      ]
+    },
+    {
+      "id": "L04.2",
+      "title": "Lecture 4.2: Recurrent neural networks, vanilla and gated (LSTM)",
+      "parts": [
+        {"id": "L04.2.1", "title": "Recurrent neural networks, vanilla and gated (LSTM)", "videoId": "5KSGNomPJTE"}
+      ]
+    },
+    {
+      "id": "L05L",
+      "title": "Lecture 5 Lab: Joint embedding method and latent variable energy based models (LV-EBMs)",
+      "parts": [
+        {"id": "L05L.1", "title": "Joint embedding method and latent variable energy based models (LV-EBMs)", "videoId": "xIn-Czj1g2Q"}
+      ]
+    },
+    {
+      "id": "L05.1",
+      "title": "Lecture 5.1: Latent Variable Energy Based Models (LV-EBMs), inference",
+      "parts": [
+        {"id": "L05.1.1", "title": "Latent Variable Energy Based Models (LV-EBMs), inference", "videoId": "xA_OPjRby5g"}
+      ]
+    },
+    {
+      "id": "L05.2",
+      "title": "Lecture 5.2: But what are these EBMs used for?",
+      "parts": [
+        {"id": "L05.2.1", "title": "But what are these EBMs used for?", "videoId": "eJeJWWEo7cE"}
+      ]
+    },
+    {
+      "id": "L06L",
+      "title": "Lecture 6 Lab: Latent variable EBMs for structured prediction",
+      "parts": [
+        {"id": "L06L.1", "title": "Latent variable EBMs for structured prediction", "videoId": "8u2s64ZtmiA"}
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Latent Variable Energy Based Models (LV-EBMs), training",
+      "parts": [
+        {"id": "L06.1", "title": "Latent Variable Energy Based Models (LV-EBMs), training", "videoId": "XIMaWj5YjOQ"}
+      ]
+    },
+    {
+      "id": "L07L",
+      "title": "Lecture 7 Lab: PCA, AE, K-means, Gaussian mixture model, sparse coding, and intuitive VAE",
+      "parts": [
+        {"id": "L07L.1", "title": "PCA, AE, K-means, Gaussian mixture model, sparse coding, and intuitive VAE", "videoId": "AOFUZZZ6KyU"}
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Unsupervised learning: autoencoding the targets",
+      "parts": [
+        {"id": "L07.1", "title": "Unsupervised learning: autoencoding the targets", "videoId": "IuXsG3sN3zY"}
+      ]
+    },
+    {
+      "id": "L08L",
+      "title": "Lecture 8 Lab: Self-supervised learning and variational inference",
+      "parts": [
+        {"id": "L08L.1", "title": "Self-supervised learning and variational inference", "videoId": "bdebHVF__mo"}
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: From LV-EBM to target prop to autoencoder",
+      "parts": [
+        {"id": "L08.1", "title": "From LV-EBM to target prop to (vanilla, denoising, contractive, variational) autoencoder", "videoId": "PpcN-F7ovK0"}
+      ]
+    },
+    {
+      "id": "L09L",
+      "title": "Lecture 9 Lab: Differentiable associative memories, attention, and transformers",
+      "parts": [
+        {"id": "L09L.1", "title": "Differentiable associative memories, attention, and transformers", "videoId": "AQtPoDnauq4"}
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: AE, DAE, VAE, and GANs with PyTorch",
+      "parts": [
+        {"id": "L09.1", "title": "AE, DAE, and VAE with PyTorch; generative adversarial networks (GAN) and code", "videoId": "bZF4N8HR1cc"}
+      ]
+    },
+    {
+      "id": "L10L",
+      "title": "Lecture 10 Lab: Self-supervised learning in computer vision",
+      "parts": [
+        {"id": "L10L.1", "title": "Self-supervised learning in computer vision", "videoId": "8L10w1KoOU8"}
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Self / cross, hard / soft attention and the Transformer",
+      "parts": [
+        {"id": "L10.1", "title": "Self / cross, hard / soft attention and the Transformer", "videoId": "fEVyfT-gLqQ"}
+      ]
+    },
+    {
+      "id": "L11L",
+      "title": "Lecture 11 Lab: Speech recognition and Graph Transformer Networks",
+      "parts": [
+        {"id": "L11L.1", "title": "Speech recognition and Graph Transformer Networks", "videoId": "Of9s8epjflU"}
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Graph Convolutional Networks (GCNs)",
+      "parts": [
+        {"id": "L11.1", "title": "Graph Convolutional Networks (GCNs)", "videoId": "lWUh7jzhQ1Q"}
+      ]
+    },
+    {
+      "id": "L12L",
+      "title": "Lecture 12 Lab: Low resource machine translation",
+      "parts": [
+        {"id": "L12L.1", "title": "Low resource machine translation", "videoId": "fR42OOy9ROo"}
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Planning and control",
+      "parts": [
+        {"id": "L12.1", "title": "Planning and control", "videoId": "wTg6qJlXkok"}
+      ]
+    },
+    {
+      "id": "L13L",
+      "title": "Lecture 13 Lab: Optimisation for Deep Learning",
+      "parts": [
+        {"id": "L13L.1", "title": "Optimisation for Deep Learning", "videoId": "n1w5b5rTFv0"}
+      ]
+    },
+    {
+      "id": "L13",
+      "title": "Lecture 13: The Truck Backer-Upper",
+      "parts": [
+        {"id": "L13.1", "title": "The Truck Backer-Upper", "videoId": "C4iSZ3IJU-w"}
+      ]
+    },
+    {
+      "id": "L14L",
+      "title": "Lecture 14 Lab: Lagrangian backpropagation, final project winners, and Q&A session",
+      "parts": [
+        {"id": "L14L.1", "title": "Lagrangian backpropagation, final project winners, and Q&A session", "videoId": "MJfnamMFylo"}
+      ]
+    },
+    {
+      "id": "L14",
+      "title": "Lecture 14: Prediction and Planning Under Uncertainty",
+      "parts": [
+        {"id": "L14.1", "title": "Prediction and Planning Under Uncertainty", "videoId": "DJgloa244ZQ"}
+      ]
+    },
+    {
+      "id": "S01",
+      "title": "Seminar: Energy-Based Self-Supervised Learning",
+      "parts": [
+        {"id": "S01.1", "title": "AI2S Xmas Seminar - Dr. Alfredo Canziani (NYU) - Energy-Based Self-Supervised Learning", "videoId": "bDvpuaPq8Vc"}
+      ]
+    },
+    {
+      "id": "P09",
+      "title": "Practice 9: Contrastive joint embedding methods for self-supervised learning",
+      "parts": [
+        {"id": "P09.1", "title": "Contrastive joint embedding methods (JEMs) for self-supervised learning (SSL)", "videoId": "5VjEBHWuYs8"}
+      ]
+    },
+    {
+      "id": "P10",
+      "title": "Practice 10: Non-contrastive joint embedding methods for self-supervised learning",
+      "parts": [
+        {"id": "P10.1", "title": "Non-contrastive joint embedding methods (JEMs) for self-supervised learning (SSL)", "videoId": "EBrbaD2zyuo"}
+      ]
+    }
+  ]
+}

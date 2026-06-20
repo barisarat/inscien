@@ -1,0 +1,19 @@
+model,condition,window,metric_mean,metric_std,cell
+model_a,condition_1,long,4.865,0.5496752287877426,4.865 ± 0.550
+model_a,condition_1,short,4.785,0.5496752287877426,4.785 ± 0.550
+model_a,condition_2,long,4.615,0.5496752287877424,4.615 ± 0.550
+model_a,condition_2,short,4.535,0.5496752287877424,4.535 ± 0.550
+model_a,condition_3,long,4.445,0.5496752287877424,4.445 ± 0.550
+model_a,condition_3,short,4.365,0.5496752287877424,4.365 ± 0.550
+model_b,condition_1,long,4.715,0.5496752287877427,4.715 ± 0.550
+model_b,condition_1,short,4.635,0.5496752287877427,4.635 ± 0.550
+model_b,condition_2,long,4.465,0.5496752287877426,4.465 ± 0.550
+model_b,condition_2,short,4.385,0.5496752287877426,4.385 ± 0.550
+model_b,condition_3,long,4.295,0.5496752287877428,4.295 ± 0.550
+model_b,condition_3,short,4.215,0.5496752287877426,4.215 ± 0.550
+model_c,condition_1,long,4.945,0.5496752287877424,4.945 ± 0.550
+model_c,condition_1,short,4.865,0.5496752287877426,4.865 ± 0.550
+model_c,condition_2,long,4.695,0.5496752287877423,4.695 ± 0.550
+model_c,condition_2,short,4.615,0.5496752287877424,4.615 ± 0.550
+model_c,condition_3,long,4.525,0.5496752287877424,4.525 ± 0.550
+model_c,condition_3,short,4.445,0.5496752287877424,4.445 ± 0.550

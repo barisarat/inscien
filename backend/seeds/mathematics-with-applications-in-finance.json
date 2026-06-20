@@ -1,0 +1,163 @@
+{
+  "id": "mathematics-with-applications-in-finance",
+  "name": "Topics in Mathematics with Applications in Finance",
+  "href": "/courses/topics-in-mathematics-with-applications-in-finance",
+  "category": "Finance",
+  "desc": "MIT OpenCourseWare lecture series covering financial markets, bond mathematics, linear algebra, probability theory, stochastic processes, regression analysis, rates products, principal component analysis, counterparty risk, portfolio management, volatility modeling, Black-Scholes, machine learning, stochastic calculus, and stochastic differential equations.",
+  "lectures": [
+    {
+      "id": "L01.1",
+      "title": "Lecture 1, Part I: Introduction of the Class",
+      "parts": [
+        {"id": "L01.1.1", "title": "Introduction of the Class", "videoId": "b8u2CQLQBVU"}
+      ]
+    },
+    {
+      "id": "L01.2",
+      "title": "Lecture 1, Part II: Introduction of Financial Markets, Financial Terms and Concepts",
+      "parts": [
+        {"id": "L01.2.1", "title": "Introduction of Financial Markets, Financial Terms and Concepts", "videoId": "z4p87TPCnQc"}
+      ]
+    },
+    {
+      "id": "L01.3",
+      "title": "Lecture 1, Part III: Bond Mathematics",
+      "parts": [
+        {"id": "L01.3.1", "title": "Bond Mathematics", "videoId": "NZ3Mva95UsQ"}
+      ]
+    },
+    {
+      "id": "L02",
+      "title": "Lecture 2: Linear Algebra",
+      "parts": [
+        {"id": "L02.1", "title": "Linear Algebra", "videoId": "0uimNNIuUyY"}
+      ]
+    },
+    {
+      "id": "L04",
+      "title": "Lecture 4: Linear Algebra (cont.); Probability Theory",
+      "parts": [
+        {"id": "L04.1", "title": "Linear Algebra (cont.); Probability Theory", "videoId": "mtXTs2U1uMA"}
+      ]
+    },
+    {
+      "id": "L05",
+      "title": "Lecture 5: Probability Theory (cont.); Stochastic Processes I",
+      "parts": [
+        {"id": "L05.1", "title": "Probability Theory (cont.); Stochastic Processes I", "videoId": "wMGEKMHsOKE"}
+      ]
+    },
+    {
+      "id": "L06",
+      "title": "Lecture 6: Stochastic Processes I (cont.); Regression Analysis",
+      "parts": [
+        {"id": "L06.1", "title": "Stochastic Processes I (cont.); Regression Analysis", "videoId": "yIn8Y_CSwPk"}
+      ]
+    },
+    {
+      "id": "L07",
+      "title": "Lecture 7: Linear Rates, Products, and Models",
+      "parts": [
+        {"id": "L07.1", "title": "Linear Rates, Products, and Models", "videoId": "RvXwSoGDYvg"}
+      ]
+    },
+    {
+      "id": "L08",
+      "title": "Lecture 8: Regression Analysis (cont.)",
+      "parts": [
+        {"id": "L08.1", "title": "Regression Analysis (cont.)", "videoId": "cMF_c2WNPyU"}
+      ]
+    },
+    {
+      "id": "L09",
+      "title": "Lecture 9: Principal Component Analysis in Finance",
+      "parts": [
+        {"id": "L09.1", "title": "Principal Component Analysis in Finance", "videoId": "CechARGinR4"}
+      ]
+    },
+    {
+      "id": "L10",
+      "title": "Lecture 10: Counterparty Risk Optimization",
+      "parts": [
+        {"id": "L10.1", "title": "Counterparty Risk Optimization", "videoId": "VbtXo62ROC4"}
+      ]
+    },
+    {
+      "id": "L11",
+      "title": "Lecture 11: Regression Analysis (cont.)",
+      "parts": [
+        {"id": "L11.1", "title": "Regression Analysis (cont.)", "videoId": "RruxdEjIvv0"}
+      ]
+    },
+    {
+      "id": "L13",
+      "title": "Lecture 13: Portfolio Management",
+      "parts": [
+        {"id": "L13.1", "title": "Portfolio Management", "videoId": "o7OnkMdmjLg"}
+      ]
+    },
+    {
+      "id": "L14",
+      "title": "Lecture 14: Stochastic Processes II",
+      "parts": [
+        {"id": "L14.1", "title": "Stochastic Processes II", "videoId": "VM29JyI1sio"}
+      ]
+    },
+    {
+      "id": "L12",
+      "title": "Lecture 12: Time Series Analysis",
+      "parts": [
+        {"id": "L12.1", "title": "Time Series Analysis", "videoId": "qlytPllimpQ"}
+      ]
+    },
+    {
+      "id": "L18",
+      "title": "Lecture 18: Applying Data Science and Artificial Intelligence to Managing Biomedical Portfolios",
+      "parts": [
+        {"id": "L18.1", "title": "Applying Data Science and Artificial Intelligence to Managing Biomedical Portfolios", "videoId": "_e2nDnV7FQs"}
+      ]
+    },
+    {
+      "id": "L19",
+      "title": "Lecture 19: Volatility Modeling",
+      "parts": [
+        {"id": "L19.1", "title": "Volatility Modeling", "videoId": "zapp8smQKhg"}
+      ]
+    },
+    {
+      "id": "L21",
+      "title": "Lecture 21: Black-Scholes Formula, Risk Neutral Valuation",
+      "parts": [
+        {"id": "L21.1", "title": "Black-Scholes Formula, Risk Neutral Valuation", "videoId": "2UCHztlWuZg"}
+      ]
+    },
+    {
+      "id": "L20",
+      "title": "Lecture 20: Building the First Federally (CFTC) Regulated Exchange Dedicated to Trading on Events",
+      "parts": [
+        {"id": "L20.1", "title": "Building the First Federally (CFTC) Regulated Exchange Dedicated to Trading on Events", "videoId": "8XrYjnDHmE4"}
+      ]
+    },
+    {
+      "id": "L23",
+      "title": "Lecture 23: Introduction to Machine Learning",
+      "parts": [
+        {"id": "L23.1", "title": "Introduction to Machine Learning", "videoId": "kTsieIl_YBA"}
+      ]
+    },
+    {
+      "id": "L24",
+      "title": "Lecture 24: Stochastic Calculus",
+      "parts": [
+        {"id": "L24.1", "title": "Stochastic Calculus", "videoId": "5cruqmIF6l0"}
+      ]
+    },
+    {
+      "id": "L25",
+      "title": "Lecture 25: Stochastic Calculus (cont.); Stochastic Differential Equations",
+      "parts": [
+        {"id": "L25.1", "title": "Stochastic Calculus (cont.); Stochastic Differential Equations", "videoId": "H4V29wkHYb4"}
+      ]
+    }
+  ]
+}

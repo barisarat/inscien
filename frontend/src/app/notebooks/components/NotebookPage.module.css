@@ -1,0 +1,577 @@
+.pageShell {
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.mainContent {
+  padding-top: 52px;
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.mainContentOpen {
+  margin-left: 292px;
+}
+
+.mainContentClosed {
+  margin-left: 132px;
+}
+
+.page {
+  min-height: calc(100vh - 52px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--sans);
+  position: relative;
+}
+
+/*
+ * Page actions injected into the global AppTopHeader, centered next to the Ask
+ * field. The code toggle and download share the search field's design language
+ * (36px height, 1px border, 8px radius, surface background).
+ */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.main {
+  max-width: min(1180px, calc(100vw - 64px));
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px clamp(32px, 4vw, 56px) 80px;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.contentBlock {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Single code-visibility toggle — pill matching the search field. */
+.codeToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+  white-space: nowrap;
+}
+
+.codeToggleBtn:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+  color: var(--text-2);
+}
+
+.codeToggleBtn:focus-visible {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px var(--accent-focus);
+}
+
+.codeToggleBtn svg {
+  flex-shrink: 0;
+}
+
+/* Download — labeled pill sharing the toggle's quiet styling. */
+.downloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-3);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+  white-space: nowrap;
+}
+
+.downloadBtn:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+  color: var(--text-2);
+}
+
+.downloadBtn:focus-visible {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px var(--accent-focus);
+}
+
+.downloadBtn svg {
+  flex-shrink: 0;
+}
+
+/*
+ * When the top bar gets tight, drop both labels and show icon-only buttons so the
+ * actions stay beside the centered Ask field without crowding it.
+ */
+@media (max-width: 1180px) {
+  .codeToggleBtn span,
+  .downloadBtnLabel {
+    display: none;
+  }
+
+  .codeToggleBtn,
+  .downloadBtn {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+.notebookInline {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.notebookInline main {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.notebookInline :global(.jp-Notebook),
+.notebookInline :global(.jp-NotebookPanel-notebook),
+.notebookInline :global(.jp-Cell),
+.notebookInline :global(.jp-CodeCell),
+.notebookInline :global(.jp-MarkdownCell) {
+  max-width: 100% !important;
+}
+
+.notebookInline :global(.jp-Cell) {
+  margin-bottom: 44px !important;
+}
+
+.notebookInline :global(.jp-Cell:last-child) {
+  margin-bottom: 0 !important;
+}
+
+.notebookInline :global(.jp-Cell-inputWrapper),
+.notebookInline :global(.jp-Cell-outputWrapper) {
+  width: 100% !important;
+}
+
+.notebookInline :global(.jp-Cell-outputWrapper) {
+  margin-top: 18px !important;
+}
+
+.notebookInline :global(.jp-OutputArea) {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+  width: 100% !important;
+}
+
+.notebookInline :global(.jp-OutputArea-child) {
+  width: 100% !important;
+}
+
+.notebookInline :global(.jp-OutputArea-output) {
+  width: 100% !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon h1),
+.notebookInline :global(.jp-RenderedHTMLCommon h2),
+.notebookInline :global(.jp-RenderedHTMLCommon h3),
+.notebookInline :global(.jp-RenderedMarkdown h1),
+.notebookInline :global(.jp-RenderedMarkdown h2),
+.notebookInline :global(.jp-RenderedMarkdown h3) {
+  margin-top: 40px !important;
+  margin-bottom: 16px !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon h1:first-child),
+.notebookInline :global(.jp-RenderedHTMLCommon h2:first-child),
+.notebookInline :global(.jp-RenderedHTMLCommon h3:first-child),
+.notebookInline :global(.jp-RenderedMarkdown h1:first-child),
+.notebookInline :global(.jp-RenderedMarkdown h2:first-child),
+.notebookInline :global(.jp-RenderedMarkdown h3:first-child) {
+  margin-top: 0 !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon p),
+.notebookInline :global(.jp-RenderedMarkdown p) {
+  margin-bottom: 18px !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon ul),
+.notebookInline :global(.jp-RenderedHTMLCommon ol),
+.notebookInline :global(.jp-RenderedMarkdown ul),
+.notebookInline :global(.jp-RenderedMarkdown ol) {
+  margin-top: 12px !important;
+  margin-bottom: 24px !important;
+  padding-left: 22px !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon li),
+.notebookInline :global(.jp-RenderedMarkdown li) {
+  margin-bottom: 10px !important;
+  color: var(--text-2) !important;
+  line-height: 1.7 !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon li:last-child),
+.notebookInline :global(.jp-RenderedMarkdown li:last-child) {
+  margin-bottom: 0 !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon a),
+.notebookInline :global(.jp-RenderedMarkdown a) {
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(15, 23, 42, 0.24) !important;
+  text-underline-offset: 3px !important;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon a:hover),
+.notebookInline :global(.jp-RenderedMarkdown a:hover) {
+  color: var(--text-2) !important;
+  text-decoration-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon table) {
+  min-width: 100%;
+  width: max-content !important;
+  max-width: none !important;
+  margin-top: 24px !important;
+  margin-bottom: 32px !important;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon::-webkit-scrollbar) {
+  height: 8px;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon::-webkit-scrollbar-track) {
+  background: var(--surface-muted);
+  border-radius: 999px;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon::-webkit-scrollbar-thumb) {
+  background: var(--border-hover);
+  border-radius: 999px;
+}
+
+.notebookInline :global(.jp-RenderedHTMLCommon::-webkit-scrollbar-thumb:hover) {
+  background: var(--text-faint);
+}
+
+.notebookInline pre {
+  max-width: 100% !important;
+  margin-top: 20px !important;
+  margin-bottom: 28px !important;
+}
+
+.notebookInline img,
+.notebookInline svg,
+.notebookInline canvas {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.notebookInline :global(.jp-OutputArea-output img),
+.notebookInline :global(.jp-OutputArea-output svg),
+.notebookInline :global(.jp-OutputArea-output canvas) {
+  display: block !important;
+  margin: 28px auto 36px !important;
+}
+
+.notebookInline :global(.jp-RenderedImage),
+.notebookInline :global(.jp-RenderedSVG),
+.notebookInline :global(.jp-RenderedHTMLCommon:has(img)),
+.notebookInline :global(.jp-RenderedHTMLCommon:has(svg)),
+.notebookInline :global(.jp-RenderedHTMLCommon:has(canvas)) {
+  text-align: center !important;
+}
+
+.notebookLoadingText {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  padding: 24px 0;
+  margin: 0;
+}
+
+.notebookPlaceholderText {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  line-height: 1.6;
+  margin: 0;
+  padding: 24px 0;
+}
+
+.downloadWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.downloadHint {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  font-weight: 500;
+  text-align: right;
+}
+
+.downloadError {
+  font-size: var(--text-xs);
+  color: var(--color-text-danger, var(--danger-text));
+  font-weight: 500;
+  text-align: right;
+}
+
+.pageEndSpacer {
+  flex: 0 0 72px;
+}
+
+.notebookInline :global(.jp-CodeCell) {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr) !important;
+  row-gap: 12px !important;
+  column-gap: 0 !important;
+  padding-left: 0 !important;
+  overflow: visible !important;
+}
+
+.notebookInline :global(.jp-CodeCell .mlnCodeInputToggle) {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+  justify-self: center !important;
+}
+
+.notebookInline :global(.jp-CodeCell .jp-Cell-inputWrapper) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  position: relative !important;
+  min-width: 0 !important;
+}
+
+.notebookInline :global(.jp-CodeCell .jp-Cell-outputWrapper) {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  margin-top: 0 !important;
+}
+
+.notebookInline :global(.jp-CodeCell::before) {
+  content: "" !important;
+  grid-column: 1 !important;
+  grid-row: 1 / span 2 !important;
+  display: block !important;
+  min-height: 100% !important;
+  border-right: 1px solid transparent !important;
+}
+
+.notebookInline :global(.mlnCodeInputToggle) {
+  z-index: 10 !important;
+  min-width: 38px !important;
+  height: 28px !important;
+  margin-top: 8px !important;
+  padding: 0 4px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  font-family: var(--mono) !important;
+  font-size: var(--text-xs) !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  opacity: 0.82 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.14s, color 0.14s, opacity 0.14s !important;
+  appearance: none !important;
+}
+
+.notebookInline :global(.mlnCodeInputToggle:hover) {
+  background: var(--bg-hover) !important;
+  color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+.notebookInline :global(.mlnCodeInputToggle:focus-visible) {
+  outline: 2px solid var(--border-hover) !important;
+  outline-offset: 2px !important;
+}
+
+.notebookInline :global(.jp-Cell-inputWrapper .mlnCodeCopyBtn) {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  z-index: 11 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  color: var(--text-3) !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: opacity 0.14s, color 0.14s, border-color 0.14s !important;
+  appearance: none !important;
+}
+
+.notebookInline :global(.jp-CodeCell:hover .mlnCodeCopyBtn),
+.notebookInline :global(.mlnCodeCopyBtn:focus-visible),
+.notebookInline :global(.mlnCodeCopyBtn.mlnCodeCopyBtnDone) {
+  opacity: 1 !important;
+}
+
+.notebookInline :global(.mlnCodeCopyBtn:hover) {
+  color: var(--text) !important;
+  border-color: var(--border-hover) !important;
+}
+
+.notebookInline :global(.mlnCodeCopyBtn:focus-visible) {
+  outline: 2px solid var(--border-hover) !important;
+  outline-offset: 2px !important;
+}
+
+.notebookInline :global(.mlnCodeCopyBtn.mlnCodeCopyBtnDone) {
+  color: var(--accent, var(--text)) !important;
+  border-color: var(--border-hover) !important;
+}
+
+.notebookInline :global(.jp-CodeCell.mlnCodeInputCollapsed) {
+  row-gap: 0 !important;
+}
+
+.notebookInline :global(.jp-CodeCell.mlnCodeInputCollapsed .mlnCodeInputToggle) {
+  color: var(--text-3) !important;
+  opacity: 0.72 !important;
+}
+
+.notebookInline :global(.jp-CodeCell.mlnCodeInputCollapsed .jp-Cell-inputWrapper) {
+  display: none !important;
+}
+
+.notebookInline :global(.jp-CodeCell.mlnCodeInputCollapsed .jp-Cell-outputWrapper) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  margin-top: 0 !important;
+}
+
+@media (max-width: 960px) {
+  .main {
+    max-width: 100%;
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .contentBlock {
+    padding: 0;
+  }
+
+  .notebookInline :global(.jp-Cell) {
+    margin-bottom: 36px !important;
+  }
+
+  .notebookInline :global(.jp-OutputArea) {
+    gap: 22px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContentOpen,
+  .mainContentClosed {
+    margin-left: 0;
+  }
+
+  .main {
+    padding: 24px 24px 60px;
+  }
+
+  .contentBlock {
+    padding: 0;
+  }
+
+  .notebookInline :global(.jp-Cell) {
+    margin-bottom: 32px !important;
+  }
+
+  .notebookInline :global(.jp-CodeCell) {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    row-gap: 10px !important;
+  }
+
+  .notebookInline :global(.jp-CodeCell.mlnCodeInputCollapsed) {
+    row-gap: 0 !important;
+  }
+
+  .notebookInline :global(.mlnCodeInputToggle) {
+    min-width: 32px !important;
+    height: 26px !important;
+    font-size: var(--text-xs) !important;
+  }
+
+  .notebookInline :global(.jp-Cell-outputWrapper) {
+    margin-top: 14px !important;
+  }
+
+  .notebookInline :global(.jp-CodeCell .jp-Cell-outputWrapper) {
+    margin-top: 0 !important;
+  }
+
+  .notebookInline :global(.jp-OutputArea) {
+    gap: 20px !important;
+  }
+
+  .notebookInline :global(.jp-OutputArea-output img),
+  .notebookInline :global(.jp-OutputArea-output svg),
+  .notebookInline :global(.jp-OutputArea-output canvas) {
+    margin: 22px auto 28px !important;
+  }
+
+  .pageEndSpacer {
+    flex-basis: 72px;
+  }
+}

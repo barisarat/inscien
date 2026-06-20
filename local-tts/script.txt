@@ -1,0 +1,21 @@
+Title: Diagnosing Large Language Model Reranker Behavior Under Fixed Evidence Pools
+
+In this paper, we study how large language models behave when used as rerankers in information retrieval systems.
+
+Modern retrieval pipelines increasingly rely on language models to reorder candidate documents after an initial search stage. While these systems achieve strong benchmark performance, we still have limited understanding of how they actually make ranking decisions.
+
+To isolate reranker behavior from retrieval noise, we introduce a controlled experimental setting. Instead of allowing the retriever to vary across runs, we fix the candidate document pool. Each query is paired with the same predefined set of documents. The reranker must operate only within this fixed evidence space.
+
+This design allows us to analyze model preferences more directly. We can measure how lexical coverage, redundancy, and semantic overlap influence ranking shifts. By removing retrieval variance, we observe the internal scoring tendencies of the model itself.
+
+Our experiments compare traditional approaches such as BM25 and Maximal Marginal Relevance against several large language models, including instruction tuned variants. We evaluate not only ranking metrics such as NDCG, but also structural properties of the produced rankings.
+
+The results reveal consistent behavioral patterns. Language model rerankers tend to prioritize semantic similarity over lexical diversity. They often downweight redundant evidence, but sometimes over penalize documents that share vocabulary with the top result.
+
+We also observe that instruction tuning affects ranking stability. Models trained with conversational objectives exhibit stronger sensitivity to query phrasing. Small changes in wording can shift ranking outcomes in ways that traditional retrieval models would not.
+
+These findings suggest that language model rerankers introduce new forms of bias and variance into retrieval systems. While they improve performance, they also reshape the structure of evidence selection.
+
+In conclusion, our study provides a diagnostic framework for understanding reranker behavior under controlled conditions. By fixing the evidence pool, we move closer to interpreting how large language models reason about relevance.
+
+Future work will explore how these patterns extend to multimodal retrieval settings and real world production systems.

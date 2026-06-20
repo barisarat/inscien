@@ -1,0 +1,66 @@
+[
+  {
+    "sourceType": "podcast",
+    "sourceId": "mlst",
+    "chunkId": "podcast::mlst::show-overview",
+    "title": "Machine Learning Street Talk",
+    "description": "In-depth technical interviews covering machine learning research, reasoning, and AI safety with leading researchers.",
+    "category": "Machine Learning & AI",
+    "sectionTitle": "Show overview",
+    "url": "/podcasts/mlst",
+    "externalUrl": "https://anchor.fm/s/1e4a0eac/podcast/rss",
+    "contentMode": "metadata_only",
+    "text": "Source type: Podcast\n\nPodcast: Machine Learning Street Talk\n\nCategory: Machine Learning & AI\n\nDescription: In-depth technical interviews covering machine learning research, reasoning, and AI safety with leading researchers.\n\nRSS feed: https://anchor.fm/s/1e4a0eac/podcast/rss",
+    "metadata": {
+      "feedUrl": "https://anchor.fm/s/1e4a0eac/podcast/rss"
+    }
+  },
+  {
+    "sourceType": "podcast",
+    "sourceId": "twiml",
+    "chunkId": "podcast::twiml::show-overview",
+    "title": "TWIML AI Podcast",
+    "description": "Conversations with top ML and AI researchers and practitioners on the latest trends, techniques, and real-world applications.",
+    "category": "Machine Learning & AI",
+    "sectionTitle": "Show overview",
+    "url": "/podcasts/twiml",
+    "externalUrl": "https://feeds.megaphone.fm/MLN2155636147",
+    "contentMode": "metadata_only",
+    "text": "Source type: Podcast\n\nPodcast: TWIML AI Podcast\n\nCategory: Machine Learning & AI\n\nDescription: Conversations with top ML and AI researchers and practitioners on the latest trends, techniques, and real-world applications.\n\nRSS feed: https://feeds.megaphone.fm/MLN2155636147",
+    "metadata": {
+      "feedUrl": "https://feeds.megaphone.fm/MLN2155636147"
+    }
+  },
+  {
+    "sourceType": "podcast",
+    "sourceId": "gradient-dissent",
+    "chunkId": "podcast::gradient-dissent::show-overview",
+    "title": "Gradient Dissent",
+    "description": "Interviews with machine learning practitioners about practical challenges in building and deploying ML systems. By Weights & Biases.",
+    "category": "Machine Learning & AI",
+    "sectionTitle": "Show overview",
+    "url": "/podcasts/gradient-dissent",
+    "externalUrl": "https://feeds.captivate.fm/gradient-dissent/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Podcast\n\nPodcast: Gradient Dissent\n\nCategory: Machine Learning & AI\n\nDescription: Interviews with machine learning practitioners about practical challenges in building and deploying ML systems. By Weights & Biases.\n\nRSS feed: https://feeds.captivate.fm/gradient-dissent/",
+    "metadata": {
+      "feedUrl": "https://feeds.captivate.fm/gradient-dissent/"
+    }
+  },
+  {
+    "sourceType": "podcast",
+    "sourceId": "learning-bayesian-statistics",
+    "chunkId": "podcast::learning-bayesian-statistics::show-overview",
+    "title": "Learning Bayesian Statistics",
+    "description": "Exploring Bayesian inference and probabilistic programming through interviews with researchers and practitioners in the field.",
+    "category": "Machine Learning & AI",
+    "sectionTitle": "Show overview",
+    "url": "/podcasts/learning-bayesian-statistics",
+    "externalUrl": "https://api.riverside.fm/hosting/iA4hgdZC.rss/",
+    "contentMode": "metadata_only",
+    "text": "Source type: Podcast\n\nPodcast: Learning Bayesian Statistics\n\nCategory: Machine Learning & AI\n\nDescription: Exploring Bayesian inference and probabilistic programming through interviews with researchers and practitioners in the field.\n\nRSS feed: https://api.riverside.fm/hosting/iA4hgdZC.rss/",
+    "metadata": {
+      "feedUrl": "https://api.riverside.fm/hosting/iA4hgdZC.rss/"
+    }
+  }
+]
