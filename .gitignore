@@ -331,3 +331,6 @@ inscien.db
 /papers-index/
 papers/
 !papers/.gitkeep
+
+# throwaway TTS benchmark harness
+tts-bench/
