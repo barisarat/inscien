@@ -147,7 +147,9 @@ def faithfulness_note(script, digests_text):
 def run_narration(file_name, out_path, progress):
     """Full pipeline. `progress(stage, percent, detail)` updates the job.
     Returns {duration_min, faithfulness, script_chars}."""
-    pdf_path = os.path.join(PAPERS_DIR, os.path.basename(file_name))
+    # An absolute path (a Zotero-resolved file in storage/) is used as-is; a bare
+    # filename is a loose papers/ file resolved under PAPERS_DIR.
+    pdf_path = file_name if os.path.isabs(file_name) else os.path.join(PAPERS_DIR, os.path.basename(file_name))
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"Paper not found: {pdf_path}")
 

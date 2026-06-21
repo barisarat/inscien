@@ -61,9 +61,22 @@ def _resolve_paper(doc_id=None, query=None):
 @router.post("")
 def start(body: NarrateIn):
     paper = _resolve_paper(doc_id=body.docId, query=body.query)
-    if not paper or not paper.get("fileName"):
+    if not paper:
         raise HTTPException(status_code=404, detail="Couldn't find that paper in your library.")
-    job_id = start_job(paper["fileName"], paper["title"])
+
+    # Zotero items live in storage/ — resolve the absolute path; loose papers/ files
+    # fall back to their manifest filename (the pipeline handles both).
+    file_ref = None
+    try:
+        from services.zotero.reader import resolve_pdf_path
+        file_ref = resolve_pdf_path(paper["docId"])
+    except Exception:
+        file_ref = None
+    file_ref = file_ref or paper.get("fileName")
+    if not file_ref:
+        raise HTTPException(status_code=404, detail="That paper has no PDF on disk.")
+
+    job_id = start_job(file_ref, paper["title"])
     return {"jobId": job_id, "title": paper["title"]}
 
 

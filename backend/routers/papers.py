@@ -54,14 +54,28 @@ def list_papers():
 @router.get("/{doc_id}")
 def get_paper(doc_id: str):
     settings = get_lab_settings()
-    file_name = _resolve_filename(doc_id)
-    if not file_name:
-        raise HTTPException(status_code=404, detail="Paper not found")
 
-    # Path(...).name strips any directory components — guards against traversal.
-    path = Path(settings["papers_dir"]) / Path(file_name).name
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="PDF file missing")
+    # Zotero-native: doc_id is the itemKey, and the file lives in the Zotero storage tree.
+    path = None
+    try:
+        from services.zotero.reader import resolve_pdf_path
+        zotero_path = resolve_pdf_path(doc_id)
+        if zotero_path:
+            path = Path(zotero_path)
+    except Exception:
+        path = None
+
+    # Fallback: a loose papers/ file resolved by the manifest filename.
+    if path is None:
+        file_name = _resolve_filename(doc_id)
+        if file_name:
+            # Path(...).name strips directory components — guards against traversal.
+            candidate = Path(settings["papers_dir"]) / Path(file_name).name
+            if candidate.exists():
+                path = candidate
+
+    if path is None or not path.exists():
+        raise HTTPException(status_code=404, detail="Paper not found")
 
     return FileResponse(
         str(path),

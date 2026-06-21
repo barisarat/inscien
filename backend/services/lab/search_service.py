@@ -184,14 +184,17 @@ def normalize_scores(results):
     ]
 
 
-def get_keyword_candidates(query, max_items, doc_id=None):
+def get_keyword_candidates(query, max_items, doc_id=None, item_keys=None):
     manifest_result = load_manifest_chunks()
     chunks = manifest_result["chunks"]
 
     # Per-document scope (used by /compare): restrict the BM25 index to this paper's
-    # chunks so keyword candidates can never bleed in from other documents.
+    # chunks so keyword candidates can never bleed in from other documents. The Zotero
+    # navigator scopes to a selection (`item_keys`, a set of itemKeys / sourceIds).
     if doc_id:
         chunks = [c for c in chunks if c.get("sourceId") == doc_id]
+    elif item_keys:
+        chunks = [c for c in chunks if c.get("sourceId") in item_keys]
 
     query_tokens = tokenize(query)
 
@@ -276,7 +279,7 @@ def diversify_by_page(results, limit):
     return selected
 
 
-def search_lab(query, limit, doc_id=None):
+def search_lab(query, limit, doc_id=None, item_keys=None):
     query_vector = embed_texts([query])[0]
 
     vector_limit = max(limit * 5, 30)
@@ -284,7 +287,7 @@ def search_lab(query, limit, doc_id=None):
 
     try:
         vector_results = normalize_vector_results(
-            search_lab_chunks(query_vector, vector_limit, doc_id=doc_id)
+            search_lab_chunks(query_vector, vector_limit, doc_id=doc_id, item_keys=item_keys)
         )
     except Exception:
         logger.warning(
@@ -293,7 +296,7 @@ def search_lab(query, limit, doc_id=None):
         )
         vector_results = []
 
-    keyword_results = get_keyword_candidates(query, keyword_limit, doc_id=doc_id)
+    keyword_results = get_keyword_candidates(query, keyword_limit, doc_id=doc_id, item_keys=item_keys)
 
     combined_results = combine_results(vector_results, keyword_results)
     results = diversify_by_page(combined_results, limit)

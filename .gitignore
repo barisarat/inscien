@@ -347,3 +347,9 @@ tts-bench/
 .vscode/
 CLAUDE.md
 AGENTS.md
+
+# Local Zotero test snapshot (never commit — full library metadata + PDFs)
+zotero-sample/
+zotero.sqlite
+zotero.sqlite*
+zotero-storage/

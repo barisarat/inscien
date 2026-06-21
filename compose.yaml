@@ -22,6 +22,10 @@ services:
     volumes:
       - ./backend:/workspace
       - ./papers:/workspace/papers:ro
+      # The user's local Zotero data dir (zotero.sqlite + storage/), read-only. Point
+      # ZOTERO_HOST_DIR at your host Zotero folder (e.g. ~/Zotero). InScien reads it via a
+      # private snapshot under ./data, so the live library is never touched.
+      - ${ZOTERO_HOST_DIR:-./zotero}:/workspace/zotero:ro
       # Durable user data (SQLite DB, indexes, narration audio) on an explicit host
       # folder — survives `down`/`down -v` and is independent of the source mount above.
       - ./data:/workspace/data
@@ -41,6 +45,7 @@ services:
       - QDRANT_COLLECTION=inscien_lab_chunks
       - LAB_TOP_K=10
       - PAPERS_DIR=/workspace/papers
+      - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}
 

@@ -141,6 +141,7 @@ def stream_agent_answer(
     anonymous_id="",
     request_metadata=None,
     skill=None,
+    item_keys=None,
 ):
     db = SessionLocal()
 
@@ -166,6 +167,22 @@ def stream_agent_answer(
         chats.append_message(db, session.id, "user", query)
 
         messages.append({"role": "user", "content": query})
+
+        # Resolve the active Zotero selection scope. An explicit selection on this turn
+        # is persisted to the session; an empty one falls back to the session's stored
+        # selection so scope carries across turns (like the rest of the working set).
+        if item_keys:
+            item_keys = set(item_keys)
+            try:
+                merged = dict(session.working_set or {})
+                merged["itemKeys"] = sorted(item_keys)
+                chats.update_working_set(db, session.id, merged)
+            except Exception:
+                db.rollback()
+        else:
+            stored = (session.working_set or {}).get("itemKeys")
+            item_keys = set(stored) if stored else None
+        ctx.item_keys = item_keys
 
         # --- Skill routing ----------------------------------------------------
         # An explicit `/skill` is dispatched DETERMINISTICALLY here — local models
@@ -298,7 +315,7 @@ def stream_agent_answer(
             # Safety net: if the model never retrieved (a small model that ignored the
             # forced tool, or a malformed call), force one search so the answer is grounded.
             if not context_results:
-                fallback = search_internal_content(query)
+                fallback = search_internal_content(query, item_keys=item_keys)
                 context_results.extend(fallback.get("contextResults", []))
             deduped = _dedupe_context(context_results)[:MAX_CITATIONS]
             citations = unique_citations(deduped, MAX_CITATIONS)

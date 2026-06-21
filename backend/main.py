@@ -23,6 +23,7 @@ from routers.graph import router as graph_router
 from routers.narrate import router as narrate_router
 from routers.compare import router as compare_router
 from routers.write import router as write_router
+from routers.zotero import router as zotero_router
 import os
 
 ENV_NAME = os.getenv("ENV_NAME", "development")
@@ -64,18 +65,22 @@ app.include_router(graph_router)
 app.include_router(narrate_router)
 app.include_router(compare_router)
 app.include_router(write_router)
+app.include_router(zotero_router)
 
 
 @app.on_event("startup")
 def on_startup():
+    import models.zotero_sync  # noqa: F401 — register the sync-ledger table
     Base.metadata.create_all(bind=engine)
     # In-process jobs don't survive a restart — fail any that were mid-run.
     from services.compare.jobs import recover_stale as recover_compare
     from services.writeup.jobs import recover_stale as recover_writeup
     from services.narration.jobs import recover_stale as recover_narration
+    from services.zotero.jobs import recover_stale as recover_zotero
     recover_compare()
     recover_writeup()
     recover_narration()
+    recover_zotero()
 
 
 @app.get("/health")

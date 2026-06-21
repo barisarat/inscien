@@ -5,6 +5,8 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    FilterSelector,
+    MatchAny,
     MatchValue,
     PointStruct,
     VectorParams,
@@ -105,6 +107,35 @@ def upsert_lab_points(points):
     )
 
 
+def delete_lab_points_by_source(source_id):
+    """Remove all points for one document (sourceId) — used before re-indexing an item
+    so a shrunk page/passage count never leaves stale points behind."""
+    settings = get_lab_settings()
+    client = get_qdrant_client()
+    client.delete(
+        collection_name=settings["qdrant_collection"],
+        points_selector=FilterSelector(
+            filter=Filter(must=[FieldCondition(key="sourceId", match=MatchValue(value=source_id))])
+        ),
+        wait=True,
+    )
+
+
+def ensure_source_payload_index():
+    """Keyword payload index on sourceId so multi-item (MatchAny) scope filters stay
+    index-backed. Idempotent — a no-op if the index already exists."""
+    settings = get_lab_settings()
+    client = get_qdrant_client()
+    try:
+        client.create_payload_index(
+            collection_name=settings["qdrant_collection"],
+            field_name="sourceId",
+            field_schema="keyword",
+        )
+    except Exception:
+        pass
+
+
 def get_lab_collection_count():
     settings = get_lab_settings()
     client = get_qdrant_client()
@@ -116,17 +147,21 @@ def get_lab_collection_count():
     }
 
 
-def search_lab_chunks(query_vector, limit, doc_id=None):
+def search_lab_chunks(query_vector, limit, doc_id=None, item_keys=None):
     settings = get_lab_settings()
     client = get_qdrant_client()
 
-    # `/compare` scopes retrieval to one paper at a time (one cell = one paper x one
-    # dimension), so the citation binds unambiguously. A payload filter on sourceId
-    # restricts the vector search to that document; unscoped search omits it.
+    # A payload filter on sourceId scopes the vector search. `/compare` scopes to one
+    # paper (`doc_id`); the Zotero navigator scopes to a *selection* (`item_keys`, a set
+    # of itemKeys). Unscoped search omits the filter and searches the whole library.
     query_filter = None
     if doc_id:
         query_filter = Filter(
             must=[FieldCondition(key="sourceId", match=MatchValue(value=doc_id))]
+        )
+    elif item_keys:
+        query_filter = Filter(
+            must=[FieldCondition(key="sourceId", match=MatchAny(any=list(item_keys)))]
         )
 
     response = client.query_points(

@@ -7,7 +7,12 @@ import { ChevronRight, ExternalLink, SendHorizontal, X } from "lucide-react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import AppSidebar from "@/components/navigation/AppSidebar"
+import ZoteroNavigator, {
+  NAV_WIDTH_COLLAPSED,
+  NAV_WIDTH_EXPANDED,
+} from "@/components/navigation/ZoteroNavigator"
 import { useSidebar } from "@/lib/SidebarProvider"
+import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useAuth } from "@/lib/auth"
 import { type ContextItem } from "@/lib/useChatSidebar"
 import {
@@ -1282,6 +1287,29 @@ function AskContent() {
     sessionParam ? Number(sessionParam) : null
   )
   const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar()
+  const { selectedKeys } = useZoteroSelection()
+  const selectedKeysRef = useRef(selectedKeys)
+  useEffect(() => {
+    selectedKeysRef.current = selectedKeys
+  }, [selectedKeys])
+  const [navCollapsed, setNavCollapsed] = useState(false)
+  useEffect(() => {
+    try {
+      setNavCollapsed(window.sessionStorage.getItem("inscien-zotero-nav") === "0")
+    } catch {}
+  }, [])
+  const toggleNav = useCallback(() => {
+    setNavCollapsed((prev) => {
+      const next = !prev
+      try {
+        window.sessionStorage.setItem("inscien-zotero-nav", next ? "0" : "1")
+      } catch {}
+      return next
+    })
+  }, [])
+  // The chat content is pushed right of both the chat sidebar and the navigator pane.
+  const sidebarOffset = sidebarOpen ? 292 : 132
+  const navWidth = navCollapsed ? NAV_WIDTH_COLLAPSED : NAV_WIDTH_EXPANDED
   const streamRef = useRef<HTMLDivElement | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement | null>(null)
   const pageEndRef = useRef<HTMLDivElement | null>(null)
@@ -1859,6 +1887,8 @@ function AskContent() {
           session_id: activeSessionIdRef.current ?? undefined,
           limit: 10,
           skill: parsedSkill,
+          item_keys:
+            selectedKeysRef.current.size > 0 ? Array.from(selectedKeysRef.current) : undefined,
         }),
       })
 
@@ -2298,7 +2328,26 @@ function AskContent() {
         onToggle={toggleSidebar}
       />
 
-      <div className={`${pageStyles.mainContent} ${sidebarOpen ? pageStyles.mainContentOpen : pageStyles.mainContentClosed}`}>
+      <ZoteroNavigator
+        collapsed={navCollapsed}
+        onToggleCollapse={toggleNav}
+        leftOffset={sidebarOffset}
+        onCompare={async () => {
+          // Refetch the corpus so just-indexed items are present, then propose.
+          const { papers: all } = await listPapers()
+          const selected = all.filter((p) => selectedKeys.has(p.docId))
+          if (selected.length >= 2) void runPropose(selected)
+        }}
+        onNarrate={() => {
+          const key = Array.from(selectedKeys)[0]
+          if (key) void startNarrationJob({ docId: key, userText: "Narrate selected paper" })
+        }}
+      />
+
+      <div
+        className={`${pageStyles.mainContent} ${sidebarOpen ? pageStyles.mainContentOpen : pageStyles.mainContentClosed}`}
+        style={{ marginLeft: sidebarOffset + navWidth }}
+      >
         <div className={`${pageStyles.page} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.pageSplit : ""}`}>
           <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.mainSplit : ""}`}>
             <section className={`${styles.chatShell} ${hasMessages ? styles.hasMessages : styles.isEmpty}`}>

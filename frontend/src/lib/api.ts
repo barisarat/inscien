@@ -663,6 +663,62 @@ export async function listPapers(): Promise<{ papers: PaperItem[] }> {
   return authedGet("/api/papers")
 }
 
+// ---- Zotero-native library (collections, items, indexing) ----
+
+export interface ZoteroCollection {
+  collectionID: number
+  key: string
+  name: string
+  parentCollectionID: number | null
+  children: ZoteroCollection[]
+  itemCount?: number
+  indexedCount?: number
+}
+
+export interface ZoteroItem {
+  itemKey: string
+  title: string | null
+  authors: string[]
+  year: string | null
+  itemType: string | null
+  isBookDefaultOff: boolean
+  indexed: boolean
+}
+
+export interface ZoteroIndexJob {
+  id: string
+  status: "queued" | "running" | "done" | "error"
+  stage: string
+  progress: number
+  detail?: string
+  error?: string
+  result?: { indexed: number; skipped: number; skippedNoPdf: number; totalChunks: number }
+}
+
+export async function fetchZoteroCollections(): Promise<{ collections: ZoteroCollection[] }> {
+  return authedGet("/api/zotero/collections")
+}
+
+export async function fetchZoteroItems(collectionId: number): Promise<{ items: ZoteroItem[] }> {
+  return authedGet(`/api/zotero/collections/${collectionId}/items`)
+}
+
+export async function fetchZoteroIndexableKeys(collectionId: number): Promise<{ itemKeys: string[] }> {
+  return authedGet(`/api/zotero/collections/${collectionId}/indexable-keys`)
+}
+
+export async function startZoteroIndex(itemKeys: string[]): Promise<{ jobId: string }> {
+  return authedAction("/api/zotero/index", "POST", { itemKeys })
+}
+
+export async function getZoteroIndexJob(jobId: string): Promise<ZoteroIndexJob> {
+  return authedGet(`/api/zotero/index/${encodeURIComponent(jobId)}`)
+}
+
+export async function fetchZoteroSyncState(): Promise<{ indexedKeys: string[]; count: number }> {
+  return authedGet("/api/zotero/sync-state")
+}
+
 export async function startNarration(
   opts: { query?: string; docId?: string },
 ): Promise<{ jobId: string; title?: string }> {

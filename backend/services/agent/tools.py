@@ -30,17 +30,19 @@ class ToolContext:
     """Per-request context passed to tool handlers.
 
     InScien is single-user/local with no auth, so this is mostly a carrier for the
-    DB session. Kept as a struct so new tools can take dependencies without changing
-    the dispatch signature.
+    DB session. `item_keys` is the active Zotero selection (a set of itemKeys); when
+    present, retrieval is scoped to those items. Kept as a struct so new tools can take
+    dependencies without changing the dispatch signature.
     """
     db: object = None
+    item_keys: object = None
 
 
-def _raw_search(query):
-    return search_lab(query, 20).get("results", [])
+def _raw_search(query, item_keys=None):
+    return search_lab(query, 20, item_keys=item_keys).get("results", [])
 
 
-def search_internal_content(query, limit=4):
+def search_internal_content(query, limit=4, item_keys=None):
     """Hybrid (dense + BM25) retrieval over the user's PDF library, with the
     retrieval-sufficiency judge loop (judge loop #1) built in.
 
@@ -50,7 +52,7 @@ def search_internal_content(query, limit=4):
     objects, and the full selected results so the harness can consolidate citations
     across multiple searches with consistent numbering.
     """
-    raw = _raw_search(query)
+    raw = _raw_search(query, item_keys=item_keys)
 
     if not raw:
         return {"contextBlocks": "", "citations": [], "contextResults": []}
@@ -60,7 +62,7 @@ def search_internal_content(query, limit=4):
 
     verdict = grade_sufficiency(query, context_blocks)
     if not verdict["sufficient"] and verdict.get("reformulation"):
-        extra = _raw_search(verdict["reformulation"])
+        extra = _raw_search(verdict["reformulation"], item_keys=item_keys)
         if extra:
             seen = {r.get("chunkId") for r in raw}
             union = raw + [r for r in extra if r.get("chunkId") not in seen]
@@ -154,7 +156,9 @@ TOOL_SCHEMAS = [
 
 
 TOOL_DISPATCH = {
-    "search_internal_content": lambda args, ctx: search_internal_content(args.get("query", "")),
+    "search_internal_content": lambda args, ctx: search_internal_content(
+        args.get("query", ""), item_keys=getattr(ctx, "item_keys", None)
+    ),
     "citation_graph": lambda args, ctx: citation_graph(args),
     "search_references": lambda args, ctx: search_references_tool(args.get("query", "")),
 }

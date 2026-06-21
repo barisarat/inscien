@@ -1,4 +1,5 @@
 import AskClient from "./components/AskClient"
+import { ZoteroSelectionProvider } from "@/lib/ZoteroSelectionProvider"
 
 export const metadata = {
   title: "InScien",
@@ -6,5 +7,9 @@ export const metadata = {
 }
 
 export default function AskPage() {
-  return <AskClient />
+  return (
+    <ZoteroSelectionProvider>
+      <AskClient />
+    </ZoteroSelectionProvider>
+  )
 }
