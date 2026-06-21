@@ -586,12 +586,9 @@ function parseSkill(text: string): { skill?: string; query: string } {
   if (!m) return { query: text }
   const cmd = m[1].toLowerCase()
   const rest = m[2].trim()
-  if (cmd === "graph") return { skill: "graph", query: rest || "Show the citation map of my library." }
   if (cmd === "refs") return { skill: "refs", query: rest || text }
-  if (cmd === "narrate") return { skill: "narrate", query: rest || text }
-  if (cmd === "compare") return { skill: "compare", query: rest || text }
-  if (cmd === "write") return { skill: "write", query: rest || text }
   if (cmd === "ask") return { skill: "ask", query: rest || text }
+  // compare / write / narrate / graph are dedicated workspace modes now, not chat skills.
   return { query: text } // unknown command — treat as ordinary text
 }
 
@@ -2038,7 +2035,7 @@ function AskContent() {
     slashQuery !== null
       ? SLASH_COMMANDS.filter((c) => c.cmd.slice(1).startsWith(slashQuery))
       : []
-  const slashOpen = !slashDismissed && slashMatches.length > 0
+  const slashOpen = false  // slash menu retired — modes live in the top action bar
   const slashSelected = Math.min(slashIndex, Math.max(0, slashMatches.length - 1))
 
   // Paper picker: active once you're typing the argument of `/narrate ` (command + space).
@@ -2052,7 +2049,7 @@ function AskContent() {
           return paperFilterTokens.every((tok) => t.includes(tok))
         }).slice(0, 8)
       : []
-  const paperPickerOpen = !paperDismissed && paperFilter !== null && papers.length > 0
+  const paperPickerOpen = false  // /narrate picker retired — Narrate is a workspace mode
   const paperSelected = Math.min(paperIndex, Math.max(0, paperMatches.length - 1))
 
   // Compare multi-select picker: active while typing the argument of `/compare `.
@@ -2073,7 +2070,7 @@ function AskContent() {
           })
           .slice(0, 8)
       : []
-  const comparePickerOpen = !compareDismissed && compareFilter !== null && papers.length > 0
+  const comparePickerOpen = false  // /compare picker retired — Compare is a workspace mode
   const compareHighlighted = Math.min(compareIndex, Math.max(0, compareMatches.length - 1))
 
   // Lazily load the library the first time either picker (narrate/compare) is needed.
