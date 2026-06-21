@@ -17,10 +17,8 @@ import NarrateMode from "../workspace/NarrateMode"
 import GraphMode from "../workspace/GraphMode"
 import { useWorkspace } from "../workspace/WorkspaceProvider"
 import { type WorkspaceMode } from "../workspace/ActionBar"
-import { useSidebar } from "@/lib/SidebarProvider"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useAuth } from "@/lib/auth"
-import { type ContextItem } from "@/lib/useChatSidebar"
 import {
   type ChatSessionSummary,
   type CompareCitation,
@@ -1317,7 +1315,6 @@ function AskContent() {
   const [activeSessionId, setActiveSessionId] = useState<number | null>(
     sessionParam ? Number(sessionParam) : null
   )
-  const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar()
   const { selectedKeys } = useZoteroSelection()
   const selectedKeysRef = useRef(selectedKeys)
   useEffect(() => {
@@ -1339,8 +1336,6 @@ function AskContent() {
       return next
     })
   }, [])
-  // The chat content is pushed right of both the chat sidebar and the navigator pane.
-  const sidebarOffset = sidebarOpen ? 292 : 132
   const navWidth = navCollapsed ? NAV_WIDTH_COLLAPSED : NAV_WIDTH_EXPANDED
   const streamRef = useRef<HTMLDivElement | null>(null)
   const transcriptEndRef = useRef<HTMLDivElement | null>(null)
@@ -2341,31 +2336,6 @@ function AskContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshSessions])
-
-  const chatContextItems = useMemo<ContextItem[]>(() => {
-    if (!isAuthenticated) return []
-
-    return sessions.map((session) => {
-      const title = session.title || "Untitled chat"
-      const label = title.charAt(0).toUpperCase() + title.slice(1)
-
-      return {
-        label,
-        href: `/ask?session=${session.id}`,
-        actions: [
-          {
-            label: "Rename",
-            onSelect: () => void handleRenameSession(session.id, title),
-          },
-          {
-            label: "Delete",
-            destructive: true,
-            onSelect: () => void handleDeleteSession(session.id),
-          },
-        ],
-      }
-    })
-  }, [handleDeleteSession, handleRenameSession, isAuthenticated, sessions])
 
   return (
     <div className={pageStyles.pageShell}>
