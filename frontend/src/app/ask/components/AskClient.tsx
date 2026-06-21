@@ -6,11 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronRight, ExternalLink, SendHorizontal, X } from "lucide-react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import AppSidebar from "@/components/navigation/AppSidebar"
 import ZoteroNavigator, {
   NAV_WIDTH_COLLAPSED,
   NAV_WIDTH_EXPANDED,
 } from "@/components/navigation/ZoteroNavigator"
+import TopBar from "../workspace/TopBar"
+import CompareMode from "../workspace/CompareMode"
+import WriteMode from "../workspace/WriteMode"
+import NarrateMode from "../workspace/NarrateMode"
+import GraphMode from "../workspace/GraphMode"
+import { useWorkspace } from "../workspace/WorkspaceProvider"
+import { type WorkspaceMode } from "../workspace/ActionBar"
 import { useSidebar } from "@/lib/SidebarProvider"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useAuth } from "@/lib/auth"
@@ -597,6 +603,31 @@ function pdfHref(citation: LabCitation): string {
   if (!citation.sourceId) return ""
   const page = citation.page ?? 1
   return `${API_BASE}/api/papers/${encodeURIComponent(citation.sourceId)}#page=${page}`
+}
+
+// A saved session is a typed run if one of its messages carries a comparison/writeup
+// widget — used to reopen it in the right mode (else it's a plain Ask chat).
+function detectRun(messages: { widgets?: unknown[] }[]):
+  | { kind: "comparison"; result: CompareResult; papers: { docId: string; title: string }[]; dimensions: string[] }
+  | { kind: "writeup"; answer: string; citations: unknown[] }
+  | null {
+  for (const m of messages) {
+    for (const w of (m.widgets || []) as Array<Record<string, unknown>>) {
+      if (w?.kind === "comparison" && w.result) {
+        const result = w.result as CompareResult
+        return {
+          kind: "comparison",
+          result,
+          papers: (w.papers as { docId: string; title: string }[]) || result.papers || [],
+          dimensions: (w.dimensions as string[]) || result.dimensions || [],
+        }
+      }
+      if (w?.kind === "writeup" && w.answer != null) {
+        return { kind: "writeup", answer: String(w.answer), citations: (w.citations as unknown[]) || [] }
+      }
+    }
+  }
+  return null
 }
 
 // Routes a citation/source link: external http(s) targets open in a new tab,
@@ -1292,6 +1323,7 @@ function AskContent() {
   useEffect(() => {
     selectedKeysRef.current = selectedKeys
   }, [selectedKeys])
+  const { mode, setMode, setActiveArtifact } = useWorkspace()
   const [navCollapsed, setNavCollapsed] = useState(false)
   useEffect(() => {
     try {
@@ -1399,8 +1431,24 @@ function AskContent() {
     void (async () => {
       try {
         const detail = await getChatSession(id)
-        setMessages(sessionMessagesToLab(detail.messages))
-        setAnswerIsComplete(true)
+        const run = detectRun(detail.messages)
+        if (run?.kind === "comparison") {
+          setMode("compare")
+          setActiveArtifact({
+            kind: "comparison",
+            sessionId: id,
+            result: run.result,
+            papers: run.papers,
+            dimensions: run.dimensions,
+          })
+        } else if (run?.kind === "writeup") {
+          setMode("write")
+          setActiveArtifact({ kind: "writeup", sessionId: id, answer: run.answer, citations: run.citations })
+        } else {
+          setMode("ask")
+          setMessages(sessionMessagesToLab(detail.messages))
+          setAnswerIsComplete(true)
+        }
       } catch {
         setError("Could not load that chat.")
       }
@@ -2254,6 +2302,7 @@ function AskContent() {
   function handleNewSearch() {
     if (isLoading) return
 
+    setMode("ask")
     shouldAutoScrollRef.current = true
     skipAutoSubmitRef.current = true
     submittedQueryRef.current = initialQuery
@@ -2320,34 +2369,30 @@ function AskContent() {
 
   return (
     <div className={pageStyles.pageShell}>
-      <AppSidebar
-        brandHref="/ask"
-        sectionTitle="Chats"
-        contextItems={chatContextItems}
-        isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
+      <TopBar
+        mode={mode}
+        onChange={setMode}
+        brandWidth={Math.max(navWidth, 160)}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onNew={handleNewSearch}
+        onRename={handleRenameSession}
+        onDelete={handleDeleteSession}
+        onOpenHistory={refreshSessions}
       />
 
       <ZoteroNavigator
         collapsed={navCollapsed}
         onToggleCollapse={toggleNav}
-        leftOffset={sidebarOffset}
-        onCompare={async () => {
-          // Refetch the corpus so just-indexed items are present, then propose.
-          const { papers: all } = await listPapers()
-          const selected = all.filter((p) => selectedKeys.has(p.docId))
-          if (selected.length >= 2) void runPropose(selected)
-        }}
-        onNarrate={() => {
-          const key = Array.from(selectedKeys)[0]
-          if (key) void startNarrationJob({ docId: key, userText: "Narrate selected paper" })
-        }}
+        leftOffset={0}
+        topOffset={52}
       />
 
       <div
-        className={`${pageStyles.mainContent} ${sidebarOpen ? pageStyles.mainContentOpen : pageStyles.mainContentClosed}`}
-        style={{ marginLeft: sidebarOffset + navWidth }}
+        className={pageStyles.mainContent}
+        style={{ marginLeft: navWidth, paddingTop: 52 }}
       >
+        {mode === "ask" ? (
         <div className={`${pageStyles.page} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.pageSplit : ""}`}>
           <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.mainSplit : ""}`}>
             <section className={`${styles.chatShell} ${hasMessages ? styles.hasMessages : styles.isEmpty}`}>
@@ -2816,6 +2861,15 @@ function AskContent() {
           ) : null}
 
         </div>
+        ) : mode === "compare" ? (
+          <CompareMode />
+        ) : mode === "write" ? (
+          <WriteMode />
+        ) : mode === "narrate" ? (
+          <NarrateMode />
+        ) : (
+          <GraphMode />
+        )}
       </div>
     </div>
   )

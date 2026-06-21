@@ -6,6 +6,7 @@ import {
   Library,
   Loader2,
   PanelLeftClose,
+  Play,
   RefreshCw,
 } from "lucide-react"
 
@@ -15,11 +16,13 @@ import {
   fetchZoteroItems,
   fetchZoteroSyncState,
   getZoteroIndexJob,
+  listNarrations,
   startZoteroIndex,
   type ZoteroCollection,
   type ZoteroItem,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { useWorkspace } from "@/app/ask/workspace/WorkspaceProvider"
 import styles from "./ZoteroNavigator.module.css"
 
 export const NAV_WIDTH_EXPANDED = 268
@@ -29,18 +32,17 @@ type Props = {
   collapsed: boolean
   onToggleCollapse: () => void
   leftOffset: number
-  onCompare?: () => void
-  onNarrate?: () => void
+  topOffset?: number
 }
 
 export default function ZoteroNavigator({
   collapsed,
   onToggleCollapse,
   leftOffset,
-  onCompare,
-  onNarrate,
+  topOffset = 0,
 }: Props) {
   const { selectedKeys, toggle, setMany, indexedKeys, markIndexed } = useZoteroSelection()
+  const { setMode, setActiveArtifact } = useWorkspace()
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
   const [items, setItems] = useState<Record<number, ZoteroItem[]>>({})
@@ -48,14 +50,20 @@ export default function ZoteroNavigator({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [indexing, setIndexing] = useState<Set<string>>(new Set())
+  const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [cols, sync] = await Promise.all([fetchZoteroCollections(), fetchZoteroSyncState()])
+      const [cols, sync, narr] = await Promise.all([
+        fetchZoteroCollections(),
+        fetchZoteroSyncState(),
+        listNarrations(),
+      ])
       setCollections(cols.collections)
       markIndexed(sync.indexedKeys)
+      setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
     } catch {
       setError("Couldn't load your Zotero library. Is the mount set?")
     } finally {
@@ -151,7 +159,7 @@ export default function ZoteroNavigator({
     return (
       <aside
         className={styles.rail}
-        style={{ left: leftOffset, width: NAV_WIDTH_COLLAPSED }}
+        style={{ left: leftOffset, top: topOffset, width: NAV_WIDTH_COLLAPSED }}
       >
         <button
           type="button"
@@ -224,6 +232,28 @@ export default function ZoteroNavigator({
                       {item.title ?? item.itemKey}
                       {item.year ? <span className={styles.itemYear}> · {item.year}</span> : null}
                     </span>
+                    {narrations.has(item.itemKey) ? (
+                      <button
+                        type="button"
+                        className={styles.playBtn}
+                        title="Play narration"
+                        aria-label="Play narration"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const n = narrations.get(item.itemKey)!
+                          setMode("narrate")
+                          setActiveArtifact({
+                            kind: "narration",
+                            docId: item.itemKey,
+                            jobId: n.jobId,
+                            title: n.title || item.title || "",
+                          })
+                        }}
+                      >
+                        <Play size={12} />
+                      </button>
+                    ) : null}
                     {isBusy ? (
                       <Loader2 size={12} className={styles.spin} />
                     ) : isIdx ? (
@@ -242,7 +272,7 @@ export default function ZoteroNavigator({
   }
 
   return (
-    <aside className={styles.pane} style={{ left: leftOffset, width: NAV_WIDTH_EXPANDED }}>
+    <aside className={styles.pane} style={{ left: leftOffset, top: topOffset, width: NAV_WIDTH_EXPANDED }}>
       <header className={styles.head}>
         <span className={styles.headTitle}>Library</span>
         <div className={styles.headActions}>
@@ -256,31 +286,9 @@ export default function ZoteroNavigator({
       </header>
 
       {selectedKeys.size > 0 ? (
-        <div className={styles.scope}>
-          <div className={styles.scopeBar}>
-            {selectedKeys.size} paper{selectedKeys.size === 1 ? "" : "s"} in scope
-            {indexing.size > 0 ? <span className={styles.scopeIndexing}> · indexing {indexing.size}…</span> : null}
-          </div>
-          <div className={styles.scopeActions}>
-            <button
-              type="button"
-              className={styles.actionBtn}
-              disabled={selectedKeys.size < 2 || indexing.size > 0}
-              onClick={onCompare}
-              title="Compare the selected papers"
-            >
-              Compare
-            </button>
-            <button
-              type="button"
-              className={styles.actionBtn}
-              disabled={selectedKeys.size !== 1 || indexing.size > 0}
-              onClick={onNarrate}
-              title="Narrate the selected paper"
-            >
-              Narrate
-            </button>
-          </div>
+        <div className={styles.scopeBar}>
+          {selectedKeys.size} paper{selectedKeys.size === 1 ? "" : "s"} in scope
+          {indexing.size > 0 ? <span className={styles.scopeIndexing}> · indexing {indexing.size}…</span> : null}
         </div>
       ) : (
         <div className={styles.scopeBarMuted}>Select papers to scope your questions</div>

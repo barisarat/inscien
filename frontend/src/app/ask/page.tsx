@@ -1,5 +1,6 @@
 import AskClient from "./components/AskClient"
 import { ZoteroSelectionProvider } from "@/lib/ZoteroSelectionProvider"
+import { WorkspaceProvider } from "./workspace/WorkspaceProvider"
 
 export const metadata = {
   title: "InScien",
@@ -9,7 +10,9 @@ export const metadata = {
 export default function AskPage() {
   return (
     <ZoteroSelectionProvider>
-      <AskClient />
+      <WorkspaceProvider>
+        <AskClient />
+      </WorkspaceProvider>
     </ZoteroSelectionProvider>
   )
 }

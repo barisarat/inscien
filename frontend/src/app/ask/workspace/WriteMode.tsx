@@ -1,0 +1,316 @@
+"use client"
+
+import { useCallback, useRef, useState } from "react"
+import { Loader2, X } from "lucide-react"
+
+import { getWriteup, listPapers, proposePlan, startWriteup, type PaperItem, type WriteResult } from "@/lib/api"
+import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { useWorkspace } from "./WorkspaceProvider"
+import { AnswerRenderer, CompactSources, type Citation } from "./answer/AnswerRenderer"
+import compareStyles from "../components/Compare.module.css"
+import styles from "./Workspace.module.css"
+
+type Phase = "topic" | "planning" | "configure" | "running" | "done" | "error"
+
+// The draft renders with the exact chat-answer styling (shared AnswerRenderer + Sources).
+function DraftView({
+  answer,
+  citations,
+  onOpen,
+}: {
+  answer: string
+  citations: Citation[]
+  onOpen: (c: Citation) => void
+}) {
+  return (
+    <>
+      <AnswerRenderer text={answer} citations={citations} onOpenSource={onOpen} />
+      <CompactSources citations={citations} onOpenSource={onOpen} />
+    </>
+  )
+}
+
+export default function WriteMode() {
+  const { openPdf, saveRun, activeArtifact, setActiveArtifact } = useWorkspace()
+  const { selectedKeys } = useZoteroSelection()
+  const loaded = activeArtifact?.kind === "writeup" ? activeArtifact : null
+
+  const [phase, setPhase] = useState<Phase>("topic")
+  const [topic, setTopic] = useState("")
+  const [candidates, setCandidates] = useState<PaperItem[]>([])
+  const [scope, setScope] = useState<string[]>([])
+  const [dimensions, setDimensions] = useState<string[]>([])
+  const [dimDraft, setDimDraft] = useState("")
+  const [progress, setProgress] = useState<{ stage?: string; detail?: string; progress?: number }>({})
+  const [result, setResult] = useState<WriteResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const runToken = useRef(0)
+
+  const openCitation = useCallback(
+    (c: Citation) => openPdf({ sourceId: c.sourceId, title: c.title, page: c.page, passage: c.passage }),
+    [openPdf],
+  )
+
+  const plan = useCallback(async () => {
+    const t = topic.trim()
+    if (!t) return
+    const token = ++runToken.current
+    setPhase("planning")
+    setError(null)
+    try {
+      const selIds = Array.from(selectedKeys)
+      const [{ papers: suggested, dimensions: dims }, all] = await Promise.all([
+        proposePlan(t),
+        selIds.length > 0 ? listPapers() : Promise.resolve({ papers: [] as PaperItem[] }),
+      ])
+      if (token !== runToken.current) return
+      // The library selection drives the review: selected papers lead the candidate
+      // list (pre-included), with the topic-proposed papers offered after them.
+      const titleOf = new Map(all.papers.map((p) => [p.docId, p.title]))
+      const selectedPapers: PaperItem[] = selIds.map((id) => ({ docId: id, title: titleOf.get(id) || id }))
+      const seen = new Set<string>()
+      const candidates: PaperItem[] = []
+      for (const p of [...selectedPapers, ...suggested]) {
+        if (!seen.has(p.docId)) {
+          seen.add(p.docId)
+          candidates.push(p)
+        }
+      }
+      setCandidates(candidates)
+      setScope(selectedPapers.length > 0 ? selectedPapers.map((p) => p.docId) : suggested.map((p) => p.docId))
+      setDimensions(dims)
+      setPhase("configure")
+    } catch (e) {
+      if (token !== runToken.current) return
+      setError(String(e))
+      setPhase("error")
+    }
+  }, [topic, selectedKeys])
+
+  const run = useCallback(async () => {
+    const token = ++runToken.current
+    setPhase("running")
+    setProgress({})
+    setError(null)
+    try {
+      const { jobId } = await startWriteup(topic.trim(), scope, dimensions)
+      for (;;) {
+        if (token !== runToken.current) return
+        const s = await getWriteup(jobId)
+        if (token !== runToken.current) return
+        setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
+        if (s.status === "done") {
+          if (s.result) {
+            setResult(s.result)
+            setPhase("done")
+            void saveRun("writeup", `Review: ${topic.trim()}`, {
+              answer: s.result.answer,
+              citations: s.result.citations,
+            })
+          } else {
+            setError("No draft returned.")
+            setPhase("error")
+          }
+          return
+        }
+        if (s.status === "error") {
+          setError(s.error || "Draft failed.")
+          setPhase("error")
+          return
+        }
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+    } catch (e) {
+      if (token !== runToken.current) return
+      setError(String(e))
+      setPhase("error")
+    }
+  }, [topic, scope, dimensions, saveRun])
+
+  // A run loaded from History.
+  if (loaded) {
+    return (
+      <div className={styles.modeFill}>
+        <div className={styles.modeHeader}>
+          <span className={styles.modeHeaderTitle}>Literature review</span>
+          <button type="button" className={styles.linkBtn} onClick={() => setActiveArtifact(null)}>
+            New review
+          </button>
+        </div>
+        <div className={styles.readingScroll}>
+          <div className={styles.reading}>
+            <DraftView answer={loaded.answer} citations={(loaded.citations as Citation[]) || []} onOpen={openCitation} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === "done" && result) {
+    return (
+      <div className={styles.modeFill}>
+        <div className={styles.modeHeader}>
+          <span className={styles.modeHeaderTitle}>Literature review</span>
+          <button type="button" className={styles.linkBtn} onClick={() => setPhase("topic")}>
+            New review
+          </button>
+        </div>
+        <div className={styles.readingScroll}>
+          <div className={styles.reading}>
+            <DraftView answer={result.answer} citations={result.citations} onOpen={openCitation} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === "topic") {
+    return (
+      <div className={styles.modeCentered}>
+        <div className={compareStyles.confirm}>
+          <div className={compareStyles.confirmHead}>
+            <span className={compareStyles.confirmTitle}>Write a literature review</span>
+          </div>
+          <div className={compareStyles.confirmLabel}>What should the review cover?</div>
+          <div className={compareStyles.dimAddRow}>
+            <input
+              className={compareStyles.dimInput}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  void plan()
+                }
+              }}
+              placeholder="e.g. machine learning for house price prediction"
+              autoFocus
+            />
+          </div>
+          <div className={compareStyles.confirmActions}>
+            <button type="button" className={compareStyles.runBtn} disabled={!topic.trim()} onClick={plan}>
+              Plan review
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.modeCentered}>
+      <div className={compareStyles.confirm}>
+        <div className={compareStyles.confirmHead}>
+          <span className={compareStyles.confirmTitle}>Review on: {topic}</span>
+          {phase !== "running" ? (
+            <button type="button" className={compareStyles.confirmCancel} onClick={() => setPhase("topic")}>
+              Change topic
+            </button>
+          ) : null}
+        </div>
+
+        {phase === "planning" ? (
+          <div className={compareStyles.confirmStatus}>
+            <Loader2 size={13} className={styles.spin} /> Finding the most relevant papers…
+          </div>
+        ) : phase === "running" ? (
+          <div className={styles.runProgress}>
+            <div className={styles.runStage}>
+              <Loader2 size={13} className={styles.spin} /> {progress.detail || progress.stage || "Writing…"}
+            </div>
+            <div className={styles.bar}>
+              <div className={styles.barFill} style={{ width: `${progress.progress ?? 5}%` }} />
+            </div>
+          </div>
+        ) : phase === "error" ? (
+          <div className={styles.errorBox}>
+            {error || "Something went wrong."}
+            <button type="button" className={styles.linkBtn} onClick={() => setPhase("topic")}>
+              Start over
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={compareStyles.confirmLabel}>Papers — most relevant in your library (toggle to include)</div>
+            <div className={compareStyles.scopeChips}>
+              {candidates.map((p) => {
+                const on = scope.includes(p.docId)
+                return (
+                  <button
+                    key={p.docId}
+                    type="button"
+                    title={p.title}
+                    className={`${compareStyles.scopeChip} ${on ? compareStyles.scopeChipOn : ""}`}
+                    onClick={() =>
+                      setScope((cur) => (cur.includes(p.docId) ? cur.filter((x) => x !== p.docId) : [...cur, p.docId]))
+                    }
+                  >
+                    {p.title}
+                  </button>
+                )
+              })}
+            </div>
+            <div className={compareStyles.confirmLabel}>Dimensions to extract from each paper — edit before running</div>
+            <div className={compareStyles.dimChips}>
+              {dimensions.map((d) => (
+                <span key={d} className={compareStyles.dimChip}>
+                  <span>{d}</span>
+                  <button
+                    type="button"
+                    className={compareStyles.chipX}
+                    aria-label={`Remove ${d}`}
+                    onClick={() => setDimensions((cur) => cur.filter((x) => x !== d))}
+                  >
+                    <X size={12} strokeWidth={2} aria-hidden />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className={compareStyles.dimAddRow}>
+              <input
+                className={compareStyles.dimInput}
+                value={dimDraft}
+                onChange={(e) => setDimDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    const v = dimDraft.trim()
+                    if (v) {
+                      setDimensions((d) => (d.includes(v) ? d : [...d, v]))
+                      setDimDraft("")
+                    }
+                  }
+                }}
+                placeholder="Add a dimension…"
+              />
+              <button
+                type="button"
+                className={compareStyles.dimAddBtn}
+                onClick={() => {
+                  const v = dimDraft.trim()
+                  if (v) {
+                    setDimensions((d) => (d.includes(v) ? d : [...d, v]))
+                    setDimDraft("")
+                  }
+                }}
+                disabled={!dimDraft.trim()}
+              >
+                Add
+              </button>
+            </div>
+            <div className={compareStyles.confirmActions}>
+              <button
+                type="button"
+                className={compareStyles.runBtn}
+                disabled={scope.length === 0 || dimensions.length === 0}
+                onClick={run}
+              >
+                Generate draft
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

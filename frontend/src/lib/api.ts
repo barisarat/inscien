@@ -729,6 +729,34 @@ export async function getNarration(jobId: string): Promise<NarrationStatus> {
   return authedGet(`/api/narrate/${encodeURIComponent(jobId)}`)
 }
 
+export interface NarrationRegistryItem {
+  docId: string
+  jobId: string
+  title: string
+  audioUrl: string
+}
+
+export async function listNarrations(): Promise<{ items: NarrationRegistryItem[] }> {
+  return authedGet("/api/narrate/registry")
+}
+
+// ---- Citation graph ----
+export async function getGraph(): Promise<{
+  graph: { nodes: { id: string; title: string }[]; edges: { from: string; to: string }[] } | null
+}> {
+  return authedGet("/api/graph")
+}
+
+export async function buildGraph(): Promise<{ jobId: string }> {
+  return authedAction("/api/graph/build", "POST")
+}
+
+export async function getGraphBuild(
+  jobId: string,
+): Promise<{ id: string; status: "queued" | "running" | "done" | "error"; error?: string }> {
+  return authedGet(`/api/graph/build/${encodeURIComponent(jobId)}`)
+}
+
 // ---- Compare (cross-paper grounded comparison table, background job) ----
 
 // One grounded cell: a short value bound to a page-precise citation (or "Not reported"

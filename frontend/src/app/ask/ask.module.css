@@ -80,7 +80,8 @@
    Fixed viewport height so each side scrolls independently. (Desktop-first.) */
 .pageSplit {
   flex-direction: row;
-  height: 100vh;
+  /* full viewport minus the 52px top bar, so the PDF split doesn't clip at the bottom */
+  height: calc(100vh - 52px);
   min-height: 0;
   overflow: hidden;
 }

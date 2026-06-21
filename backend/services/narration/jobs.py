@@ -30,7 +30,7 @@ _jobs = {}
 _lock = threading.Lock()
 
 _PUBLIC_FIELDS = ("id", "title", "status", "stage", "progress", "detail", "error",
-                  "durationMin", "faithfulness")
+                  "durationMin", "faithfulness", "docId")
 
 
 def audio_path(job_id):
@@ -69,15 +69,34 @@ def _run(job_id, file_name):
         _set(job_id, status="error", error=last)
 
 
-def start_job(file_name, title=""):
+def start_job(file_name, title="", doc_id=None):
     job_id = uuid.uuid4().hex[:12]
-    job = {"id": job_id, "title": title or "", "status": "queued",
+    job = {"id": job_id, "title": title or "", "docId": doc_id, "status": "queued",
            "stage": "queued", "progress": 0}
     with _lock:
         _jobs[job_id] = job
         _persist(job)
     _executor.submit(_run, job_id, file_name)
     return job_id
+
+
+def list_narrations():
+    """Registry of completed narrations, newest per paper: [{docId, jobId, title}].
+    Scanned from the persisted job files (jobs carry their docId), so it survives restarts."""
+    out = {}
+    for f in JOBS_DIR.glob("*.json"):
+        try:
+            job = json.loads(f.read_text())
+        except Exception:
+            continue
+        doc_id = job.get("docId")
+        if job.get("status") != "done" or not doc_id:
+            continue
+        mtime = f.stat().st_mtime
+        prev = out.get(doc_id)
+        if prev is None or mtime > prev[0]:
+            out[doc_id] = (mtime, {"docId": doc_id, "jobId": job["id"], "title": job.get("title", "")})
+    return [v[1] for v in out.values()]
 
 
 def get_job(job_id):

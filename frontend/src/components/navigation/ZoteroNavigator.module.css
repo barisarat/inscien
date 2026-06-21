@@ -224,6 +224,22 @@
 .itemYear {
   color: var(--text-faint);
 }
+.playBtn {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.playBtn:hover {
+  background: var(--surface-muted);
+}
+
 .idxBadge,
 .bookBadge {
   flex-shrink: 0;

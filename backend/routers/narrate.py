@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from services.refs.build import _tokens
 from routers.papers import corpus_papers
-from services.narration.jobs import audio_path, get_job, start_job
+from services.narration.jobs import audio_path, get_job, list_narrations, start_job
 
 router = APIRouter(prefix="/api/narrate", tags=["narrate"])
 
@@ -76,8 +76,19 @@ def start(body: NarrateIn):
     if not file_ref:
         raise HTTPException(status_code=404, detail="That paper has no PDF on disk.")
 
-    job_id = start_job(file_ref, paper["title"])
+    job_id = start_job(file_ref, paper["title"], paper["docId"])
     return {"jobId": job_id, "title": paper["title"]}
+
+
+@router.get("/registry")
+def registry():
+    """Completed narrations, 1:1 by paper, so the library can show a ▶ that replays the
+    saved mp3 without regenerating."""
+    items = [
+        {**n, "audioUrl": f"/api/narrate/{n['jobId']}/audio"}
+        for n in list_narrations()
+    ]
+    return {"items": items}
 
 
 @router.get("/{job_id}")
