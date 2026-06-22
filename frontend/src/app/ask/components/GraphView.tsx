@@ -3,31 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 
+import { type GraphNode } from "@/lib/api"
 import styles from "./PdfViewerPanel.module.css"
 
 // react-force-graph touches the canvas/window, so load it client-only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false }) as any
-
-// One node type spanning both callers: the selection-scoped discovery map
-// ({label, type, year, date, citedBy, globalCitedBy, doi}) and the agent's legacy
-// intra-corpus citation widget ({title, refCount, citedBy} — all owned papers). Fields are
-// optional so either shape flows through; rendering normalizes below.
-export type GraphData = {
-  nodes: {
-    id: string
-    label?: string
-    title?: string
-    type?: "owned" | "external"
-    year?: string | number | null
-    date?: string | null
-    citedBy?: number | null
-    globalCitedBy?: number | null
-    refCount?: number | null
-    doi?: string | null
-  }[]
-  edges: { from: string; to: string; viaTitle?: string }[]
-}
 
 export type GraphLayout = "network" | "timeline"
 export type OpenNode = { id: string; title: string; type: "owned" | "external"; doi?: string | null }
@@ -52,7 +33,7 @@ function nodeVal(type: "owned" | "external", citedBy: number, globalCitedBy: num
 // `Number(null) === 0`, which would otherwise pin a dateless paper to year 0 and crush
 // the whole x-axis. Anything without a usable (> 0) year returns null → parked in the
 // gutter, out of the time domain.
-function yearValue(n: GraphData["nodes"][number]): number | null {
+function yearValue(n: GraphNode): number | null {
   const d = n.date
   if (typeof d === "string" && /^\d{4}/.test(d)) {
     const [y, m = "1", day = "1"] = d.split("-")
@@ -70,7 +51,7 @@ type Ticks = {
   undatedX: number | null
 }
 
-function computeTimeline(nodes: GraphData["nodes"]): {
+function computeTimeline(nodes: GraphNode[]): {
   pos: Map<string, { x: number; y: number }>
   ticks: Ticks
 } {
@@ -165,7 +146,7 @@ export default function GraphView({
   layout = "network",
   onOpenNode,
 }: {
-  data: GraphData
+  data: { nodes: GraphNode[]; edges: { from: string; to: string }[] }
   layout?: GraphLayout
   onOpenNode: (node: OpenNode) => void
 }) {
@@ -212,9 +193,9 @@ export default function GraphView({
     () => ({
       nodes: visibleNodes.map((n) => {
         const type = n.type ?? "owned"
-        const title = n.label ?? n.title ?? n.id
+        const title = n.label ?? n.id
         const degree = n.citedBy ?? 0
-        const global = n.globalCitedBy ?? n.citedBy ?? n.refCount ?? 0
+        const global = n.globalCitedBy ?? n.citedBy ?? 0
         const node: Record<string, unknown> = {
           id: n.id,
           name: n.year ? `${title} (${n.year})` : title,
