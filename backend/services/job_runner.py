@@ -1,0 +1,105 @@
+"""Shared in-process background-job runner for the skills (compare / write / narrate /
+graph-fetch).
+
+Each skill is LLM/IO-bound and runs in the lean backend, so it uses the same pattern: a
+single-worker (serialized) executor, job state persisted to a volume so the UI can poll
+across reloads, and stale `queued`/`running` jobs failed on startup (an in-process worker
+doesn't survive a restart). This class is that pattern, parameterized by the skill's jobs
+dir + public-field projection; each skill module is a thin wrapper over an instance.
+"""
+
+import json
+import logging
+import threading
+import traceback
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+
+class JobRunner:
+    def __init__(self, name, jobs_dir, public_fields):
+        self.name = name
+        self.public_fields = tuple(public_fields)
+        self._dir = Path(jobs_dir)
+        self._dir.mkdir(parents=True, exist_ok=True)
+        self._executor = ThreadPoolExecutor(max_workers=1)  # one job at a time
+        self._jobs = {}
+        self._lock = threading.Lock()
+        self._log = logging.getLogger(f"jobs.{name}")
+
+    # --- persistence -------------------------------------------------------
+    def _persist(self, job):
+        (self._dir / f"{job['id']}.json").write_text(json.dumps(job), encoding="utf-8")
+
+    def _set(self, job_id, **fields):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if not job:
+                return
+            job.update(fields)
+            self._persist(job)
+
+    def _progress(self, job_id):
+        def cb(stage, percent, detail=""):
+            self._set(job_id, stage=stage, progress=percent, detail=detail,
+                      status="done" if stage == "done" else "running")
+        return cb
+
+    # --- lifecycle ---------------------------------------------------------
+    def _run(self, job_id, work):
+        self._set(job_id, status="running", stage="queued", progress=0)
+        try:
+            done_fields = work(job_id, self._progress(job_id)) or {}
+            self._set(job_id, status="done", stage="done", progress=100, **done_fields)
+        except Exception:
+            last = (traceback.format_exc().strip().splitlines() or ["error"])[-1]
+            self._log.exception("%s job %s failed", self.name, job_id)
+            self._set(job_id, status="error", error=last)
+
+    def start(self, work, extra=None):
+        """Queue `work(job_id, progress_cb) -> dict|None`; the returned dict is merged into
+        the job on success. `extra` seeds extra fields on the job record (e.g. title/docId)."""
+        job_id = uuid.uuid4().hex[:12]
+        job = {"id": job_id, "status": "queued", "stage": "queued", "progress": 0, **(extra or {})}
+        with self._lock:
+            self._jobs[job_id] = job
+            self._persist(job)
+        self._executor.submit(self._run, job_id, work)
+        return job_id
+
+    def get(self, job_id):
+        with self._lock:
+            job = self._jobs.get(job_id)
+        if job is None:
+            path = self._dir / f"{job_id}.json"
+            if not path.exists():
+                return None
+            try:
+                job = json.loads(path.read_text())
+            except (ValueError, OSError):
+                return None
+        return {k: job.get(k) for k in self.public_fields}
+
+    def recover_stale(self):
+        """Mark jobs interrupted by a restart as failed (the in-process worker is gone)."""
+        with self._lock:
+            for f in self._dir.glob("*.json"):
+                try:
+                    job = json.loads(f.read_text())
+                except (ValueError, OSError):
+                    continue
+                if job.get("status") in ("queued", "running"):
+                    job["status"] = "error"
+                    job["error"] = "interrupted by restart"
+                    f.write_text(json.dumps(job))
+
+    def clear(self):
+        """Delete all persisted job files (used by the corpus reset). Best-effort."""
+        with self._lock:
+            self._jobs.clear()
+            for f in self._dir.glob("*.json"):
+                try:
+                    f.unlink()
+                except OSError:
+                    self._log.warning("clear: could not delete %s", f)
