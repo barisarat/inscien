@@ -1,13 +1,46 @@
 import logging
 import math
+import threading
 from collections import Counter, defaultdict
+from pathlib import Path
 
 from services.lab.embedding_service import embed_texts
 from services.lab.manifest_loader import load_manifest_chunks
 from services.lab.qdrant_store import search_lab_chunks
+from services.lab.settings import get_lab_settings
 from services.lab.text_utils import tokenize
 
 logger = logging.getLogger(__name__)
+
+# Cache the parsed manifest chunks + the full-corpus BM25 index, invalidated when the
+# manifest file changes (ingestion rewrites it). Without this, every search reparsed the
+# whole manifest and rebuilt the index from scratch — O(corpus) per query.
+_corpus_cache = {"key": None, "chunks": [], "index": None}
+_corpus_lock = threading.Lock()
+
+
+def _manifest_key():
+    """Cheap change-token for the manifest: (path, mtime, size). A stat, not a full read."""
+    path = Path(get_lab_settings()["chunk_index_path"])
+    try:
+        st = path.stat()
+        return (str(path), st.st_mtime_ns, st.st_size)
+    except OSError:
+        return (str(path), None, None)  # manifest not written yet
+
+
+def _corpus():
+    """Return {chunks, index} for the current manifest, rebuilding only when it changed."""
+    global _corpus_cache
+    key = _manifest_key()
+    cache = _corpus_cache
+    if cache["key"] == key:
+        return cache
+    with _corpus_lock:
+        if _corpus_cache["key"] != key:
+            chunks = load_manifest_chunks()["chunks"]
+            _corpus_cache = {"key": key, "chunks": chunks, "index": build_bm25_index(chunks)}
+        return _corpus_cache
 
 
 def make_result_from_chunk(chunk, score):
@@ -108,23 +141,24 @@ def normalize_scores(results):
 
 
 def get_keyword_candidates(query, max_items, doc_id=None, item_keys=None):
-    manifest_result = load_manifest_chunks()
-    chunks = manifest_result["chunks"]
-
-    # Per-document scope (used by /compare): restrict the BM25 index to this paper's
-    # chunks so keyword candidates can never bleed in from other documents. The Zotero
-    # navigator scopes to a selection (`item_keys`, a set of itemKeys / sourceIds).
-    if doc_id:
-        chunks = [c for c in chunks if c.get("sourceId") == doc_id]
-    elif item_keys:
-        chunks = [c for c in chunks if c.get("sourceId") in item_keys]
-
     query_tokens = tokenize(query)
 
     if not query_tokens:
         return []
 
-    index = build_bm25_index(chunks)
+    corpus = _corpus()
+
+    # Per-document scope (used by /compare): restrict the BM25 index to this paper's chunks so
+    # keyword candidates can never bleed in from other documents (and IDF stays subset-relative).
+    # The Zotero navigator scopes to a selection (`item_keys`, a set of itemKeys / sourceIds).
+    # Unscoped (the chat agent's retrieval) reuses the cached full-corpus index.
+    if doc_id:
+        index = build_bm25_index([c for c in corpus["chunks"] if c.get("sourceId") == doc_id])
+    elif item_keys:
+        index = build_bm25_index([c for c in corpus["chunks"] if c.get("sourceId") in item_keys])
+    else:
+        index = corpus["index"]
+
     candidates = []
 
     for document in index["documents"]:
