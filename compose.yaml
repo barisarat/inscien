@@ -60,6 +60,10 @@ services:
     volumes:
       - ./frontend:/workspace
       - frontend_node_modules:/workspace/node_modules
+      # Keep the Next.js build cache off the host bind mount too — like node_modules, it's a
+      # disposable, container-owned artifact, so this stops a root-owned .next/ from landing
+      # in the user's ./frontend checkout.
+      - frontend_next:/workspace/.next
     ports:
       - "3200:3000"
     depends_on:
@@ -82,3 +86,4 @@ services:
 volumes:
   qdrant_data:
   frontend_node_modules:
+  frontend_next:

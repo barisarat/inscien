@@ -43,6 +43,11 @@ export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = window.sessionStorage.getItem(STORAGE_KEY)
+      // SSR-safe rehydration: sessionStorage only exists client-side, so we restore the saved
+      // selection in an effect (after mount) rather than a lazy initializer that would crash
+      // SSR / cause a hydration mismatch. The rule's synchronous-setState warning is a false
+      // positive for this intentional pattern.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setSelectedKeys(new Set(JSON.parse(raw) as string[]))
     } catch {}
     setSettled(true)
