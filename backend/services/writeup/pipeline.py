@@ -20,8 +20,9 @@ import re
 from services.compare.pipeline import propose_dimensions
 from services.lab.search_service import search_lab
 from services.llm.client import chat_create, text_of
-from services.rag.extraction import NOT_REPORTED, extract_cell, parse_json, retrieve_cell
+from services.rag.extraction import NOT_REPORTED, extract_cell, retrieve_cell
 from services.rag.grounding import verify_grounding
+from services.rag.json_utils import extract_json as parse_json
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,8 @@ DISCOVER_K = 30  # retrieval breadth when auto-selecting candidate papers
 
 def _titles(doc_ids):
     # Lazy import to avoid a router<->service import cycle at module load.
-    from routers.papers import corpus_papers
-    by = {d["docId"]: d["title"] for d in corpus_papers()}
-    return {d: (by.get(d) or d) for d in doc_ids}
+    from routers.papers import resolve_titles
+    return resolve_titles(doc_ids)
 
 
 def select_papers(topic, n=MAX_PAPERS):

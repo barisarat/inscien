@@ -12,26 +12,17 @@ errors or returns junk, we proceed rather than block the answer. (Paper->TTS wil
 `verify_grounding` for its faithfulness check.)
 """
 
-import json
 import logging
 
 from services.llm.client import chat_create, text_of
+from services.rag.json_utils import extract_json
 
 logger = logging.getLogger(__name__)
 
 
 def _parse_json(text):
-    """Extract the first JSON object from a model response (tolerates code fences)."""
-    if not text:
-        return {}
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return {}
-    try:
-        return json.loads(text[start:end + 1])
-    except (ValueError, TypeError):
-        return {}
+    """First JSON object from a model response (tolerates fences/prose); {} on failure."""
+    return extract_json(text, {})
 
 
 def grade_sufficiency(query, context_blocks):

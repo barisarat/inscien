@@ -23,8 +23,9 @@ import logging
 
 from services.lab.manifest_loader import load_manifest_chunks
 from services.llm.client import chat_create, text_of
-from services.rag.extraction import extract_cell, parse_json as _parse_json, retrieve_cell
+from services.rag.extraction import extract_cell, retrieve_cell
 from services.rag.grounding import verify_grounding
+from services.rag.json_utils import extract_json as _parse_json
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +35,10 @@ MAX_DIMENSIONS = 6
 
 
 def _resolve_titles(doc_ids):
-    """{docId: title} from the chunk manifest (real titles already merged upstream by
-    corpus_papers, but the manifest title is sufficient and avoids a refs dependency)."""
-    # Imported lazily to avoid a router<->service import cycle at module load.
-    from routers.papers import corpus_papers
+    # Lazy import to avoid a router<->service import cycle at module load.
+    from routers.papers import resolve_titles
 
-    by_id = {d["docId"]: d for d in corpus_papers()}
-    titles = {}
-    for doc_id in doc_ids:
-        doc = by_id.get(doc_id)
-        titles[doc_id] = (doc or {}).get("title") or doc_id
-    return titles
+    return resolve_titles(doc_ids)
 
 
 def _sample_excerpt(doc_id, max_chunks=2, max_chars=900):

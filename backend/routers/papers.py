@@ -33,6 +33,13 @@ def corpus_papers():
     return list(docs.values())
 
 
+def resolve_titles(doc_ids):
+    """{docId: title} from the chunk manifest, falling back to the id when unknown.
+    Shared by the /compare and /write skills to label papers in their outputs."""
+    by_id = {d["docId"]: d["title"] for d in corpus_papers()}
+    return {doc_id: (by_id.get(doc_id) or doc_id) for doc_id in doc_ids}
+
+
 @router.get("")
 def list_papers():
     """The library, for the inline narration picker."""

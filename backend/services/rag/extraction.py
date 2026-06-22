@@ -8,7 +8,6 @@ Reuses per-document scoped hybrid retrieval (`search_lab` with `doc_id`), the nu
 renderer, the page-precise citation, and the retrieval-sufficiency judge.
 """
 
-import json
 import logging
 
 from services.lab.answer_service import make_citation
@@ -16,26 +15,12 @@ from services.lab.prompt_service import build_context_blocks
 from services.lab.search_service import search_lab
 from services.llm.client import chat_create, text_of
 from services.rag.grounding import grade_sufficiency
+from services.rag.json_utils import extract_json
 
 logger = logging.getLogger(__name__)
 
 CELL_RETRIEVE_K = 4
 NOT_REPORTED = "Not reported"
-
-
-def parse_json(text, fallback):
-    """Extract the first JSON value (object or array) from a model response."""
-    if not text:
-        return fallback
-    for open_ch, close_ch in (("[", "]"), ("{", "}")):
-        start = text.find(open_ch)
-        end = text.rfind(close_ch)
-        if start != -1 and end > start:
-            try:
-                return json.loads(text[start:end + 1])
-            except (ValueError, TypeError):
-                continue
-    return fallback
 
 
 def retrieve_cell(attribute, doc_id):
@@ -77,7 +62,7 @@ def extract_cell(title, attribute, results):
 
     try:
         response = chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200)
-        data = parse_json(text_of(response), {})
+        data = extract_json(text_of(response), {})
     except Exception:
         logger.exception("cell extraction failed for attribute=%s", attribute)
         data = {}

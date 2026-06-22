@@ -1,43 +1,7 @@
 import re
 from collections import defaultdict
 
-
-STOP_WORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "by",
-    "can",
-    "do",
-    "does",
-    "for",
-    "from",
-    "how",
-    "i",
-    "in",
-    "is",
-    "it",
-    "make",
-    "me",
-    "my",
-    "of",
-    "on",
-    "or",
-    "the",
-    "this",
-    "to",
-    "use",
-    "using",
-    "what",
-    "when",
-    "where",
-    "which",
-    "with",
-}
+from services.lab.text_utils import tokenize
 
 
 INSUFFICIENT_PHRASES = [
@@ -55,19 +19,6 @@ INSUFFICIENT_PHRASES = [
 def detect_insufficient(answer):
     lower_answer = answer.lower()
     return any(phrase in lower_answer for phrase in INSUFFICIENT_PHRASES)
-
-
-def tokenize(value):
-    if not value:
-        return []
-
-    tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9_\-+.]*", value.lower())
-
-    return [
-        token
-        for token in tokens
-        if token not in STOP_WORDS and len(token) > 1
-    ]
 
 
 def result_search_text(result):

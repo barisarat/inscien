@@ -1,11 +1,8 @@
 "use client"
 
-import { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
+import { FormEvent, KeyboardEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ChevronRight, ExternalLink, SendHorizontal } from "lucide-react"
-import ReactMarkdown, { type Components } from "react-markdown"
-import remarkGfm from "remark-gfm"
+import { SendHorizontal } from "lucide-react"
 import ZoteroNavigator, {
   NAV_WIDTH_COLLAPSED,
   NAV_WIDTH_EXPANDED,
@@ -29,32 +26,20 @@ import {
   renameChatSession,
 } from "@/lib/api"
 import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
+import { AnswerRenderer, CompactSources, type Citation } from "../workspace/answer/AnswerRenderer"
 import pageStyles from "../ask.module.css"
 import styles from "./AskClient.module.css"
 import compareStyles from "./Compare.module.css"
 
-type LabCitation = {
-  title: string
-  url: string
-  sourceId?: string
-  sourceType: string
-  contentMode: string
-  // Page-precise citation surface (InScien): the page the passage was on, and the
-  // exact retrieved passage text so the Sources list can reveal it on click.
-  page?: number | null
-  passage?: string
-}
-
-
 type LabStreamEvent =
   | { type: "stage"; stage: LoadingStage; tool?: string; label?: string }
-  | { type: "citations"; citations: LabCitation[] }
+  | { type: "citations"; citations: Citation[] }
   | { type: "delta"; text: string }
   | {
       type: "final"
       query: string
       answer: string
-      citations: LabCitation[]
+      citations: Citation[]
       contextSummary?: string
       sessionId?: number | null
       insufficientContext: boolean
@@ -68,7 +53,7 @@ type LabMessage = {
   role: "user" | "assistant"
   content: string
   visibleContent?: string
-  citations?: LabCitation[]
+  citations?: Citation[]
   insufficientContext?: boolean
   isTyping?: boolean
   loadingStage?: LoadingStage
@@ -124,7 +109,7 @@ function sessionMessagesToLab(
       role: m.role === "assistant" ? "assistant" : "user",
       content: m.content,
       visibleContent: m.content,
-      citations: (m.citations as LabCitation[]) ?? [],
+      citations: (m.citations as Citation[]) ?? [],
       contextSummary: m.contextSummary ?? "",
     }
 
@@ -192,330 +177,6 @@ function IconCheck() {
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  )
-}
-
-// Marker class set on citation link nodes by the remark plugin below so the
-// `a` component override can route them through next/link with citation styling.
-const CITATION_CLASS = "lab-citation"
-
-const isExternalUrl = (url: string) => /^https?:\/\//i.test(url)
-
-// Absolute URL to the source PDF, opened at the cited page via the `#page=N`
-// fragment (the browser's native PDF viewer honors it). Empty if not a PDF source.
-function pdfHref(citation: LabCitation): string {
-  if (!citation.sourceId) return ""
-  const page = citation.page ?? 1
-  return `${API_BASE}/api/papers/${encodeURIComponent(citation.sourceId)}#page=${page}`
-}
-
-// A saved session is a typed run if one of its messages carries a comparison/writeup
-// widget — used to reopen it in the right mode (else it's a plain Ask chat).
-function detectRun(messages: { widgets?: unknown[] }[]):
-  | { kind: "comparison"; result: CompareResult; papers: { docId: string; title: string }[]; dimensions: string[] }
-  | { kind: "writeup"; answer: string; citations: unknown[] }
-  | null {
-  for (const m of messages) {
-    for (const w of (m.widgets || []) as Array<Record<string, unknown>>) {
-      if (w?.kind === "comparison" && w.result) {
-        const result = w.result as CompareResult
-        return {
-          kind: "comparison",
-          result,
-          papers: (w.papers as { docId: string; title: string }[]) || result.papers || [],
-          dimensions: (w.dimensions as string[]) || result.dimensions || [],
-        }
-      }
-      if (w?.kind === "writeup" && w.answer != null) {
-        return { kind: "writeup", answer: String(w.answer), citations: (w.citations as unknown[]) || [] }
-      }
-    }
-  }
-  return null
-}
-
-// Routes a citation/source link: external http(s) targets open in a new tab,
-// internal routes use next/link. Shared by the inline chip and the Sources rows.
-function CitationLink({
-  href,
-  className,
-  ariaLabel,
-  title,
-  onClick,
-  children,
-}: {
-  href: string
-  className?: string
-  ariaLabel?: string
-  title?: string
-  onClick?: (e: ReactMouseEvent) => void
-  children: ReactNode
-}) {
-  if (isExternalUrl(href)) {
-    // href is kept so middle/ctrl-click still opens the browser tab; onClick (when
-    // provided) intercepts a plain left-click to open the in-app viewer instead.
-    return (
-      <a
-        href={href}
-        className={className}
-        aria-label={ariaLabel}
-        title={title}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onClick}
-      >
-        {children}
-      </a>
-    )
-  }
-  return (
-    <Link href={href} className={className} aria-label={ariaLabel} title={title} onClick={onClick}>
-      {children}
-    </Link>
-  )
-}
-
-// Remark plugin: rewrite `[n]` markers in text nodes into mdast link nodes
-// pointing at citations[n-1]. Runs on the parsed tree (after remark-gfm), so it
-// survives nesting inside lists, bold, etc. `[n]` inside code is untouched because
-// code/inlineCode are not `text` nodes and have no children to walk.
-function createCitationPlugin(citations: LabCitation[]) {
-  // mdast nodes are typed as `any` here — react-markdown's PluggableList is
-  // strict and we don't depend on @types/mdast.
-  function splitTextNode(value: string): unknown[] {
-    const parts: unknown[] = []
-    const regex = /\[(\d+)\]/g
-    let last = 0
-    let match = regex.exec(value)
-
-    while (match) {
-      if (match.index > last) {
-        parts.push({ type: "text", value: value.slice(last, match.index) })
-      }
-
-      const citationNumber = Number(match[1])
-      const citation = citations[citationNumber - 1]
-
-      if (citation) {
-        const pageLabel = citation.page != null ? ` (p. ${citation.page})` : ""
-        parts.push({
-          type: "link",
-          url: pdfHref(citation) || citation.url,
-          data: {
-            hProperties: {
-              className: [CITATION_CLASS],
-              title: `${citation.title}${pageLabel}`,
-              target: "_blank",
-              rel: "noopener noreferrer",
-            },
-          },
-          children: [{ type: "text", value: `${citationNumber}` }],
-        })
-      } else {
-        parts.push({ type: "text", value: match[0] })
-      }
-
-      last = regex.lastIndex
-      match = regex.exec(value)
-    }
-
-    if (last < value.length) {
-      parts.push({ type: "text", value: value.slice(last) })
-    }
-
-    return parts
-  }
-
-  function visit(node: any) {
-    if (!node || !Array.isArray(node.children)) return
-
-    const next: unknown[] = []
-    for (const child of node.children) {
-      if (child?.type === "text" && typeof child.value === "string" && /\[\d+\]/.test(child.value)) {
-        next.push(...splitTextNode(child.value))
-      } else {
-        visit(child)
-        next.push(child)
-      }
-    }
-    node.children = next
-  }
-
-  return () => (tree: any) => {
-    visit(tree)
-  }
-}
-
-function buildMarkdownComponents(
-  citations: LabCitation[],
-  onOpenSource?: (citation: LabCitation) => void,
-): Components {
-  return {
-  code({ className, children }) {
-    const text = String(children ?? "")
-    const language = /language-(\w+)/.exec(className || "")?.[1]
-    // Fenced/block code has a language class or spans multiple lines; everything
-    // else is inline. (react-markdown v9 dropped the `inline` prop.)
-    if (language || text.includes("\n")) {
-      return (
-        <pre className={styles.pre}>
-          <code>{text.replace(/\n$/, "")}</code>
-        </pre>
-      )
-    }
-    return <code className={styles.inlineCode}>{children}</code>
-  },
-  // The `code` override renders its own <pre>; unwrap the default <pre> wrapper
-  // to avoid nested <pre> and extra UA styling.
-  pre: ({ children }) => <>{children}</>,
-  h1: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
-  h2: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
-  h3: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
-  h4: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
-  p: ({ children }) => <p className={styles.answerParagraph}>{children}</p>,
-  ul: ({ children }) => <ul className={styles.answerList}>{children}</ul>,
-  ol: ({ children, start }) => (
-    <ol className={styles.answerList} start={start}>
-      {children}
-    </ol>
-  ),
-  strong: ({ children }) => <strong className={styles.answerStrong}>{children}</strong>,
-  em: ({ children }) => <em className={styles.answerEm}>{children}</em>,
-  a({ className, href, title, children }) {
-    const isCitation = typeof className === "string" && className.includes(CITATION_CLASS)
-    if (href && isCitation) {
-      // The link's visible text IS the citation number, so map back to the citation
-      // and (when a handler is provided) open it in the in-app viewer on left-click.
-      const idx = Number(String(children))
-      const citation = Number.isFinite(idx) ? citations[idx - 1] : undefined
-      return (
-        <CitationLink
-          href={href}
-          title={title}
-          ariaLabel={`Source ${String(children)}${title ? `, ${title}` : ""}`}
-          className={`${styles.numberChip} ${styles.citationChip}`}
-          onClick={
-            citation && onOpenSource
-              ? (e) => {
-                  e.preventDefault()
-                  onOpenSource(citation)
-                }
-              : undefined
-          }
-        >
-          {children}
-        </CitationLink>
-      )
-    }
-    return (
-      <a href={href} title={title} className={styles.answerLink} target="_blank" rel="noreferrer">
-        {children}
-      </a>
-    )
-  },
-  }
-}
-
-function AnswerRenderer({
-  text,
-  citations,
-  onOpenSource,
-}: {
-  text: string
-  citations: LabCitation[]
-  onOpenSource?: (citation: LabCitation) => void
-}) {
-  const remarkPlugins = useMemo(
-    () => [remarkGfm, createCitationPlugin(citations)],
-    [citations]
-  )
-  const components = useMemo(
-    () => buildMarkdownComponents(citations, onOpenSource),
-    [citations, onOpenSource]
-  )
-
-  return (
-    <div className={styles.answerText}>
-      <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
-        {text}
-      </ReactMarkdown>
-    </div>
-  )
-}
-
-function CompactSources({
-  citations,
-  onOpenSource,
-}: {
-  citations: LabCitation[]
-  onOpenSource?: (citation: LabCitation) => void
-}) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-
-  if (citations.length === 0) return null
-
-  return (
-    <section className={styles.compactSources}>
-      <div className={styles.compactSourcesTitle}>Sources</div>
-      <div className={styles.compactSourceList}>
-        {citations.map((citation, index) => {
-          const expanded = openIndex === index
-          const pageLabel = citation.page != null ? `p. ${citation.page}` : null
-
-          const pdf = pdfHref(citation)
-
-          return (
-            <div key={`${citation.url}-${citation.page ?? ""}-${index}`}>
-              <div className={styles.compactSourceRow}>
-                <button
-                  type="button"
-                  className={styles.compactSourceLink}
-                  onClick={() => setOpenIndex(expanded ? null : index)}
-                  aria-expanded={expanded}
-                  aria-label={`Source ${index + 1}: ${citation.title}${pageLabel ? `, ${pageLabel}` : ""}`}
-                >
-                  <span className={styles.numberChip}>{index + 1}</span>
-                  <span className={styles.compactSourceText}>
-                    {citation.title}
-                    {pageLabel ? <span className={styles.compactSourcePage}> · {pageLabel}</span> : null}
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    strokeWidth={1.5}
-                    className={styles.compactSourceArrow}
-                    style={{ transform: expanded ? "rotate(90deg)" : undefined }}
-                    aria-hidden
-                  />
-                </button>
-                {pdf ? (
-                  <a
-                    className={styles.compactSourceOpen}
-                    href={pdf}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`Open the PDF${pageLabel ? ` at ${pageLabel}` : ""}`}
-                    aria-label={`Open ${citation.title}${pageLabel ? ` at ${pageLabel}` : ""}`}
-                    onClick={
-                      onOpenSource
-                        ? (e) => {
-                            e.preventDefault()
-                            onOpenSource(citation)
-                          }
-                        : undefined
-                    }
-                  >
-                    <ExternalLink size={15} strokeWidth={1.5} aria-hidden />
-                  </a>
-                ) : null}
-              </div>
-              {expanded && citation.passage ? (
-                <blockquote className={styles.passage}>{citation.passage}</blockquote>
-              ) : null}
-            </div>
-          )
-        })}
-      </div>
-    </section>
   )
 }
 
@@ -651,7 +312,7 @@ function MessageBubble({
   onViewComparison,
 }: {
   message: LabMessage
-  onOpenSource?: (citation: LabCitation) => void
+  onOpenSource?: (citation: Citation) => void
   onViewComparison?: (result?: CompareResult) => void
 }) {
   if (message.role === "user") {
@@ -751,7 +412,7 @@ function AskContent() {
   const [comparison, setComparison] = useState<CompareResult | null>(null)
   const [comparisonActive, setComparisonActive] = useState(false)
 
-  const handleOpenSource = useCallback((citation: LabCitation) => {
+  const handleOpenSource = useCallback((citation: Citation) => {
     if (!citation.sourceId) return
     const id = citation.sourceId
     const tab: PdfTab = {
@@ -776,8 +437,6 @@ function AskContent() {
       sourceId: c.sourceId,
       title: c.title,
       url: c.url ?? "",
-      sourceType: "pdf",
-      contentMode: "full_text",
       page: c.page ?? 1,
       passage: c.passage,
     })

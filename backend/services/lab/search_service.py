@@ -1,64 +1,13 @@
 import logging
 import math
-import re
 from collections import Counter, defaultdict
 
 from services.lab.embedding_service import embed_texts
 from services.lab.manifest_loader import load_manifest_chunks
 from services.lab.qdrant_store import search_lab_chunks
+from services.lab.text_utils import tokenize
 
 logger = logging.getLogger(__name__)
-
-
-STOP_WORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "by",
-    "can",
-    "do",
-    "does",
-    "for",
-    "from",
-    "how",
-    "i",
-    "in",
-    "is",
-    "it",
-    "make",
-    "me",
-    "my",
-    "of",
-    "on",
-    "or",
-    "the",
-    "this",
-    "to",
-    "use",
-    "using",
-    "what",
-    "when",
-    "where",
-    "which",
-    "with",
-}
-
-
-def tokenize(value):
-    if not value:
-        return []
-
-    tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9_\-+.]*", value.lower())
-
-    return [
-        token
-        for token in tokens
-        if token not in STOP_WORDS and len(token) > 1
-    ]
 
 
 def make_result_from_chunk(chunk, score):
