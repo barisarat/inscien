@@ -99,8 +99,8 @@ def bm25_score(query_tokens, document, index):
     if not query_tokens or document["length"] == 0:
         return 0
 
-    k1 = 1.5
-    b = 0.75
+    k1 = 1.5   # BM25 term-frequency saturation (standard default)
+    b = 0.75   # BM25 length-normalization strength (standard default)
     score = 0
 
     document_count = index["document_count"]
@@ -184,6 +184,8 @@ def normalize_vector_results(results):
 
 
 def combine_results(vector_results, keyword_results):
+    # Hybrid fusion weights: 0.65 dense / 0.35 BM25. Dense leads (semantic relevance is the
+    # primary signal); BM25 supplies exact-term/rare-keyword recall the embeddings miss.
     combined = {}
 
     for result in vector_results:
@@ -220,6 +222,8 @@ def diversify_by_page(results, limit):
     for result in results:
         page_key = (result.get("url", ""), (result.get("metadata") or {}).get("page"))
 
+        # At most 3 chunks per (doc, page): enough to cover a dense page, but leaves room in
+        # the result set for other pages/papers rather than one page dominating.
         if page_counts[page_key] >= 3:
             continue
 

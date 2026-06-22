@@ -93,6 +93,8 @@ def score_group(group, query_tokens, token_frequency, group_count):
         coverage_score += rarity_weight
 
     normalized_coverage = coverage_score / max(len(query_tokens), 1)
+    # Small nudge (≤0.045) toward papers corroborated by multiple chunks, without letting a
+    # high-hit-count paper dominate a single strongly-relevant one.
     multi_chunk_bonus = min(len(group["results"]), 3) * 0.015
 
     return float(group["best_score"]) + normalized_coverage + multi_chunk_bonus
@@ -137,6 +139,8 @@ def select_answer_context(query, results, max_items):
     for group in groups[1:]:
         group_score = float(group["group_score"])
 
+        # Only pull in a secondary paper if it scores within 82% of the best group — keeps
+        # the answer focused on the strongest sources rather than padding with weak ones.
         if group_score < best_score * 0.82:
             continue
 

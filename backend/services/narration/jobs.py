@@ -53,7 +53,9 @@ def clear_jobs():
 
 def list_narrations():
     """Registry of completed narrations, newest per paper: [{docId, jobId, title}].
-    Scanned from the persisted job files (jobs carry their docId), so it survives restarts."""
+    Scanned from the persisted job files (jobs carry their docId), so it survives restarts.
+    The scan is O(files), but the shared JobRunner caps each jobs dir at JOB_RETENTION_MAX,
+    so this stays cheap without a separate cache to invalidate."""
     out = {}
     for f in JOBS_DIR.glob("*.json"):
         try:

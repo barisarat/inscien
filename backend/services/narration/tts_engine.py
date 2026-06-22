@@ -6,13 +6,19 @@ weights (`kokoro-*.onnx` + `voices-*.bin`) are baked into the backend image, so 
 works fully offline. This replaces the old XTTS (GPU + non-commercial license) engine.
 """
 
+import logging
 import os
 import re
+import shutil
+import subprocess
+import tempfile
 
 import numpy as np
 from pydub import AudioSegment
 
 from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
+
+logger = logging.getLogger(__name__)
 
 MODEL_PATH = os.getenv("KOKORO_MODEL_PATH", "/opt/kokoro/kokoro-v1.0.onnx")
 VOICES_PATH = os.getenv("KOKORO_VOICES_PATH", "/opt/kokoro/voices-v1.0.bin")
@@ -33,6 +39,35 @@ def _get_kokoro():
         from kokoro_onnx import Kokoro
         _kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
     return _kokoro
+
+
+def clean_for_speech(text):
+    """Strip markdown + TTS-hostile symbols from the script so Kokoro doesn't vocalize them
+    ("asterisk asterisk", "hash"). The model is *asked* for clean prose but a local model can't
+    be trusted to comply, so this deterministic pass is the real guarantee."""
+    # Links / images: [label](url) -> label; bare URLs dropped.
+    text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"https?://\S+", "", text)
+    # Code fences + inline code.
+    text = text.replace("```", " ").replace("`", "")
+    # Line-start structure: headings, blockquotes, list markers.
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", text)
+    text = re.sub(r"(?m)^\s{0,3}>\s?", "", text)
+    text = re.sub(r"(?m)^\s{0,3}([-*+]|\d{1,2}[.)])\s+", "", text)
+    # Emphasis markers (bold/italic/strike). Underscores only when used as emphasis
+    # (doubled, or wrapping a word) so intra-word snake_case survives.
+    text = re.sub(r"\*+", "", text)
+    text = text.replace("~~", "")
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+    text = re.sub(r"(?<!\w)_([^_]+)_(?!\w)", r"\1", text)
+    # Tables + common non-speakable glyphs.
+    text = text.replace("|", " ").replace("•", ", ")
+    text = text.replace("–", "-").replace("—", ", ")
+    text = (text.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'"))
+    # Collapse leftover whitespace.
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 def split_into_chunks(text, max_chars=TTS_MAX_CHARS):
@@ -77,24 +112,61 @@ def _to_segment(samples, sample_rate):
     return AudioSegment(pcm16.tobytes(), frame_rate=int(sample_rate), sample_width=2, channels=1)
 
 
+def _concat_to_mp3(part_paths, out_path, work_dir):
+    """Concatenate WAV parts into a single mp3 via ffmpeg's concat demuxer — streams the parts
+    sequentially so memory never holds the whole audio (unlike loading them all in pydub)."""
+    list_path = os.path.join(work_dir, "parts.txt")
+    with open(list_path, "w", encoding="utf-8") as f:
+        for p in part_paths:
+            # The concat demuxer needs single-quoted paths with embedded quotes escaped.
+            f.write(f"file '{p.replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))}'\n")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+             "-b:a", BITRATE, out_path],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or b"").decode("utf-8", "replace")[-2000:]
+        logger.error("ffmpeg concat failed (%d parts): %s", len(part_paths), stderr)
+        raise
+
+
 def synthesize(script, out_path, progress):
-    """Synthesize the script to an mp3 at out_path; return its duration in minutes."""
+    """Synthesize the script to an mp3 at out_path; return its duration in minutes.
+
+    Streams one chunk at a time to disk (temp WAV files) and concatenates with ffmpeg, so peak
+    memory is one chunk regardless of narration length."""
     generation = current_generation()
     kokoro = _get_kokoro()
-    chunks = split_into_chunks(script)
+    chunks = split_into_chunks(clean_for_speech(script))
     total = len(chunks)
+    if not chunks:
+        raise ValueError("Narration script was empty after cleaning; nothing to synthesize.")
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    silence = AudioSegment.silent(duration=SILENCE_MS)
-    full = AudioSegment.empty()
+    work_dir = tempfile.mkdtemp(prefix="narration-", dir=os.path.dirname(out_path))
+    part_paths = []
+    total_ms = 0
 
-    for i, chunk in enumerate(chunks):
-        samples, sample_rate = kokoro.create(chunk, voice=VOICE, speed=1.0, lang=LANG)
-        full += _to_segment(samples, sample_rate) + silence
-        progress("synthesizing", 55 + int(44 * (i + 1) / max(total, 1)),
-                 f"synthesizing ({i + 1}/{total})")
+    try:
+        for i, chunk in enumerate(chunks):
+            ensure_current_generation(generation)  # cancel promptly if a reset lands mid-synthesis
+            samples, sample_rate = kokoro.create(chunk, voice=VOICE, speed=1.0, lang=LANG)
+            seg = _to_segment(samples, sample_rate)
+            # Silence at the segment's own rate so every WAV part is uniform (mono/16-bit/same
+            # rate) — the ffmpeg concat demuxer requires consistent parameters across parts.
+            seg = seg + AudioSegment.silent(duration=SILENCE_MS, frame_rate=seg.frame_rate)
+            part = os.path.join(work_dir, f"part-{i:05d}.wav")
+            seg.export(part, format="wav")
+            part_paths.append(part)
+            total_ms += len(seg)
+            progress("synthesizing", 55 + int(44 * (i + 1) / max(total, 1)),
+                     f"synthesizing ({i + 1}/{total})")
 
-    with DERIVED_STATE_LOCK:
-        ensure_current_generation(generation)
-        full.export(out_path, format="mp3", bitrate=BITRATE)
-    return round(len(full) / 1000.0 / 60.0, 2)
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            _concat_to_mp3(part_paths, out_path, work_dir)
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+    return round(total_ms / 1000.0 / 60.0, 2)

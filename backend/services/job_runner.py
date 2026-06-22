@@ -10,6 +10,7 @@ dir + public-field projection; each skill module is a thin wrapper over an insta
 
 import json
 import logging
+import os
 import threading
 import traceback
 import uuid
@@ -17,6 +18,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from services.state_guard import DerivedStateReset, claim_generation, ensure_current_generation
+
+# Cap completed (done/error) job files kept per jobs dir, newest-first. Bounds disk growth and
+# the narration registry's per-request dir scan; queued/running jobs are never pruned.
+JOB_RETENTION_MAX = int(os.getenv("JOB_RETENTION_MAX", "200"))
 
 
 class JobRunner:
@@ -76,6 +81,8 @@ class JobRunner:
             # narration registry (which globs disk) are unaffected.
             with self._lock:
                 self._jobs.pop(job_id, None)
+                # Bound the dir as jobs complete, not only on restart.
+                self._prune_completed()
 
     def start(self, work, extra=None):
         """Queue `work(job_id, progress_cb) -> dict|None`; the returned dict is merged into
@@ -101,6 +108,30 @@ class JobRunner:
                 return None
         return {k: job.get(k) for k in self.public_fields}
 
+    def _prune_completed(self):
+        """Keep only the newest JOB_RETENTION_MAX terminal (done/error) job files; delete the
+        rest. Queued/running files are always kept. Best-effort; caller holds self._lock."""
+        files = list(self._dir.glob("*.json"))
+        if len(files) <= JOB_RETENTION_MAX:
+            return
+        terminal = []
+        for f in files:
+            try:
+                status = json.loads(f.read_text()).get("status")
+            except (ValueError, OSError):
+                continue
+            if status in ("done", "error"):
+                try:
+                    terminal.append((f.stat().st_mtime, f))
+                except OSError:
+                    continue
+        terminal.sort(reverse=True)  # newest first
+        for _mtime, f in terminal[JOB_RETENTION_MAX:]:
+            try:
+                f.unlink()
+            except OSError:
+                self._log.warning("prune: could not delete %s", f)
+
     def recover_stale(self):
         """Mark jobs interrupted by a restart as failed (the in-process worker is gone)."""
         with self._lock:
@@ -113,6 +144,8 @@ class JobRunner:
                     job["status"] = "error"
                     job["error"] = "interrupted by restart"
                     f.write_text(json.dumps(job))
+            # Bound accumulated completed-job files on every startup.
+            self._prune_completed()
 
     def clear(self):
         """Delete all persisted job files (used by the corpus reset). Best-effort."""

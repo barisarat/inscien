@@ -7,6 +7,7 @@ is no separate tts service. The frontend contract is unchanged:
   GET  /api/narrate/{jobId}/audio            -> mp3
 """
 
+import logging
 import re
 
 from fastapi import APIRouter, HTTPException
@@ -15,6 +16,8 @@ from pydantic import BaseModel
 
 from routers.papers import corpus_papers
 from services.narration.jobs import active_narration, audio_path, get_job, list_narrations, start_job
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/narrate", tags=["narrate"])
 
@@ -73,6 +76,8 @@ def start(body: NarrateIn):
         from services.zotero.reader import resolve_pdf_path
         file_ref = resolve_pdf_path(paper["docId"])
     except Exception:
+        # A reader/config error (Zotero unreadable) shouldn't masquerade as "no PDF" silently.
+        logger.warning("resolve_pdf_path failed for %s", paper["docId"], exc_info=True)
         file_ref = None
     if not file_ref:
         raise HTTPException(status_code=404, detail="That paper has no PDF on disk.")

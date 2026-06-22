@@ -91,4 +91,41 @@ app.include_router(zotero_router)
 
 @app.get("/health")
 async def health():
+    # Liveness only — fast and dependency-free, so the compose healthcheck reflects "the API
+    # process is serving" and never flaps on a host Ollama being down. See /health/ready.
     return {"status": "ok"}
+
+
+@app.get("/health/ready")
+def health_ready():
+    """Readiness/diagnostics: probe each dependency without ever failing the request. Ollama
+    is informational (it lives on the host and may legitimately be down); readiness needs only
+    the API's own stores (SQLite + Qdrant)."""
+    from sqlalchemy import text
+    from core.db import SessionLocal
+    from services.lab.qdrant_store import check_qdrant_connection
+    from services.llm.client import list_ollama_models_status
+
+    db_ok = False
+    try:
+        session = SessionLocal()
+        try:
+            session.execute(text("SELECT 1"))
+            db_ok = True
+        finally:
+            session.close()
+    except Exception:
+        logging.getLogger("health").exception("readiness: DB probe failed")
+
+    qdrant_ok = False
+    try:
+        qdrant_ok = bool(check_qdrant_connection().get("ok"))
+    except Exception:
+        logging.getLogger("health").warning("readiness: Qdrant unreachable", exc_info=True)
+
+    try:
+        ollama_ok = bool(list_ollama_models_status().get("reachable"))
+    except Exception:
+        ollama_ok = False
+
+    return {"db": db_ok, "qdrant": qdrant_ok, "ollama": ollama_ok, "ready": db_ok and qdrant_ok}

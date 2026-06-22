@@ -9,6 +9,7 @@ uses the same local Ollama model + base URL as chat — there is no separate TTS
 Parsing reuses the shared `services.lab.pdf_parser` (two-column reading-order aware).
 """
 
+import logging
 import os
 import re
 
@@ -16,9 +17,19 @@ from services.lab.pdf_parser import parse_pdf
 from services.llm.client import chat_create, text_of
 from services.narration.tts_engine import synthesize
 
+logger = logging.getLogger(__name__)
+
+# Per-chunk digest window for the map step: small enough for a local 7B to summarize one
+# section reliably (smaller than the embedding chunk size), large enough to avoid over-splitting.
 DOC_CHUNK = 3500
 
-_HEADING = re.compile(r"(?im)^\s*(references|bibliography)\s*$")
+# Standalone bibliography heading — broad enough to catch the common title variants (and an
+# optional leading section number / trailing colon) so the reference list is never narrated.
+_HEADING = re.compile(
+    r"(?im)^\s*(?:\d{1,2}\.?\s+)?"
+    r"(references|bibliography|works\s+cited|literature\s+cited|reference\s+list)"
+    r"\s*:?\s*$"
+)
 
 
 def _complete(prompt, max_tokens):
@@ -108,6 +119,7 @@ Output requirements
 - Do not mention "this paper", "the authors", "this narration", "the notes", "the listener",
   or any meta commentary.
 - Do not include introductions or outros unrelated to the paper content.
+- Plain spoken prose only: no markdown, headings, bullet points, asterisks, or symbols.
 
 Style and tone
 - Neutral, clear, technically accurate; an expert explanation, not a beginner tutorial.
@@ -138,6 +150,7 @@ def faithfulness_note(script, digests_text):
     try:
         return _complete(prompt, max_tokens=120)
     except Exception:
+        logger.exception("faithfulness_note check failed; skipping")
         return "OK (check skipped)"
 
 

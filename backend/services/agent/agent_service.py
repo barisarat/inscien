@@ -40,11 +40,12 @@ from repositories import chat_repository as chats
 
 logger = logging.getLogger(__name__)
 
-MAX_TOOL_ROUNDS = 4
-MAX_OUTPUT_TOKENS = 1200
-MAX_CITATIONS = 6
-MAX_HISTORY_MESSAGES = 16
-MAX_HISTORY_CHARS = 2000
+# Agent budgets, tuned for a local model + Ollama's context window:
+MAX_TOOL_ROUNDS = 4        # cap on retrieve→refine loops before forcing a draft (avoids loops)
+MAX_OUTPUT_TOKENS = 1200   # final answer length ceiling
+MAX_CITATIONS = 6          # sources shown; beyond ~6 the [n] markers get unwieldy to author
+MAX_HISTORY_MESSAGES = 16  # replayed turns (~8 exchanges) — bounds the context budget
+MAX_HISTORY_CHARS = 2000   # per-message truncation so replayed history stays compact
 
 # Single-user/local: every session is owned by one implicit user.
 LOCAL_USER_ID = 1
@@ -166,6 +167,8 @@ def stream_agent_answer(
                 merged["itemKeys"] = sorted(item_keys)
                 chats.update_working_set(db, session.id, merged)
             except Exception:
+                logger.warning("failed to persist working-set selection for session %s",
+                               session.id, exc_info=True)
                 db.rollback()
         else:
             stored = (session.working_set or {}).get("itemKeys")
@@ -344,6 +347,8 @@ def stream_agent_answer(
                     citations=citations, context_summary=summary,
                 )
             except Exception:
+                logger.warning("failed to persist assistant turn for session %s",
+                               chat_session_id, exc_info=True)
                 db.rollback()
 
         yield {
