@@ -1,11 +1,12 @@
 """Agentic answer pipeline for InScien.
 
-`stream_agent_answer` is a tool-calling loop over the OpenAI Responses API that
-emits an SSE protocol (`stage` / `citations` / `delta` / `final` / `error`). For v1
-the only tool is library retrieval (`search_internal_content`), whose results ground
-a streamed, page-cited final answer. Multi-turn chat is preserved: each turn is
-persisted to SQLite and prior turns (plus a compact `(context: …)` recap) are replayed
-as history so follow-ups resolve naturally.
+`stream_agent_answer` is a tool-calling loop over the OpenAI-compatible chat-completions
+API (the local Ollama, via `services.llm.client`) that emits an SSE protocol (`stage` /
+`citations` / `delta` / `final` / `error`). The tools are library retrieval
+(`search_internal_content`) plus reference-graph lookups (`citation_graph`,
+`search_references`), whose results ground a streamed, page-cited final answer. Multi-turn
+chat is preserved: each turn is persisted to SQLite and prior turns (plus a compact
+`(context: …)` recap) are replayed as history so follow-ups resolve naturally.
 
 Like the lab streamer it opens its own DB session because a streaming response
 outlives a request-scoped session. There is no auth — a single implicit local user
@@ -65,7 +66,7 @@ def _parse_arguments(raw):
 
 
 def _history_messages(history):
-    """Map prior conversation turns into Responses API input messages, defensively
+    """Map prior conversation turns into chat-completions messages, defensively
     capped (count + per-message length) so the conversation never blows the budget."""
     if not history:
         return []
