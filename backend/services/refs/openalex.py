@@ -8,6 +8,8 @@ rather than raising.
 """
 
 import logging
+import os
+import random
 import time
 
 import requests
@@ -19,6 +21,24 @@ _HEADERS = {"User-Agent": "InScien/1.0"}
 _TIMEOUT = 20
 _SELECT = "id,display_name,publication_year,publication_date,doi,cited_by_count"
 _TRANSIENT = {429, 500, 502, 503, 504}
+# A flaky network or a 429 burst shouldn't silently drop papers/refs from the graph: retry a
+# few times with exponential backoff + jitter instead of one-and-done.
+_MAX_ATTEMPTS = int(os.getenv("OPENALEX_RETRIES", "4"))
+_BACKOFF_BASE = 0.5
+_BACKOFF_CAP = 10.0
+
+
+def _sleep_backoff(attempt, resp):
+    """Exponential backoff with jitter; honor a 429 Retry-After header when present."""
+    delay = min(_BACKOFF_BASE * (2 ** attempt), _BACKOFF_CAP)
+    if resp is not None and resp.status_code == 429:
+        retry_after = resp.headers.get("Retry-After")
+        if retry_after:
+            try:
+                delay = max(delay, float(retry_after))
+            except ValueError:
+                pass
+    time.sleep(delay + random.uniform(0, 0.3))
 
 
 def _short_id(openalex_id):
@@ -37,22 +57,26 @@ def _strip_doi(doi_url):
 
 
 def _get(url, params=None):
-    """GET with a single retry on transient errors; None on hard failure."""
-    for attempt in range(2):
+    """GET with bounded exponential-backoff retries on transient errors; None on hard failure."""
+    last = _MAX_ATTEMPTS - 1
+    for attempt in range(_MAX_ATTEMPTS):
         try:
             resp = requests.get(url, params=params, headers=_HEADERS, timeout=_TIMEOUT)
             if resp.status_code == 404:
                 return None
-            if resp.status_code in _TRANSIENT and attempt == 0:
-                time.sleep(1.0)
-                continue
+            if resp.status_code in _TRANSIENT:
+                if attempt < last:
+                    _sleep_backoff(attempt, resp)
+                    continue
+                logger.warning("OpenAlex %s after %d attempts: %s", resp.status_code, _MAX_ATTEMPTS, url)
+                return None
             resp.raise_for_status()
             return resp.json()
         except requests.RequestException as exc:
-            if attempt == 0:
-                time.sleep(1.0)
+            if attempt < last:
+                _sleep_backoff(attempt, None)
                 continue
-            logger.warning("OpenAlex request failed (%s): %s", url, exc)
+            logger.warning("OpenAlex request failed after %d attempts (%s): %s", _MAX_ATTEMPTS, url, exc)
             return None
     return None
 

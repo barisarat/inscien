@@ -39,14 +39,27 @@ def _titles(doc_ids):
 
 
 def select_papers(topic, n=MAX_PAPERS):
-    """Top-N papers for a topic: aggregate each paper's retrieved-chunk scores and rank."""
+    """Top-N papers for a topic, ranked by *quality* not quantity.
+
+    Score each paper by its best (max) chunk score plus a small capped corroboration bonus, so a
+    few strongly-relevant passages beat many weak mentions (summing chunk scores let a paper win
+    on hit-count alone)."""
     results = search_lab(topic, DISCOVER_K)["results"]
-    scores = {}
+    agg = {}  # sourceId -> {"max": best chunk score, "hits": chunk count}
     for r in results:
         sid = r.get("sourceId")
-        if sid:
-            scores[sid] = scores.get(sid, 0.0) + float(r.get("score", 0))
-    ranked = sorted(scores, key=lambda s: scores[s], reverse=True)[:n]
+        if not sid:
+            continue
+        score = float(r.get("score", 0))
+        a = agg.setdefault(sid, {"max": 0.0, "hits": 0})
+        a["max"] = max(a["max"], score)
+        a["hits"] += 1
+
+    def paper_score(sid):
+        a = agg[sid]
+        return a["max"] + min(a["hits"] - 1, 2) * 0.02
+
+    ranked = sorted(agg, key=paper_score, reverse=True)[:n]
     titles = _titles(ranked)
     return [{"docId": sid, "title": titles[sid]} for sid in ranked]
 

@@ -114,11 +114,21 @@ def _context_summary(executed):
 
 
 def _dedupe_context(results):
+    """Drop duplicate passages by *content*, not by (url, page).
+
+    Keying on (url, page) was too coarse — it collapsed two genuinely-different passages on the
+    same page (so the model couldn't cite both) while still letting near-identical passages slip
+    through as separate citations. Normalized passage text collapses literal/near-duplicates
+    (incl. the same chunk re-retrieved across tool rounds + the fallback search) but keeps
+    distinct passages from one page."""
     seen = set()
     deduped = []
 
     for result in results:
-        key = (result.get("url", ""), result.get("metadata", {}).get("page"))
+        norm = " ".join((result.get("text") or "").split()).lower()
+        key = norm or result.get("chunkId") or (
+            result.get("url", ""), (result.get("metadata") or {}).get("page")
+        )
 
         if key in seen:
             continue
