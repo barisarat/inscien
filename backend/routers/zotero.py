@@ -13,6 +13,7 @@ from core.db import get_db
 from repositories import zotero_repository as ledger
 from services.zotero import reader
 from services.zotero.ingest import reset_index
+from services.zotero.settings import get_zotero_settings
 from services.zotero.jobs import get_job, start_job
 
 router = APIRouter(prefix="/api/zotero", tags=["zotero"])
@@ -39,6 +40,15 @@ def _cached_tree():
 def collections(db: Session = Depends(get_db)):
     """The collection forest, each node annotated with recursive item + indexed counts."""
     ledger.ensure_table()
+    # Fresh install: nothing mounted yet. Return a clean, distinct status (not a 500) so the
+    # UI can show actionable setup guidance instead of a generic load error.
+    if not reader.library_present():
+        return {
+            "collections": [],
+            "liveConnected": False,
+            "libraryMissing": True,
+            "mountPath": get_zotero_settings()["db_path"],
+        }
     indexed = ledger.indexed_keys(db)
     tree, direct = _cached_tree()
 
@@ -54,7 +64,11 @@ def collections(db: Session = Depends(get_db)):
         annotate(root)
     # liveConnected=False => the live Zotero DB is unmounted and we're serving a
     # possibly-stale snapshot; the UI surfaces this so the tree isn't silently trusted.
-    return {"collections": tree, "liveConnected": reader.live_connected()}
+    return {
+        "collections": tree,
+        "liveConnected": reader.live_connected(),
+        "libraryMissing": False,
+    }
 
 
 @router.get("/collections/{collection_id}/items")

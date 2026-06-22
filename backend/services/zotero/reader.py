@@ -65,6 +65,16 @@ def _normalize_doi(value):
 
 # --- snapshot + connection -------------------------------------------------
 
+def library_present():
+    """Whether any readable Zotero library exists — the live mounted DB or a prior snapshot.
+
+    False means a fresh install with nothing mounted yet: reads would raise FileNotFoundError.
+    Endpoints check this first to return a clean "no library" status instead of a 500.
+    """
+    s = get_zotero_settings()
+    return os.path.exists(s["db_path"]) or os.path.exists(s["snapshot_path"])
+
+
 def _refresh_snapshot():
     """Copy the live DB to our snapshot if missing or stale (live mtime advanced).
 

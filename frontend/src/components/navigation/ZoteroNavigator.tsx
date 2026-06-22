@@ -50,6 +50,8 @@ export default function ZoteroNavigator({
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
   const [liveConnected, setLiveConnected] = useState(true)
+  const [libraryMissing, setLibraryMissing] = useState(false)
+  const [mountPath, setMountPath] = useState<string | null>(null)
   const [items, setItems] = useState<Record<number, ZoteroItem[]>>({})
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -73,6 +75,8 @@ export default function ZoteroNavigator({
       ])
       setCollections(cols.collections)
       setLiveConnected(cols.liveConnected !== false)
+      setLibraryMissing(cols.libraryMissing === true)
+      setMountPath(cols.mountPath ?? null)
       markIndexed(sync.indexedKeys)
       setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
       setMapped(new Set(maps.keys))
@@ -353,7 +357,16 @@ export default function ZoteroNavigator({
         <div className={styles.scopeBarMuted}>Select papers to scope your questions</div>
       )}
 
-      {!loading && !error && !liveConnected ? (
+      {!loading && !error && libraryMissing ? (
+        <div className={styles.setupBanner}>
+          No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
+          <code>ZOTERO_HOST_DIR</code> to your Zotero data directory (the folder with{" "}
+          <code>zotero.sqlite</code> + <code>storage/</code>) and restart the stack — see the
+          README.
+        </div>
+      ) : null}
+
+      {!loading && !error && !liveConnected && !libraryMissing ? (
         <div className={styles.staleBanner}>
           Live Zotero library not connected — showing the last snapshot. New papers or
           changes won’t appear until the mount is restored.
@@ -365,6 +378,8 @@ export default function ZoteroNavigator({
           <div className={styles.itemMuted}><Loader2 size={12} className={styles.spin} /> loading library…</div>
         ) : error ? (
           <div className={styles.errorBox}>{error}</div>
+        ) : libraryMissing ? (
+          <div className={styles.itemMuted}>No library mounted yet.</div>
         ) : collections.length === 0 ? (
           <div className={styles.itemMuted}>No collections found.</div>
         ) : (

@@ -40,8 +40,9 @@ type LabStreamEvent =
       contextSummary?: string
       sessionId?: number | null
       insufficientContext: boolean
+      verification?: { grounded: boolean; unsupported: string[]; checkSkipped?: boolean }
     }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; code?: string; retryable?: boolean }
 
 type LoadingStage = "thinking" | "searching" | "reading" | "drafting" | "verifying" | "tool"
 
@@ -57,6 +58,7 @@ type LabMessage = {
   stageLabel?: string
   streaming?: boolean
   contextSummary?: string
+  verificationSkipped?: boolean
 }
 
 
@@ -120,6 +122,15 @@ const startCapabilities = [
   { label: "Pull the results", prompt: "What are the key quantitative results, and on which page are they reported?" },
 ]
 
+// After this many ms with no stream events, show a soft "still working" hint so a slow
+// local model doesn't look like a frozen spinner. Non-fatal — the backend request timeout
+// governs actual failure.
+const IDLE_HINT_MS = 45_000
+const IDLE_HINT_LABEL = "Still working — local models can be slow on the first answer…"
+
+// Error codes (from the backend `error` event) that a Settings change can resolve.
+const SETTINGS_ERROR_CODES = new Set(["ollama_unreachable", "model_missing", "timeout"])
+
 function makeMessageId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
@@ -163,6 +174,13 @@ function MessageBubble({
               </div>
             ) : null}
 
+            {isComplete && message.verificationSkipped ? (
+              <div className={styles.warning}>
+                Grounding check couldn&apos;t run — this answer wasn&apos;t verified against
+                the sources.
+              </div>
+            ) : null}
+
             {isComplete ? (
               <CompactSources citations={citations} onOpenSource={onOpenSource} />
             ) : null}
@@ -183,6 +201,7 @@ function AskContent() {
   const [messages, setMessages] = useState<LabMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [errorCode, setErrorCode] = useState("")
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([])
   const [activeSessionId, setActiveSessionId] = useState<number | null>(
     sessionParam ? Number(sessionParam) : null
@@ -230,6 +249,7 @@ function AskContent() {
   const skipAutoSubmitRef = useRef(false)
   const inFlightRef = useRef(false)
   const streamAbortRef = useRef<AbortController | null>(null)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const shouldAutoScrollRef = useRef(true)
   // Mirror of `messages` so submit can read the latest committed turns without
   // re-creating the callback (the closure would otherwise capture stale state).
@@ -408,6 +428,7 @@ function AskContent() {
     setInput("")
     setIsLoading(true)
     setError("")
+    setErrorCode("")
 
     const updateAssistant = (patch: Partial<LabMessage>) => {
       setMessages((current) =>
@@ -417,12 +438,29 @@ function AskContent() {
       )
     }
 
+    // Soft "still working" hint: (re)armed on every stream event; fires only after a long
+    // silence so a slow local model doesn't read as a frozen spinner.
+    const bumpIdleHint = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(() => {
+        updateAssistant({ stageLabel: IDLE_HINT_LABEL })
+      }, IDLE_HINT_MS)
+    }
+    const clearIdleHint = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+
     let accumulated = ""
     let started = false
     let finalized = false
+    let streamErrorCode = ""
 
 
     const handleEvent = (payload: LabStreamEvent) => {
+      // Any event means the backend is alive — re-arm the idle hint.
+      bumpIdleHint()
+
       if (payload.type === "stage") {
         // Server may send a dynamic label (e.g. "searching 12 papers");
         // fall back to the static stage label when absent.
@@ -456,6 +494,7 @@ function AskContent() {
 
       if (payload.type === "final") {
         finalized = true
+        clearIdleHint()
         updateAssistant({
           isTyping: false,
           streaming: false,
@@ -464,12 +503,14 @@ function AskContent() {
           citations: payload.citations,
           contextSummary: payload.contextSummary,
           insufficientContext: payload.insufficientContext,
+          verificationSkipped: payload.verification?.checkSkipped ?? false,
         })
         adoptSession(payload.sessionId ?? null)
         return
       }
 
       if (payload.type === "error") {
+        streamErrorCode = payload.code ?? ""
         throw new Error(payload.message || "Something went wrong.")
       }
     }
@@ -545,7 +586,9 @@ function AskContent() {
       // Keep the conversation; drop only the failed assistant placeholder.
       setMessages((prev) => prev.filter((message) => message.id !== assistantId))
       setError(nextError instanceof Error ? nextError.message : "Something went wrong.")
+      setErrorCode(streamErrorCode)
     } finally {
+      clearIdleHint()
       // Only clear shared state if this is still the active stream — a newer submit
       // (after an abort) may already own streamAbortRef.
       if (streamAbortRef.current === controller) {
@@ -714,16 +757,23 @@ function AskContent() {
               {error ? (
                 <div className={styles.errorBox} role="alert">
                   <span>{error}</span>
-                  {lastQueryRef.current ? (
+                  {lastQueryRef.current || SETTINGS_ERROR_CODES.has(errorCode) ? (
                     <div className={styles.errorActions}>
-                      <button
-                        type="button"
-                        className={styles.retryButton}
-                        onClick={handleRetry}
-                        disabled={isLoading}
-                      >
-                        Try again
-                      </button>
+                      {lastQueryRef.current ? (
+                        <button
+                          type="button"
+                          className={styles.retryButton}
+                          onClick={handleRetry}
+                          disabled={isLoading}
+                        >
+                          Try again
+                        </button>
+                      ) : null}
+                      {SETTINGS_ERROR_CODES.has(errorCode) ? (
+                        <a className={styles.errorSettingsLink} href="/settings">
+                          Open Settings
+                        </a>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>

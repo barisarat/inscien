@@ -675,7 +675,22 @@
 
 .errorActions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Accent blue is reserved for links/active states (see globals.css) — this is a link. */
+.errorSettingsLink {
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.errorSettingsLink:hover {
+  text-decoration: underline;
 }
 
 .retryButton {

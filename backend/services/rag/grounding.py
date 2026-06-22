@@ -32,7 +32,7 @@ def grade_sufficiency(query, context_blocks):
     (sufficient=True) so a flaky judge never blocks a usable answer.
     """
     if not context_blocks:
-        return {"sufficient": False, "reformulation": None}
+        return {"sufficient": False, "reformulation": None, "ok": True}
 
     prompt = (
         "You grade retrieval quality for a research-paper Q&A system. Given the user's "
@@ -62,10 +62,11 @@ def grade_sufficiency(query, context_blocks):
         return {
             "sufficient": bool(data.get("sufficient", True)),
             "reformulation": reformulation,
+            "ok": True,
         }
     except Exception:
         logger.exception("grade_sufficiency failed; treating context as sufficient")
-        return {"sufficient": True, "reformulation": None}
+        return {"sufficient": True, "reformulation": None, "ok": False}
 
 
 def verify_grounding(answer, context_blocks):
@@ -76,7 +77,7 @@ def verify_grounding(answer, context_blocks):
     Fails open (grounded=True, no revision) on any error.
     """
     if not answer or not context_blocks:
-        return {"grounded": True, "unsupported": [], "revised_answer": None}
+        return {"grounded": True, "unsupported": [], "revised_answer": None, "ok": True}
 
     prompt = (
         "You are a strict fact-checker for a research-paper assistant. Check the draft "
@@ -112,7 +113,8 @@ def verify_grounding(answer, context_blocks):
             "grounded": grounded and not unsupported,
             "unsupported": unsupported,
             "revised_answer": revised,
+            "ok": True,
         }
     except Exception:
         logger.exception("verify_grounding failed; treating answer as grounded")
-        return {"grounded": True, "unsupported": [], "revised_answer": None}
+        return {"grounded": True, "unsupported": [], "revised_answer": None, "ok": False}

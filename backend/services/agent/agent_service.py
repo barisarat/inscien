@@ -24,7 +24,7 @@ from services.lab.answer_service import (
     remove_invalid_citation_markers,
 )
 from services.lab.prompt_service import build_context_blocks
-from services.llm.client import chat_create, delta_of, text_of
+from services.llm.client import chat_create, delta_of, describe_llm_error, text_of
 from services.agent.prompt import build_agent_system_prompt, build_grounding_block
 from services.agent.tools import (
     TOOL_DISPATCH,
@@ -263,7 +263,7 @@ def stream_agent_answer(
             yield {"type": "citations", "citations": citations}
 
         # --- Final answer -----------------------------------------------------
-        verification = {"grounded": True, "unsupported": []}
+        verification = {"grounded": True, "unsupported": [], "checkSkipped": False}
 
         if not deduped:
             # No sources after retrieval (incl. the fallback search). Return an honest,
@@ -325,6 +325,9 @@ def stream_agent_answer(
                 verification = {
                     "grounded": verdict.get("grounded", True) or applied,
                     "unsupported": verdict.get("unsupported", []),
+                    # The judge failed open (couldn't actually run) — surface that the answer
+                    # wasn't verified rather than implying a clean pass.
+                    "checkSkipped": not verdict.get("ok", True),
                 }
 
         # Derived from retrieval/grounding state, not brittle keyword matching: no sources
@@ -352,12 +355,14 @@ def stream_agent_answer(
             "verification": verification,
             "insufficientContext": insufficient,
         }
-    except Exception:
+    except Exception as exc:
         logger.exception("agent stream failed query=%r session=%s", query, session_id)
+        err = describe_llm_error(exc)
         yield {
             "type": "error",
-            "retryable": True,
-            "message": "Something went wrong generating that answer. Please try again.",
+            "code": err["code"],
+            "retryable": err["retryable"],
+            "message": err["message"],
         }
     finally:
         db.close()
