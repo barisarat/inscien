@@ -13,6 +13,7 @@ The functions mirror exactly the queries proven during feasibility testing:
 Trashed items are excluded via `deletedItems`.
 """
 
+import logging
 import os
 import re
 import shutil
@@ -22,8 +23,33 @@ from collections import defaultdict
 
 from services.zotero.settings import BOOK_ITEM_TYPES, get_zotero_settings
 
+logger = logging.getLogger(__name__)
 
 _snapshot_lock = threading.Lock()
+
+# Whether the live Zotero DB was reachable at the last snapshot refresh. When False we
+# are serving the existing read-only snapshot (live source unmounted/absent), so the
+# navigator may be stale — endpoints surface this to the UI via `live_connected()`.
+_live_connected = True
+
+
+def live_connected():
+    return _live_connected
+
+
+def _set_live_connected(value):
+    """Update + log only on a state transition, to avoid per-request log spam."""
+    global _live_connected
+    if value != _live_connected:
+        if value:
+            logger.info("Zotero live DB reconnected; snapshot will refresh on next read.")
+        else:
+            logger.warning(
+                "Zotero live DB not found at %s; serving the existing read-only snapshot. "
+                "Library changes won't appear until the data dir (ZOTERO_DATA_DIR) is mounted.",
+                get_zotero_settings()["db_path"],
+            )
+    _live_connected = value
 _YEAR_RE = re.compile(r"(\d{4})")
 _DOI_PREFIX_RE = re.compile(r"^(?:https?://)?(?:dx\.)?doi\.org/", re.IGNORECASE)
 
@@ -40,14 +66,22 @@ def _normalize_doi(value):
 # --- snapshot + connection -------------------------------------------------
 
 def _refresh_snapshot():
-    """Copy the live DB to our snapshot if missing or stale (live mtime advanced)."""
+    """Copy the live DB to our snapshot if missing or stale (live mtime advanced).
+
+    If the live DB is absent, degrade to the existing snapshot (read-only, possibly
+    stale) so reads keep working; only fail when there is genuinely nothing to read.
+    """
     s = get_zotero_settings()
     live, snap = s["db_path"], s["snapshot_path"]
     if not os.path.exists(live):
+        if os.path.exists(snap):
+            _set_live_connected(False)
+            return snap
         raise FileNotFoundError(
-            f"Zotero DB not found at {live}. Bind-mount the Zotero data dir "
-            f"(set ZOTERO_DATA_DIR) so {live} exists."
+            f"Zotero DB not found at {live} and no snapshot exists yet. Bind-mount the "
+            f"Zotero data dir (set ZOTERO_DATA_DIR) so {live} exists."
         )
+    _set_live_connected(True)
     with _snapshot_lock:
         fresh = os.path.exists(snap) and os.path.getmtime(snap) >= os.path.getmtime(live)
         if fresh:
@@ -72,8 +106,18 @@ def _connect():
 
 
 def snapshot_mtime():
-    """mtime of the live DB the snapshot tracks — a cheap cache key for the tree."""
-    return os.path.getmtime(get_zotero_settings()["db_path"])
+    """mtime of the live DB the snapshot tracks — a cheap cache key for the tree.
+
+    Falls back to the snapshot's own mtime when the live DB is absent, so the cache key
+    stays stable (and callers don't crash) while we serve a stale snapshot.
+    """
+    s = get_zotero_settings()
+    live, snap = s["db_path"], s["snapshot_path"]
+    if os.path.exists(live):
+        return os.path.getmtime(live)
+    if os.path.exists(snap):
+        return os.path.getmtime(snap)
+    return 0.0
 
 
 # --- collections -----------------------------------------------------------

@@ -26,6 +26,8 @@ export default function NarrateMode() {
   const [progress, setProgress] = useState<{ stage?: string; detail?: string; progress?: number }>({})
   const [error, setError] = useState<string | null>(null)
   const runToken = useRef(0)
+  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
+  useEffect(() => () => { runToken.current += 1 }, [])
 
   // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
   useEffect(() => {

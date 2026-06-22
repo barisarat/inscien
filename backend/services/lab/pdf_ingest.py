@@ -8,6 +8,7 @@ and Qdrant store (`qdrant_store`).
 """
 
 import json
+import os
 from pathlib import Path
 
 
@@ -56,10 +57,16 @@ def _page_passages(blocks):
 
 
 def _write_manifest(chunks, path):
+    """Atomically replace the manifest: write a temp file in the same dir, fsync, then
+    rename over the target. A crash mid-write can never truncate the live manifest."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         json.dump(chunks, f, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
 
 
 def _batched(items, size):

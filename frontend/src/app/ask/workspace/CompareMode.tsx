@@ -35,6 +35,8 @@ export default function CompareMode() {
   const [error, setError] = useState<string | null>(null)
 
   const runToken = useRef(0)
+  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
+  useEffect(() => () => { runToken.current += 1 }, [])
   const loaded = activeArtifact?.kind === "comparison" ? activeArtifact : null
 
   // (Re)propose dimensions when the selected set changes — unless we're showing a

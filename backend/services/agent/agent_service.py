@@ -20,8 +20,8 @@ import logging
 from core.db import SessionLocal
 from services.lab.answer_service import (
     detect_insufficient,
+    make_citation,
     remove_invalid_citation_markers,
-    unique_citations,
 )
 from services.lab.prompt_service import build_context_blocks
 from services.llm.client import chat_create, delta_of, text_of
@@ -254,7 +254,10 @@ def stream_agent_answer(
             fallback = search_internal_content(query, item_keys=item_keys)
             context_results.extend(fallback.get("contextResults", []))
         deduped = _dedupe_context(context_results)[:MAX_CITATIONS]
-        citations = unique_citations(deduped, MAX_CITATIONS)
+        # Citations are 1:1 with the numbered context blocks the model cites against
+        # (build_context_blocks(deduped)), so [n] markers, the validity cap, and the
+        # UI citation list all share one page-precise numbering.
+        citations = [make_citation(r) for r in deduped]
 
         yield {"type": "stage", "stage": "drafting"}
 

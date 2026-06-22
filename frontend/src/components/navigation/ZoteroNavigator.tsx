@@ -48,6 +48,7 @@ export default function ZoteroNavigator({
   const { setMode, setActiveArtifact } = useWorkspace()
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
+  const [liveConnected, setLiveConnected] = useState(true)
   const [items, setItems] = useState<Record<number, ZoteroItem[]>>({})
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -70,6 +71,7 @@ export default function ZoteroNavigator({
         mappedKeys(),
       ])
       setCollections(cols.collections)
+      setLiveConnected(cols.liveConnected !== false)
       markIndexed(sync.indexedKeys)
       setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
       setMapped(new Set(maps.keys))
@@ -356,6 +358,13 @@ export default function ZoteroNavigator({
       ) : (
         <div className={styles.scopeBarMuted}>Select papers to scope your questions</div>
       )}
+
+      {!loading && !error && !liveConnected ? (
+        <div className={styles.staleBanner}>
+          Live Zotero library not connected — showing the last snapshot. New papers or
+          changes won’t appear until the mount is restored.
+        </div>
+      ) : null}
 
       <div className={styles.tree}>
         {loading ? (

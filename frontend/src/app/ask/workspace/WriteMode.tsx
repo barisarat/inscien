@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, X } from "lucide-react"
 
 import { getWriteup, listPapers, proposePlan, startWriteup, type PaperItem, type WriteResult } from "@/lib/api"
@@ -45,6 +45,8 @@ export default function WriteMode() {
   const [result, setResult] = useState<WriteResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const runToken = useRef(0)
+  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
+  useEffect(() => () => { runToken.current += 1 }, [])
 
   const openCitation = useCallback(
     (c: Citation) => openPdf({ sourceId: c.sourceId, title: c.title, page: c.page, passage: c.passage }),

@@ -11,6 +11,7 @@ Idempotent via a content hash recorded in the sync ledger: an unchanged file is 
 """
 
 import hashlib
+import logging
 from collections import defaultdict
 from pathlib import Path
 
@@ -34,6 +35,8 @@ from services.lab.qdrant_store import (
 )
 from services.lab.settings import get_lab_settings
 from services.zotero.reader import item_metadata, resolve_pdf_path
+
+logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 32
 
@@ -101,47 +104,81 @@ def index_items(item_keys, progress=None):
 
     ensure_source_payload_index()
     db = SessionLocal()
-    indexed = skipped = skipped_no_pdf = 0
+    indexed = skipped = skipped_no_pdf = failed = 0
     total = max(len(item_keys), 1)
+
+    def _flush_manifest():
+        """Persist the manifest atomically from the current working set."""
+        merged = [chunk for chunks in by_source.values() for chunk in chunks]
+        _write_manifest(merged, manifest_path)
+        return merged
+
     try:
         ledger = get_ledger(db)
         for i, key in enumerate(item_keys, start=1):
             pct = int(i / total * 100)
-            pdf = resolve_pdf_path(key)
-            if not pdf:
-                skipped_no_pdf += 1
-                emit("indexing", pct, f"{key}: no PDF — skipped")
-                continue
+            meta = {"itemKey": key}
+            file_hash = None
 
-            file_hash = _file_hash(pdf)
-            prev = ledger.get(key)
-            if prev and prev.get("status") == "indexed" and prev.get("file_hash") == file_hash:
-                skipped += 1
-                emit("indexing", pct, f"{key}: up to date")
-                continue
+            # Per-item isolation: a single bad PDF (parse/embed/upsert failure) must not
+            # abort the whole job or leave the manifest out of sync with Qdrant + ledger.
+            try:
+                pdf = resolve_pdf_path(key)
+                if not pdf:
+                    skipped_no_pdf += 1
+                    emit("indexing", pct, f"{key}: no PDF — skipped")
+                    continue
 
-            meta = item_metadata(key) or {"itemKey": key}
-            chunks, _ = build_chunks_for_item(key, pdf, meta)
+                file_hash = _file_hash(pdf)
+                prev = ledger.get(key)
+                if prev and prev.get("status") == "indexed" and prev.get("file_hash") == file_hash:
+                    skipped += 1
+                    emit("indexing", pct, f"{key}: up to date")
+                    continue
 
-            delete_lab_points_by_source(key)  # clear stale points if re-indexing
-            for batch in _batched(chunks, BATCH_SIZE):
-                vectors = embed_texts([c["text"] for c in batch])
-                upsert_lab_points([build_point(c, v) for c, v in zip(batch, vectors)])
+                meta = item_metadata(key) or {"itemKey": key}
+                chunks, _ = build_chunks_for_item(key, pdf, meta)
 
-            by_source[key] = chunks
-            upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
-            indexed += 1
-            emit("indexing", pct, f"{(meta.get('title') or key)[:48]} — {len(chunks)} chunks")
+                delete_lab_points_by_source(key)  # clear stale points if re-indexing
+                for batch in _batched(chunks, BATCH_SIZE):
+                    vectors = embed_texts([c["text"] for c in batch])
+                    upsert_lab_points([build_point(c, v) for c, v in zip(batch, vectors)])
 
-        merged = [chunk for chunks in by_source.values() for chunk in chunks]
-        _write_manifest(merged, manifest_path)
+                by_source[key] = chunks
+                upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
+                indexed += 1
+                # Persist after each item so a later crash leaves a manifest matching
+                # exactly the items committed to Qdrant + the ledger (resumable).
+                _flush_manifest()
+                emit("indexing", pct, f"{(meta.get('title') or key)[:48]} — {len(chunks)} chunks")
+            except Exception:
+                logger.exception("index_items: failed to index %s", key)
+                db.rollback()
+                # Leave the item in a consistent unindexed state: clear any (partial or
+                # stale) Qdrant points, drop its chunks from the manifest, and mark it
+                # failed so the next run retries it.
+                by_source.pop(key, None)
+                try:
+                    delete_lab_points_by_source(key)
+                except Exception:
+                    logger.exception("index_items: cleanup delete failed for %s", key)
+                try:
+                    upsert_item(db, key, file_hash, meta.get("title"), 0, "failed")
+                except Exception:
+                    db.rollback()
+                failed += 1
+                _flush_manifest()
+                emit("indexing", pct, f"{key}: failed — skipped")
+
+        merged = _flush_manifest()
         summary = {
             "indexed": indexed,
             "skipped": skipped,
             "skippedNoPdf": skipped_no_pdf,
+            "failed": failed,
             "totalChunks": len(merged),
         }
-        emit("done", 100, f"indexed {indexed}, skipped {skipped}, no-PDF {skipped_no_pdf}")
+        emit("done", 100, f"indexed {indexed}, skipped {skipped}, no-PDF {skipped_no_pdf}, failed {failed}")
         return summary
     finally:
         db.close()
@@ -156,12 +193,19 @@ def reset_index():
     recreate_lab_collection()
     ensure_source_payload_index()
     _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
-    # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
-    from services.refs.refstore import reset_cache
-    reset_cache()
+    # Clear the ledger right after wiping Qdrant + the manifest so the three index-state
+    # stores stay consistent. (Done before the OpenAlex reset below, which is best-effort:
+    # a failure there must not leave the ledger claiming items are still indexed.)
     db = SessionLocal()
     try:
         clear_all(db)
     finally:
         db.close()
+    # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
+    # Rebuildable, so failure here is non-fatal (logged, not raised).
+    try:
+        from services.refs.refstore import reset_cache
+        reset_cache()
+    except Exception:
+        logger.exception("reset_index: OpenAlex cache reset failed (non-fatal)")
     return {"ok": True}

@@ -502,6 +502,7 @@ function AskContent() {
   const lastUserMessageIdRef = useRef("")
   const skipAutoSubmitRef = useRef(false)
   const inFlightRef = useRef(false)
+  const streamAbortRef = useRef<AbortController | null>(null)
   const shouldAutoScrollRef = useRef(true)
   // Mirror of `messages` so submit can read the latest committed turns without
   // re-creating the callback (the closure would otherwise capture stale state).
@@ -521,6 +522,9 @@ function AskContent() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  // Abort any in-flight answer stream when the component unmounts.
+  useEffect(() => () => streamAbortRef.current?.abort(), [])
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId
@@ -743,10 +747,14 @@ function AskContent() {
       }
     }
 
+    const controller = new AbortController()
+    streamAbortRef.current = controller
+
     try {
       const response = await fetch(`${API_BASE}/api/agent/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           query: finalQuery,
           session_id: activeSessionIdRef.current ?? undefined,
@@ -805,12 +813,19 @@ function AskContent() {
         }
       }
     } catch (nextError) {
+      // User aborted (New chat / unmount) — not an error; leave the fresh state alone.
+      if (controller.signal.aborted) return
       // Keep the conversation; drop only the failed assistant placeholder.
       setMessages((prev) => prev.filter((message) => message.id !== assistantId))
       setError(nextError instanceof Error ? nextError.message : "Something went wrong.")
     } finally {
-      setIsLoading(false)
-      inFlightRef.current = false
+      // Only clear shared state if this is still the active stream — a newer submit
+      // (after an abort) may already own streamAbortRef.
+      if (streamAbortRef.current === controller) {
+        streamAbortRef.current = null
+        setIsLoading(false)
+        inFlightRef.current = false
+      }
     }
   }, [input, adoptSession])
 
@@ -860,7 +875,11 @@ function AskContent() {
   }
 
   function handleNewSearch() {
-    if (isLoading) return
+    // Abort any in-flight answer stream and free the composer immediately, so a new
+    // chat can start even mid-answer (the aborted stream's finally may not have run yet).
+    streamAbortRef.current?.abort()
+    inFlightRef.current = false
+    setIsLoading(false)
 
     setMode("ask")
     shouldAutoScrollRef.current = true

@@ -177,7 +177,7 @@ export interface ZoteroIndexJob {
   result?: { indexed: number; skipped: number; skippedNoPdf: number; totalChunks: number }
 }
 
-export async function fetchZoteroCollections(): Promise<{ collections: ZoteroCollection[] }> {
+export async function fetchZoteroCollections(): Promise<{ collections: ZoteroCollection[]; liveConnected?: boolean }> {
   return authedGet("/api/zotero/collections")
 }
 

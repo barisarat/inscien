@@ -369,6 +369,17 @@
   border-radius: var(--radius-sm);
 }
 
+.staleBanner {
+  margin: 6px;
+  padding: 8px 10px;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--text-2);
+  background: var(--surface-muted);
+  border-left: 2px solid var(--source-amber);
+  border-radius: var(--radius-sm);
+}
+
 .spin {
   animation: zn-spin 1s linear infinite;
   color: var(--text-faint);

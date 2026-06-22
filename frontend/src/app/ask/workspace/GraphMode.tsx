@@ -38,6 +38,8 @@ export default function GraphMode() {
   const [error, setError] = useState<string | null>(null)
   const [layout, setLayout] = useState<GraphLayout>("network")
   const token = useRef(0)
+  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
+  useEffect(() => () => { token.current += 1 }, [])
 
   const render = useCallback(async (keys: string[], t: number) => {
     const graph = await fetchDiscoveryGraph(keys)

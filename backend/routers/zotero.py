@@ -52,7 +52,9 @@ def collections(db: Session = Depends(get_db)):
 
     for root in tree:
         annotate(root)
-    return {"collections": tree}
+    # liveConnected=False => the live Zotero DB is unmounted and we're serving a
+    # possibly-stale snapshot; the UI surfaces this so the tree isn't silently trusted.
+    return {"collections": tree, "liveConnected": reader.live_connected()}
 
 
 @router.get("/collections/{collection_id}/items")
