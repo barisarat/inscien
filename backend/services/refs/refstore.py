@@ -89,7 +89,6 @@ def fetch_items(item_keys, progress=None):
     cache = _load()
     todo = [k for k in item_keys if not _is_mapped(cache.get(k))]
     total = max(len(todo), 1)
-    pending_refs = set()
 
     for done, key in enumerate(todo):
         meta = item_metadata(key) or {}
@@ -100,33 +99,44 @@ def fetch_items(item_keys, progress=None):
             cache[key] = {"doi": None, "openalexId": None, "year": meta.get("year"),
                           "citedBy": None, "references": [], "status": "no_doi",
                           "fetchedAt": time.time()}
-            continue
-        work = fetch_work(doi)
-        if not work:
-            cache[key] = {"doi": doi, "openalexId": None, "year": meta.get("year"),
-                          "citedBy": None, "references": [], "status": "not_found",
-                          "fetchedAt": time.time()}
-            continue
-        refs = work["referencedWorks"]
-        cache[key] = {"doi": doi, "openalexId": work["openalexId"], "year": work["year"],
-                      "date": work["date"], "citedBy": work["citedByCount"],
-                      "references": refs,  # ids, resolved below
-                      "status": "mapped", "fetchedAt": time.time(), "v": SCHEMA_VERSION}
-        pending_refs.update(refs)
+        else:
+            work = fetch_work(doi)
+            if not work:
+                cache[key] = {"doi": doi, "openalexId": None, "year": meta.get("year"),
+                              "citedBy": None, "references": [], "status": "not_found",
+                              "fetchedAt": time.time()}
+            else:
+                cache[key] = {"doi": doi, "openalexId": work["openalexId"], "year": work["year"],
+                              "date": work["date"], "citedBy": work["citedByCount"],
+                              "references": work["referencedWorks"],  # raw ids, resolved below
+                              "status": "mapped", "fetchedAt": time.time(), "v": SCHEMA_VERSION}
+        # Persist after each paper so an interrupted batch isn't lost (each record is
+        # one polite OpenAlex round-trip); the atomic _save makes this safe.
+        _save(cache)
 
-    emit("resolving", 88, f"resolving {len(pending_refs)} reference(s)")
-    resolved = resolve_works(list(pending_refs)) if pending_refs else {}
-    for key in todo:
+    # Resolve reference ids → metadata for every requested mapped record whose references
+    # are still raw ids. Covers this run AND any left unresolved by a prior interrupted run
+    # (a mapped record with unresolved refs would otherwise be skipped above and never fixed).
+    pending_refs = set()
+    to_resolve = []
+    for key in item_keys:
         rec = cache.get(key)
-        if not _is_mapped(rec):
-            continue
-        rec["references"] = [
-            {"id": rid, **{f: (resolved.get(rid) or {}).get(f)
-                           for f in ("title", "year", "date", "doi", "citedBy")}}
-            for rid in rec["references"]
-        ]
+        if _is_mapped(rec) and rec.get("references") and isinstance(rec["references"][0], str):
+            to_resolve.append(key)
+            pending_refs.update(rec["references"])
 
-    _save(cache)
+    if pending_refs:
+        emit("resolving", 88, f"resolving {len(pending_refs)} reference(s)")
+        resolved = resolve_works(list(pending_refs))
+        for key in to_resolve:
+            rec = cache[key]
+            rec["references"] = [
+                {"id": rid, **{f: (resolved.get(rid) or {}).get(f)
+                               for f in ("title", "year", "date", "doi", "citedBy")}}
+                for rid in rec["references"]
+            ]
+        _save(cache)
+
     emit("done", 100, "done")
     return {"mapped": [k for k in item_keys if _is_mapped(cache.get(k))]}
 

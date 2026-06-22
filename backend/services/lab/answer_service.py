@@ -4,23 +4,6 @@ from collections import defaultdict
 from services.lab.text_utils import tokenize
 
 
-INSUFFICIENT_PHRASES = [
-    "could not find",
-    "do not contain",
-    "don't contain",
-    "not contain enough",
-    "sources are insufficient",
-    "no relevant",
-    "isn't in the",
-    "is not in the",
-]
-
-
-def detect_insufficient(answer):
-    lower_answer = answer.lower()
-    return any(phrase in lower_answer for phrase in INSUFFICIENT_PHRASES)
-
-
 def result_search_text(result):
     return "\n".join([
         result.get("title", ""),

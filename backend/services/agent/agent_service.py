@@ -20,7 +20,6 @@ import logging
 from core.db import SessionLocal
 from services.lab.answer_service import (
     accept_revision,
-    detect_insufficient,
     make_citation,
     remove_invalid_citation_markers,
 )
@@ -260,62 +259,73 @@ def stream_agent_answer(
         # UI citation list all share one page-precise numbering.
         citations = [make_citation(r) for r in deduped]
 
-        yield {"type": "stage", "stage": "drafting"}
-
         if citations:
             yield {"type": "citations", "citations": citations}
 
         # --- Final answer -----------------------------------------------------
         verification = {"grounded": True, "unsupported": []}
 
-        grounding = build_grounding_block(build_context_blocks(deduped)) if deduped else ""
-        final_messages = messages + [{
-            "role": "user",
-            "content": (
-                "Write the final answer now for the user's question, grounded ONLY in the "
-                "sources below. Cite each claim with [n] and its page. Never invent facts "
-                "or page numbers." + grounding
-            ),
-        }]
-
-        accumulated = ""
-        try:
-            stream = chat_create(
-                messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS, stream=True,
+        if not deduped:
+            # No sources after retrieval (incl. the fallback search). Return an honest,
+            # deterministic insufficiency response instead of asking the model to cite
+            # sources that don't exist — grounded-only is enforced structurally here,
+            # not left to the model's wording.
+            answer = (
+                "I couldn't find anything in your library about that. Try selecting the "
+                "relevant collection(s) in the sidebar, or rephrasing the question."
             )
-            for chunk in stream:
-                delta = delta_of(chunk)
-                if delta:
-                    accumulated += delta
-                    yield {"type": "delta", "text": delta}
-        except Exception:
-            logger.exception("agent final-stream failed; falling back to non-streaming")
+        else:
+            yield {"type": "stage", "stage": "drafting"}
+            grounding = build_grounding_block(build_context_blocks(deduped))
+            final_messages = messages + [{
+                "role": "user",
+                "content": (
+                    "Write the final answer now for the user's question, grounded ONLY in the "
+                    "sources below. Cite each claim with [n] and its page. Never invent facts "
+                    "or page numbers." + grounding
+                ),
+            }]
+
             accumulated = ""
+            try:
+                stream = chat_create(
+                    messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS, stream=True,
+                )
+                for chunk in stream:
+                    delta = delta_of(chunk)
+                    if delta:
+                        accumulated += delta
+                        yield {"type": "delta", "text": delta}
+            except Exception:
+                logger.exception("agent final-stream failed; falling back to non-streaming")
+                accumulated = ""
 
-        if not accumulated:
-            response = chat_create(messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS)
-            accumulated = text_of(response)
+            if not accumulated:
+                response = chat_create(messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS)
+                accumulated = text_of(response)
 
-        answer = accumulated or "I could not generate an answer from the available sources."
-        answer = remove_invalid_citation_markers(answer, len(citations))
+            answer = accumulated or "I could not generate an answer from the available sources."
+            answer = remove_invalid_citation_markers(answer, len(citations))
 
-        # Judge loop #2: answer-grounding verification.
-        if deduped and accumulated:
-            yield {"type": "stage", "stage": "verifying"}
-            verdict = verify_grounding(answer, build_context_blocks(deduped))
-            revised = verdict.get("revised_answer")
-            if revised:
-                revised = remove_invalid_citation_markers(revised, len(citations))
-                # Swap in the judge's rewrite only if it doesn't drop citations or
-                # truncate — a weak local judge can otherwise make the answer worse.
-                if accept_revision(answer, revised):
-                    answer = revised
-            verification = {
-                "grounded": verdict.get("grounded", True),
-                "unsupported": verdict.get("unsupported", []),
-            }
+            # Judge loop #2: answer-grounding verification.
+            if accumulated:
+                yield {"type": "stage", "stage": "verifying"}
+                verdict = verify_grounding(answer, build_context_blocks(deduped))
+                revised = verdict.get("revised_answer")
+                if revised:
+                    revised = remove_invalid_citation_markers(revised, len(citations))
+                    # Swap in the judge's rewrite only if it doesn't drop citations or
+                    # truncate — a weak local judge can otherwise make the answer worse.
+                    if accept_revision(answer, revised):
+                        answer = revised
+                verification = {
+                    "grounded": verdict.get("grounded", True),
+                    "unsupported": verdict.get("unsupported", []),
+                }
 
-        insufficient = detect_insufficient(answer)
+        # Derived from retrieval/grounding state, not brittle keyword matching: no sources
+        # at all, or the grounding judge found the drafted answer unsupported.
+        insufficient = (not deduped) or (not verification["grounded"])
 
         summary = _context_summary(executed)
 
