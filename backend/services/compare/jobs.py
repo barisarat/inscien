@@ -1,12 +1,10 @@
 """Background-job runner for `/compare`.
 
-`/compare` is LLM-only (Ollama + Qdrant, both reachable from the backend), so unlike
-narration — which needs the GPU tts container — its long-running job lives here in the
-lean backend. Single-worker (serialized) in-process executor; job state is persisted to a
-volume so the UI can poll across reloads. An in-process worker doesn't survive a restart,
-so stale running jobs are marked failed on startup.
-
-Mirrors the proven pattern in `tts/app.py`.
+`/compare` is LLM-only (Ollama + Qdrant, both reachable from the backend), so its
+long-running job lives here in the backend. Single-worker (serialized) in-process
+executor; job state is persisted to a volume so the UI can poll across reloads. An
+in-process worker doesn't survive a restart, so stale running jobs are marked failed on
+startup. Mirrors the pattern in `services/narration/jobs.py`.
 """
 
 import json

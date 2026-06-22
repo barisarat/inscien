@@ -63,7 +63,6 @@ def _write(data, path):
 def build_references(progress=None):
     emit = progress or (lambda _msg: None)
     settings = get_lab_settings()
-    papers_dir = Path(settings["papers_dir"])
 
     docs = _corpus_docs()
     emit(f"{len(docs)} document(s) in the index")
@@ -72,9 +71,7 @@ def build_references(progress=None):
     identities = {}
     for index, (doc_id, info) in enumerate(docs.items(), start=1):
         emit(f"[{index}/{len(docs)}] {info['fileName']} …")
-        # Resolve the PDF: Zotero items live in storage/ (by itemKey); loose files in
-        # papers_dir (by filename). Without the Zotero branch only papers_dir files build,
-        # so a Zotero corpus collapses to whatever happens to be copied into papers/.
+        # Resolve the PDF: Zotero items live in storage/ (by itemKey).
         path = None
         try:
             from services.zotero.reader import resolve_pdf_path
@@ -83,10 +80,6 @@ def build_references(progress=None):
                 path = Path(zotero_path)
         except Exception:
             path = None
-        if path is None:
-            candidate = papers_dir / Path(info["fileName"]).name
-            if candidate.exists():
-                path = candidate
         if path is None or not path.exists():
             emit("    file missing — skipped")
             continue

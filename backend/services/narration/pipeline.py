@@ -16,7 +16,6 @@ from services.lab.pdf_parser import parse_pdf
 from services.llm.client import chat_create, text_of
 from services.narration.tts_engine import synthesize
 
-PAPERS_DIR = os.getenv("PAPERS_DIR", "/workspace/papers")
 DOC_CHUNK = 3500
 
 _HEADING = re.compile(r"(?im)^\s*(references|bibliography)\s*$")
@@ -147,11 +146,10 @@ def faithfulness_note(script, digests_text):
 def run_narration(file_name, out_path, progress):
     """Full pipeline. `progress(stage, percent, detail)` updates the job.
     Returns {duration_min, faithfulness, script_chars}."""
-    # An absolute path (a Zotero-resolved file in storage/) is used as-is; a bare
-    # filename is a loose papers/ file resolved under PAPERS_DIR.
-    pdf_path = file_name if os.path.isabs(file_name) else os.path.join(PAPERS_DIR, os.path.basename(file_name))
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"Paper not found: {pdf_path}")
+    # The Zotero-resolved file in storage/ is passed as an absolute path.
+    if not os.path.isabs(file_name) or not os.path.exists(file_name):
+        raise FileNotFoundError(f"Paper not found: {file_name}")
+    pdf_path = file_name
 
     progress("parsing", 5, "parsing the paper")
     text = _paper_text(pdf_path)

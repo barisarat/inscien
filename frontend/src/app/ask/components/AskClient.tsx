@@ -154,7 +154,7 @@ type TokenPattern = {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-const LAB_ANONYMOUS_ID_KEY = "financelab_lab_anonymous_id"
+const LAB_ANONYMOUS_ID_KEY = "inscien_lab_anonymous_id"
 const MAX_HISTORY_MESSAGES = 16
 
 type ChatHistoryItem = { role: "user" | "assistant"; content: string }
@@ -198,7 +198,7 @@ function sessionMessagesToLab(
 
     // Translate saved skill payloads back into the dedicated message fields so each
     // skill output rehydrates exactly as it rendered live (the `widgets` column is the
-    // FinanceLab-style carrier). Unknown kinds are ignored.
+    // carrier). Unknown kinds are ignored.
     const widgets = (m.widgets ?? []) as Array<{ kind?: string } & Record<string, unknown>>
     for (const w of widgets) {
       if (w.kind === "draft") {
@@ -379,14 +379,6 @@ function buildLabRequestHeaders() {
 
   if (anonymousId) {
     headers["X-Lab-Anonymous-Id"] = anonymousId
-  }
-
-  if (typeof window !== "undefined") {
-    const access = window.localStorage.getItem("financelab_access")
-
-    if (access) {
-      headers.Authorization = `Bearer ${access}`
-    }
   }
 
   return headers

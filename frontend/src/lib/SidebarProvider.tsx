@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react"
 
-const STORAGE_KEY = "financelab-sidebar-open"
+const STORAGE_KEY = "inscien-sidebar-open"
 
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect

@@ -1,11 +1,11 @@
 """Incremental, item-keyed ingestion from the Zotero library.
 
-Reuses the existing PDF parser + page-windowing chunker unchanged, but writes chunks
-keyed by Zotero **itemKey** (`sourceId = itemKey`) and enriched with real bibliographic
-metadata. Unlike `lab.pdf_ingest.reindex_library` (which rebuilds the whole Qdrant
-collection + manifest), this path is **additive**: it indexes a given set of items,
-upserting only their points and replacing only their chunks in the manifest. So
-selecting a new collection adds to the index without disturbing what's already there.
+Reuses the shared PDF parser + page-windowing chunker (`lab.pdf_parser`,
+`lab.pdf_ingest`), but writes chunks keyed by Zotero **itemKey** (`sourceId = itemKey`)
+and enriched with real bibliographic metadata. This path is **additive**: it indexes a
+given set of items, upserting only their points and replacing only their chunks in the
+manifest. So selecting a new collection adds to the index without disturbing what's
+already there.
 
 Idempotent via a content hash recorded in the sync ledger: an unchanged file is skipped.
 """

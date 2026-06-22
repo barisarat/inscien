@@ -2,15 +2,16 @@ name: inscien
 
 # Local-first single-user stack: just the API, the web UI, and the vector store.
 # No MySQL / Redis / Celery — chat history lives in a file-based SQLite DB and
-# ingestion is an on-demand script, not a scheduled worker. Narration (TTS) runs
-# inside the backend on CPU (Kokoro), so there is no GPU service and no GPU required.
+# ingestion runs on-demand over the user's Zotero library, not a scheduled worker.
+# Narration (TTS) runs inside the backend on CPU (Kokoro), so there is no GPU service
+# and no GPU required.
 #
 # `docker compose up` boots the whole stack with no env setup. The only thing you must
 # run yourself is a native Ollama on the host (see README). Override OLLAMA_BASE_URL /
 # KOKORO_VOICE via a local .env file if needed (see .env.example).
 #
 # Data model: irreplaceable state (DB, indexes, narration) lives in the host `./data/`
-# folder; the Qdrant `qdrant_data` volume is a rebuildable cache (reindex from papers/).
+# folder; the Qdrant `qdrant_data` volume is a rebuildable cache (re-index from Zotero).
 # `docker compose down` keeps everything; `down -v` clears only the rebuildable cache.
 
 services:
@@ -21,7 +22,6 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/workspace
-      - ./papers:/workspace/papers:ro
       # The user's local Zotero data dir (zotero.sqlite + storage/), read-only. Point
       # ZOTERO_HOST_DIR at your host Zotero folder (e.g. ~/Zotero). InScien reads it via a
       # private snapshot under ./data, so the live library is never touched.
@@ -44,7 +44,6 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_COLLECTION=inscien_lab_chunks
       - LAB_TOP_K=10
-      - PAPERS_DIR=/workspace/papers
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}

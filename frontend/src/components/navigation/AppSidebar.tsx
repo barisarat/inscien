@@ -8,9 +8,6 @@ import {
   Activity,
   ChevronDown,
   ChevronRight,
-  Code2,
-  LineChart,
-  LogIn,
   Menu,
   MoreHorizontal,
   Plus,
@@ -42,13 +39,11 @@ type Props = {
   onToggle: () => void
 }
 
-const SIDEBAR_FILTER_STORAGE_PREFIX = "financelab.sidebar.contextFilter"
-const SIDEBAR_OPEN_GROUPS_STORAGE_KEY = "financelab.sidebar.openGroups"
+const SIDEBAR_FILTER_STORAGE_PREFIX = "inscien.sidebar.contextFilter"
+const SIDEBAR_OPEN_GROUPS_STORAGE_KEY = "inscien.sidebar.openGroups"
 
 const primaryNavIcons: Record<string, LucideIcon> = {
   "New chat": Plus,
-  "Signal Tests": LineChart,
-  Developers: Code2,
   Settings,
   Monitor: Activity,
 }
@@ -177,7 +172,7 @@ function AppSidebarInner({ brandHref, sectionTitle, contextItems, isOpen, onTogg
     () => getSidebarScopeFromPathname(pathname),
     [pathname]
   )
-  const { user, tier, login, isAuthenticated } = useAuth()
+  const { user, tier } = useAuth()
   const navItems = React.useMemo<SidebarNavItem[]>(
     () => (user?.is_admin
       ? [...topLevelNavItems, { label: "Monitor", href: "/admin" }]
@@ -577,34 +572,15 @@ function AppSidebarInner({ brandHref, sectionTitle, contextItems, isOpen, onTogg
           ) : null}
 
           <div className={styles.sidebarBottom}>
-            {isAuthenticated ? (
-              <div className={styles.accountActions}>
-                <Link href="/settings" className={styles.accountRow}>
-                  <div className={styles.accountAvatarWrap}>{avatarNode}</div>
-                  <div className={`${styles.accountMeta} ${isOpen ? styles.accountMetaVisible : styles.accountMetaHidden}`}>
-                    <div className={styles.accountName}>{displayName}</div>
-                    <div className={styles.accountTier}>{tierLabel}</div>
-                  </div>
-                </Link>
-              </div>
-            ) : (
-              <div className={styles.visitorActions}>
-                <button
-                  type="button"
-                  className={styles.loginButton}
-                  onClick={() => login(pathname || "/")}
-                >
-                  <LogIn className={styles.loginIcon} aria-hidden="true" size={16} />
-                  <div className={`${styles.accountMeta} ${isOpen ? styles.accountMetaVisible : styles.accountMetaHidden}`}>
-                    <div className={styles.loginLabel}>Sign in</div>
-                  </div>
-                </button>
-
-                <div className={styles.visitorNote}>
-                  Sign in to get higher limits and save progress.
+            <div className={styles.accountActions}>
+              <Link href="/settings" className={styles.accountRow}>
+                <div className={styles.accountAvatarWrap}>{avatarNode}</div>
+                <div className={`${styles.accountMeta} ${isOpen ? styles.accountMetaVisible : styles.accountMetaHidden}`}>
+                  <div className={styles.accountName}>{displayName}</div>
+                  <div className={styles.accountTier}>{tierLabel}</div>
                 </div>
-              </div>
-            )}
+              </Link>
+            </div>
           </div>
         </div>
       </aside>

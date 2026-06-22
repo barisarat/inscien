@@ -64,15 +64,13 @@ def start(body: NarrateIn):
     if not paper:
         raise HTTPException(status_code=404, detail="Couldn't find that paper in your library.")
 
-    # Zotero items live in storage/ — resolve the absolute path; loose papers/ files
-    # fall back to their manifest filename (the pipeline handles both).
+    # Zotero items live in storage/ — resolve the absolute path to the stored PDF.
     file_ref = None
     try:
         from services.zotero.reader import resolve_pdf_path
         file_ref = resolve_pdf_path(paper["docId"])
     except Exception:
         file_ref = None
-    file_ref = file_ref or paper.get("fileName")
     if not file_ref:
         raise HTTPException(status_code=404, detail="That paper has no PDF on disk.")
 

@@ -13,7 +13,6 @@ from schemas.lab import (
     LabSearchResponse,
 )
 from services.lab.answer_service import answer_lab, stream_lab_answer
-from services.lab.pdf_ingest import reindex_library
 from services.lab.search_service import search_lab
 
 
@@ -33,12 +32,6 @@ def _request_metadata(request: Request):
         "client_ip": client_ip or "",
         "client_user_agent": request.headers.get("user-agent", ""),
     }
-
-
-@router.post("/reindex")
-def lab_reindex():
-    """Re-ingest the local PDF library (parse -> chunk -> embed -> rebuild Qdrant)."""
-    return reindex_library()
 
 
 @router.post("/search", response_model=LabSearchResponse)

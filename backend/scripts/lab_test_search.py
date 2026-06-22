@@ -8,11 +8,11 @@ API_URL = "http://localhost:8000/api/lab/search"
 
 
 TEST_QUERIES = [
-    "How do I convert notebooks to HTML?",
-    "Docker Compose development workspace with backend and frontend containers",
-    "limit order book forecasting with FI-2010 and DeepLOB",
-    "GDELT topic sentiment index with news articles",
-    "Which podcast is useful for Bayesian statistics?",
+    "What datasets were used for evaluation?",
+    "machine learning methods for price prediction",
+    "how is model performance measured",
+    "limitations and future work",
+    "deep learning architecture details",
 ]
 
 

@@ -1,10 +1,10 @@
-"""Load the chunk manifest produced by PDF ingestion.
+"""Load the chunk manifest produced by Zotero ingestion.
 
-InScien ingests local PDFs into a single chunk manifest (a JSON list) written by
-`scripts/inscien_ingest.py` to `chunk_index_path`. This module reads + validates it
-for both the Qdrant reindex and the in-process BM25 keyword index. If the manifest
-does not exist yet (nothing ingested), it returns an empty set rather than failing —
-the app still boots and answers "insufficient sources".
+InScien ingests the user's Zotero PDFs into a single chunk manifest (a JSON list)
+written by `services.zotero.ingest` to `chunk_index_path`. This module reads +
+validates it for both the Qdrant index and the in-process BM25 keyword index. If the
+manifest does not exist yet (nothing indexed), it returns an empty set rather than
+failing — the app still boots and answers "insufficient sources".
 """
 
 import json
