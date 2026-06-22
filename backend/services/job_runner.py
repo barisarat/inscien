@@ -41,9 +41,12 @@ class JobRunner:
             self._persist(job)
 
     def _progress(self, job_id):
+        # A progress update never flips the job to its terminal "done" status — even when a
+        # pipeline reports stage="done" as its last step. The "done" transition is owned
+        # solely by `_run` *after* `work` returns, so a poller can't observe status="done"
+        # before the result dict has been merged into the job.
         def cb(stage, percent, detail=""):
-            self._set(job_id, stage=stage, progress=percent, detail=detail,
-                      status="done" if stage == "done" else "running")
+            self._set(job_id, stage=stage, progress=percent, detail=detail, status="running")
         return cb
 
     # --- lifecycle ---------------------------------------------------------
