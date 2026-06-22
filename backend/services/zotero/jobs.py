@@ -92,3 +92,15 @@ def recover_stale():
             job["status"] = "error"
             job["error"] = "interrupted by restart"
             f.write_text(json.dumps(job))
+
+
+def clear_jobs():
+    """Drop all index-job state (in-memory + persisted files). Called by a corpus reset
+    so stale jobs about now-deleted items don't survive the clean slate."""
+    with _lock:
+        _jobs.clear()
+    for f in JOBS_DIR.glob("*.json"):
+        try:
+            f.unlink()
+        except OSError:
+            continue
