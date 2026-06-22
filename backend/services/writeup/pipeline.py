@@ -18,6 +18,7 @@ import logging
 import re
 
 from services.compare.pipeline import propose_dimensions
+from services.lab.answer_service import accept_revision
 from services.lab.search_service import search_lab
 from services.llm.client import chat_create, text_of
 from services.rag.extraction import NOT_REPORTED, extract_cell, retrieve_cell
@@ -143,6 +144,12 @@ def _finalize(draft, doc_ids, titles, cells):
     """Compact the global paper-numbers actually cited to 1..k, build aligned doc-level
     citations + a one-entry-per-paper References block."""
     used = sorted({int(n) for n in re.findall(r"\[(\d+)\]", draft) if 1 <= int(n) <= len(doc_ids)})
+    if not used:
+        # No inline [n] (model didn't cite, or the rewrite stripped them) — fall back to
+        # every reviewed paper with >=1 grounded cell, so the review keeps its doc-level
+        # provenance instead of shipping a reference-less "literature review".
+        used = [i + 1 for i, doc_id in enumerate(doc_ids)
+                if any(c.get("citation") for c in cells[doc_id].values())]
     remap = {old: i + 1 for i, old in enumerate(used)}
     draft = re.sub(
         r"\[(\d+)\]",
@@ -213,8 +220,11 @@ def run_writeup(topic, doc_ids, dimensions, progress):
 
     # Faithfulness judge over the grounded table, then compact citations + references.
     verdict = verify_grounding(draft, _cells_table_text(doc_ids, titles, dimensions, cells))
-    if verdict.get("revised_answer"):
-        draft = verdict["revised_answer"]
+    revised = verdict.get("revised_answer")
+    # Only accept the rewrite if it keeps the draft's citations and isn't truncated — a
+    # weak judge can otherwise strip the [n] markers, which would yield a reference-less draft.
+    if revised and accept_revision(draft, revised):
+        draft = revised
 
     answer, citations = _finalize(draft, doc_ids, titles, cells)
 

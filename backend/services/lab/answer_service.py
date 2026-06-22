@@ -214,3 +214,30 @@ def remove_invalid_citation_markers(answer, citation_count):
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
 
     return cleaned.strip()
+
+
+_CITATION_MARKER_RE = re.compile(r"\[(\d+)\]")
+
+
+def _citation_markers(text):
+    return {int(n) for n in _CITATION_MARKER_RE.findall(text or "")}
+
+
+def accept_revision(original, revised):
+    """Accept a grounding judge's rewrite only if it doesn't regress the answer.
+
+    The judge is the same local model that drafted the answer, so its rewrite can drop
+    [n] citations (defeating page-precise/doc-level citations) or truncate. Keep the
+    rewrite only when it preserves the original's citations (allowing at most one dropped
+    marker for a legitimately removed unsupported claim) and isn't drastically shorter;
+    otherwise the caller keeps the original. Shared by the chat agent and the /write skill.
+    """
+    if not revised or not revised.strip():
+        return False
+    orig = _citation_markers(original)
+    new = _citation_markers(revised)
+    if orig and len(orig & new) < max(1, len(orig) - 1):
+        return False
+    if len(revised.strip()) < 0.5 * len(original.strip()):
+        return False
+    return True
