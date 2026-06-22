@@ -61,29 +61,14 @@ def tokenize(value):
     ]
 
 
-def chunk_search_text(chunk):
-    return "\n".join([
-        chunk.get("title", ""),
-        chunk.get("description", ""),
-        chunk.get("category", ""),
-        chunk.get("sectionTitle", ""),
-        chunk.get("text", ""),
-    ])
-
-
 def make_result_from_chunk(chunk, score):
     return {
         "score": float(score),
         "sourceType": chunk.get("sourceType", ""),
         "sourceId": chunk.get("sourceId", ""),
         "chunkId": chunk.get("chunkId", ""),
-        "parentId": chunk.get("parentId", ""),
         "title": chunk.get("title", ""),
-        "description": chunk.get("description", ""),
-        "category": chunk.get("category", ""),
-        "sectionTitle": chunk.get("sectionTitle", ""),
         "url": chunk.get("url", ""),
-        "externalUrl": chunk.get("externalUrl", ""),
         "contentMode": chunk.get("contentMode", ""),
         "text": chunk.get("text", ""),
         "metadata": chunk.get("metadata", {}),
@@ -97,18 +82,11 @@ def build_bm25_index(chunks):
 
     for chunk in chunks:
         title_tokens = tokenize(chunk.get("title", ""))
-        section_tokens = tokenize(chunk.get("sectionTitle", ""))
-        description_tokens = tokenize(chunk.get("description", ""))
-        category_tokens = tokenize(chunk.get("category", ""))
         text_tokens = tokenize(chunk.get("text", ""))
 
-        weighted_tokens = (
-            title_tokens * 4 +
-            section_tokens * 3 +
-            description_tokens * 2 +
-            category_tokens * 2 +
-            text_tokens
-        )
+        # Title terms weighted above body text; section/category/etc. fields don't
+        # exist for Zotero PDFs.
+        weighted_tokens = title_tokens * 4 + text_tokens
 
         token_counts = Counter(weighted_tokens)
         unique_tokens = set(token_counts.keys())

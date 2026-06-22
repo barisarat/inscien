@@ -347,8 +347,6 @@ export interface LabCitationDTO {
   url?: string
   sourceId?: string
   sourceType?: string
-  category?: string
-  sectionTitle?: string
   contentMode?: string
   page?: number | null
   passage?: string

@@ -116,7 +116,7 @@ def _dedupe_context(results):
     deduped = []
 
     for result in results:
-        key = (result.get("url", ""), result.get("sectionTitle", ""), result.get("metadata", {}).get("page"))
+        key = (result.get("url", ""), result.get("metadata", {}).get("page"))
 
         if key in seen:
             continue

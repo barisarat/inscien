@@ -38,8 +38,6 @@ type LabCitation = {
   url: string
   sourceId?: string
   sourceType: string
-  category: string
-  sectionTitle: string
   contentMode: string
   // Page-precise citation surface (InScien): the page the passage was on, and the
   // exact retrieved passage text so the Sources list can reveal it on click.
@@ -779,8 +777,6 @@ function AskContent() {
       title: c.title,
       url: c.url ?? "",
       sourceType: "pdf",
-      category: "",
-      sectionTitle: "",
       contentMode: "full_text",
       page: c.page ?? 1,
       passage: c.passage,

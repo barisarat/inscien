@@ -73,9 +73,6 @@ def tokenize(value):
 def result_search_text(result):
     return "\n".join([
         result.get("title", ""),
-        result.get("description", ""),
-        result.get("category", ""),
-        result.get("sectionTitle", ""),
         result.get("text", ""),
     ])
 
@@ -95,8 +92,6 @@ def make_citation(result):
         # Document id — lets the UI open the source PDF at the cited page.
         "sourceId": result.get("sourceId", ""),
         "sourceType": result.get("sourceType", ""),
-        "category": result.get("category", ""),
-        "sectionTitle": result.get("sectionTitle", ""),
         "contentMode": result.get("contentMode", ""),
         # Page-precise citation surface: the page the passage was on, and the
         # exact retrieved passage so the UI can show it on click.
@@ -241,7 +236,6 @@ def unique_citations(results, max_items):
         key = (
             result.get("title", ""),
             result.get("url", ""),
-            result.get("sectionTitle", ""),
         )
 
         if key in seen:

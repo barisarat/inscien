@@ -160,8 +160,6 @@ def _finalize(draft, doc_ids, titles, cells):
             "url": (rep or {}).get("url", ""),
             "sourceId": doc_id,
             "sourceType": "zotero",
-            "category": "",
-            "sectionTitle": "",
             "contentMode": "full_text",
             "page": (rep or {}).get("page"),
             "passage": (rep or {}).get("passage", ""),
