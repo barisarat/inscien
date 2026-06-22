@@ -142,3 +142,14 @@ def recover_stale():
             job["status"] = "error"
             job["error"] = "interrupted by restart"
             f.write_text(json.dumps(job))
+
+
+def clear_jobs():
+    """Delete all persisted job files + generated mp3s (used by the corpus reset)."""
+    with _lock:
+        _jobs.clear()
+    for f in list(JOBS_DIR.glob("*.json")) + list(AUDIO_DIR.glob("*.mp3")):
+        try:
+            f.unlink()
+        except OSError:
+            logger.warning("clear_jobs: could not delete %s", f)

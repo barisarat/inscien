@@ -185,9 +185,10 @@ def index_items(item_keys, progress=None):
 
 
 def reset_index():
-    """One-time reset: drop + recreate the Qdrant collection, empty the manifest, and
-    clear the ledger. Used once to clear the pre-Zotero (finance/test) corpus before the
-    first Zotero index. Everything after this is additive via `index_items`.
+    """Full reset to a clean slate: drop + recreate the Qdrant collection, empty the
+    manifest, clear the ledger, and clear derived artifacts (the OpenAlex cache and the
+    compare/writeup/narration/graph-fetch job files + narration mp3s). Everything after
+    this is additive via `index_items`.
     """
     ensure_table()
     recreate_lab_collection()
@@ -208,4 +209,15 @@ def reset_index():
         reset_cache()
     except Exception:
         logger.exception("reset_index: OpenAlex cache reset failed (non-fatal)")
+    # Clear derived skill artifacts (compare/writeup/narration incl. audio, graph fetch)
+    # so the reset is a true clean slate. Best-effort, like the OpenAlex cache above.
+    from services.compare.jobs import clear_jobs as _clear_compare
+    from services.writeup.jobs import clear_jobs as _clear_writeup
+    from services.narration.jobs import clear_jobs as _clear_narration
+    from services.refs.fetch_jobs import clear_jobs as _clear_graph_fetch
+    for clear in (_clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch):
+        try:
+            clear()
+        except Exception:
+            logger.exception("reset_index: skill-artifact cleanup failed (non-fatal)")
     return {"ok": True}

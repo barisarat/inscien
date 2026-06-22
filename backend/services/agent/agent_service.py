@@ -16,6 +16,7 @@ owns every session.
 
 import json
 import logging
+import re
 
 from core.db import SessionLocal
 from services.lab.answer_service import (
@@ -109,6 +110,33 @@ def _context_summary(executed):
     if not queries:
         return ""
     return "searched the library for " + ", ".join(queries)
+
+
+_CITATION_MARKER_RE = re.compile(r"\[(\d+)\]")
+
+
+def _citation_markers(text):
+    return {int(n) for n in _CITATION_MARKER_RE.findall(text or "")}
+
+
+def _accept_revision(original, revised):
+    """Accept the grounding judge's rewrite only if it doesn't regress the answer.
+
+    The judge is the same local model that drafted the answer, so its rewrite can drop
+    [n] citations (defeating page-precise citations) or truncate. Keep the rewrite only
+    when it preserves the original's citations (allowing at most one dropped marker for a
+    legitimately removed unsupported claim) and isn't drastically shorter; otherwise keep
+    the original answer (the caller still surfaces grounded=False + the unsupported list).
+    """
+    if not revised or not revised.strip():
+        return False
+    orig = _citation_markers(original)
+    new = _citation_markers(revised)
+    if orig and len(orig & new) < max(1, len(orig) - 1):
+        return False
+    if len(revised.strip()) < 0.5 * len(original.strip()):
+        return False
+    return True
 
 
 def _dedupe_context(results):
@@ -302,8 +330,13 @@ def stream_agent_answer(
         if deduped and accumulated:
             yield {"type": "stage", "stage": "verifying"}
             verdict = verify_grounding(answer, build_context_blocks(deduped))
-            if verdict.get("revised_answer"):
-                answer = remove_invalid_citation_markers(verdict["revised_answer"], len(citations))
+            revised = verdict.get("revised_answer")
+            if revised:
+                revised = remove_invalid_citation_markers(revised, len(citations))
+                # Swap in the judge's rewrite only if it doesn't drop citations or
+                # truncate — a weak local judge can otherwise make the answer worse.
+                if _accept_revision(answer, revised):
+                    answer = revised
             verification = {
                 "grounded": verdict.get("grounded", True),
                 "unsupported": verdict.get("unsupported", []),

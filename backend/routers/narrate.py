@@ -84,10 +84,13 @@ def start(body: NarrateIn):
 @router.get("/registry")
 def registry():
     """Completed narrations, 1:1 by paper, so the library can show a ▶ that replays the
-    saved mp3 without regenerating."""
+    saved mp3 without regenerating. Filtered to papers still in the current library, so a
+    reset or a Zotero-side removal doesn't leave a ▶ for a paper that no longer exists."""
+    valid = {p["docId"] for p in corpus_papers()}
     items = [
         {**n, "audioUrl": f"/api/narrate/{n['jobId']}/audio"}
         for n in list_narrations()
+        if n["docId"] in valid
     ]
     return {"items": items}
 
