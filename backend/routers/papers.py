@@ -49,20 +49,20 @@ def list_papers():
 @router.get("/{doc_id}")
 def get_paper(doc_id: str):
     # Zotero-native: doc_id is the itemKey, and the file lives in the Zotero storage tree.
-    path = None
-    try:
-        from services.zotero.reader import resolve_pdf_path
-        zotero_path = resolve_pdf_path(doc_id)
-        if zotero_path:
-            path = Path(zotero_path)
-    except Exception:
-        # Don't let a real Zotero-reader/config error masquerade as "not found".
-        logger.warning("resolve_pdf_path failed for %s", doc_id, exc_info=True)
-        path = None
+    from services.zotero.reader import resolve_pdf_path
 
-    if path is None or not path.exists():
+    try:
+        zotero_path = resolve_pdf_path(doc_id)
+    except Exception as exc:
+        # A reader/config error (Zotero library unreadable/unmounted) is NOT "paper not
+        # found" — report it as such instead of masquerading as a 404.
+        logger.warning("resolve_pdf_path failed for %s", doc_id, exc_info=True)
+        raise HTTPException(status_code=503, detail="Could not read the Zotero library.") from exc
+
+    if not zotero_path or not Path(zotero_path).exists():
         raise HTTPException(status_code=404, detail="Paper not found")
 
+    path = Path(zotero_path)
     return FileResponse(
         str(path),
         media_type="application/pdf",

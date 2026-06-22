@@ -1,4 +1,10 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+// Single source of truth for the backend origin. NEXT_PUBLIC_* is inlined at build time;
+// in docker compose it's always set (http://localhost:8200). If it's somehow unset we
+// default to the compose host port and warn, rather than failing with a wrong default.
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (console.warn("NEXT_PUBLIC_API_URL unset; defaulting to http://localhost:8200"),
+    "http://localhost:8200")
 
 async function getErrorMessage(res: Response): Promise<string> {
   const data: unknown = await res.json().catch(() => ({}))

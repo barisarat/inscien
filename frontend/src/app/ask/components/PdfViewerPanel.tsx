@@ -2,12 +2,11 @@
 
 import { Columns3, ExternalLink, PanelRightClose, X } from "lucide-react"
 
-import { type CompareCitation, type CompareResult } from "@/lib/api"
+import { type CompareCitation, type CompareResult, API_BASE } from "@/lib/api"
 import ComparisonView from "./ComparisonView"
 import PdfDocument from "./PdfDocument"
 import styles from "./PdfViewerPanel.module.css"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export type PdfTab = {
   id: string // = sourceId; one tab per document

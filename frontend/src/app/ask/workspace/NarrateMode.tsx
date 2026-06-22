@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AudioLines, Loader2 } from "lucide-react"
 
-import { activeNarration, getNarration, listNarrations, listPapers, startNarration } from "@/lib/api"
+import { activeNarration, getNarration, listNarrations, listPapers, startNarration, API_BASE } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import compareStyles from "../components/Compare.module.css"
 import styles from "./Workspace.module.css"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 type Phase = "idle" | "running" | "done" | "error"
 

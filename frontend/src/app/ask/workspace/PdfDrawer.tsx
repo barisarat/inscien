@@ -2,10 +2,9 @@
 
 import { X } from "lucide-react"
 
+import { API_BASE } from "@/lib/api"
 import PdfDocument from "../components/PdfDocument"
 import styles from "./PdfDrawer.module.css"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // The shared in-app PDF viewer: a right drawer any mode opens via WorkspaceProvider.openPdf.
 // Reuses PdfDocument, which scrolls to the page and highlights the cited passage.

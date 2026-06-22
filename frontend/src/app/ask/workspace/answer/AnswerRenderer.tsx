@@ -6,6 +6,7 @@ import { ChevronRight, ExternalLink } from "lucide-react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 
+import { API_BASE } from "@/lib/api"
 import styles from "../../components/AskClient.module.css"
 
 // Shared answer/draft renderer — the same markdown + page-cited styling the chat uses,
@@ -20,7 +21,6 @@ export type Citation = {
   passage?: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 const CITATION_CLASS = "lab-citation"
 
 function isExternalUrl(href: string): boolean {

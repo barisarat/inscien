@@ -20,6 +20,7 @@ import {
   type CompareResult,
   type NarrationStatus,
   type PaperItem,
+  API_BASE,
   deleteChatSession,
   getChatSession,
   listChatSessions,
@@ -96,8 +97,6 @@ type LabMessage = {
 }
 
 
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // Reconstruct a saved session's messages into renderable LabMessages.
 function sessionMessagesToLab(
