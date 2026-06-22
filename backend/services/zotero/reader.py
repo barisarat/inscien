@@ -151,10 +151,6 @@ def resolve_collection_items(collection_id, recursive=True):
     return {r["key"] for r in rows}
 
 
-def collection_item_count(collection_id, recursive=True):
-    return len(resolve_collection_items(collection_id, recursive))
-
-
 def collection_direct_items():
     """One-query map {collectionID: set(itemKey)} of *direct* (non-recursive) membership,
     excluding trash. The collections endpoint folds this up the tree in Python instead of

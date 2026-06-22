@@ -43,6 +43,12 @@ def _save(cache):
     tmp.replace(CACHE_PATH)
 
 
+def reset_cache():
+    """Drop the OpenAlex cache so a corpus reset doesn't leave records keyed to
+    itemKeys that no longer exist."""
+    CACHE_PATH.unlink(missing_ok=True)
+
+
 def _is_mapped(rec):
     """Mapped *and* current-schema — a stale-schema record re-fetches like a miss."""
     return bool(rec) and rec.get("status") == "mapped" and rec.get("v") == SCHEMA_VERSION

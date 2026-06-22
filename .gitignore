@@ -340,8 +340,13 @@ papers/
 data/*
 !data/.gitkeep
 
-# throwaway TTS benchmark harness
+# throwaway TTS benchmark harness + pre-Kokoro GPU-TTS leftovers
 tts-bench/
+tts/
+
+# empty AI-assistant scratch dirs
+.agents/
+.codex/
 
 # Editor + AI-assistant local files (kept locally, not shipped in the public repo)
 .vscode/

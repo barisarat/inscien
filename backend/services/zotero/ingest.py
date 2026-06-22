@@ -156,6 +156,9 @@ def reset_index():
     recreate_lab_collection()
     ensure_source_payload_index()
     _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
+    # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
+    from services.refs.refstore import reset_cache
+    reset_cache()
     db = SessionLocal()
     try:
         clear_all(db)

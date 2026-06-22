@@ -2,6 +2,8 @@
 
 > **What this is:** a self-contained briefing distilled from a planning discussion, to hand to a fresh agent in the InScien repo. It captures *what* InScien is, *why* it's scoped this way, the *architecture*, and the *build plan*. Read it as authoritative context, not gospel — but the reasoning behind each decision is included so you can adapt intelligently.
 
+> **Implementation divergence (read first):** two design ideas below changed when built. (1) The agent loop runs over the OpenAI-compatible **chat-completions** API, **not** the Responses API. (2) The shipped product is **local-only by construction** — generation runs against the user's local Ollama and there is **no cloud/BYOK path** (privacy/zero-cost/offline are guarantees, not settings). The "BYOK-cloud optional / frontier" passages below are the original vision, kept for rationale; they are not the current behavior. See `CLAUDE.md` for the as-built architecture.
+
 ---
 
 ## 1. One-liner & identity
@@ -19,7 +21,7 @@
 
 InScien is **forked from two existing projects** and reuses their hardest parts:
 
-- **FinanceLab** — a FastAPI + Next.js agentic platform. Its **agent harness** (a hand-rolled tool-calling loop over the OpenAI Responses API, with SSE streaming and a widget/artifact system — *no* agent framework) is reused as InScien's orchestration layer + UI.
+- **FinanceLab** — a FastAPI + Next.js agentic platform. Its **agent harness** (a hand-rolled tool-calling loop with SSE streaming and a widget/artifact system — *no* agent framework) is reused as InScien's orchestration layer + UI. (As built, the loop runs over the OpenAI-compatible **chat-completions** API against local Ollama — see the divergence note above.)
 - **MLNotebooks** — the original RAG project FinanceLab was forked from. Its **hybrid retrieval engine** (Qdrant dense + in-process BM25, weighted fusion, citations) is reused as InScien's retrieval/citation backbone.
 
 The name **InScien** was literally the *original* name of this lineage (FinanceLab was *formerly InScien / MLNotebooks*). Reviving it for a research/science tool fits better than it ever fit finance — the name comes home.
@@ -170,7 +172,7 @@ Consider **wrapping or borrowing from PaperQA2** for the paper-QA engine rather 
 
 ## 12. Tech / stack notes
 
-- **Backend pattern:** FastAPI + the reused agent loop over the **OpenAI Responses API** (no agent framework — it's a hand-rolled tool-calling loop; this was a deliberate, validated choice). SSE event protocol (`stage`/`widget`/`delta`/`final`/`error`).
+- **Backend pattern:** FastAPI + the reused agent loop over the OpenAI-compatible **chat-completions** API against local Ollama (no agent framework — it's a hand-rolled tool-calling loop; this was a deliberate, validated choice). SSE event protocol (`stage`/`citations`/`delta`/`final`/`error`).
 - **Retrieval:** hybrid dense (Qdrant or an *embedded* store — see note) + in-process BM25, weighted fusion (~0.65/0.35), citations.
   - **Note:** FinanceLab uses **Qdrant (a server)**. For a single-user, self-hosted, local tool, prefer an **embedded/file-based vector store** (SQLite+`sqlite-vec`, **LanceDB**, or DuckDB) — lower install friction = better self-hostability. Reconsider Qdrant for this context.
 - **Ingestion = "seed once, query many":** parse → chunk (with **page metadata** — critical for citations) → **local** embed → store (vectors + chunk text + metadata + optional BM25). Make it **incremental/idempotent** (content-hash dedup; embed-once cache). Store must support BOTH semantic search AND metadata filter/enumerate (so the lit-review/extraction skills can map-reduce over the corpus later).

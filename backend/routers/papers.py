@@ -5,12 +5,15 @@ honors a `#page=N` fragment). The doc id is a Zotero itemKey, resolved to the fi
 the Zotero storage tree.
 """
 
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from services.lab.manifest_loader import load_manifest_chunks
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/papers", tags=["papers"])
 
@@ -46,6 +49,8 @@ def get_paper(doc_id: str):
         if zotero_path:
             path = Path(zotero_path)
     except Exception:
+        # Don't let a real Zotero-reader/config error masquerade as "not found".
+        logger.warning("resolve_pdf_path failed for %s", doc_id, exc_info=True)
         path = None
 
     if path is None or not path.exists():
