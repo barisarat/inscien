@@ -1,0 +1,71 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--surface);
+}
+
+.card {
+  max-width: 440px;
+  width: 100%;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-subtle, var(--surface));
+  text-align: center;
+}
+
+.title {
+  font-family: var(--sans);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-strong, var(--text));
+  margin: 0 0 10px;
+}
+
+.body {
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--text-2);
+  margin: 0 0 20px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 9px 18px;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Accent blue is reserved for links/active states (globals.css). */
+.secondary {
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.secondary:hover {
+  text-decoration: underline;
+}

@@ -45,7 +45,7 @@ export default function ZoteroNavigator({
   leftOffset,
   topOffset = 0,
 }: Props) {
-  const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed } = useZoteroSelection()
+  const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
@@ -370,6 +370,13 @@ export default function ZoteroNavigator({
         <div className={styles.staleBanner}>
           Live Zotero library not connected — showing the last snapshot. New papers or
           changes won’t appear until the mount is restored.
+        </div>
+      ) : null}
+
+      {persistError ? (
+        <div className={styles.staleBanner}>
+          Your selection won’t be saved across reloads — browser storage is blocked (e.g.
+          private mode).
         </div>
       ) : null}
 

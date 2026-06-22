@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from repositories import settings_repository as settings_repo
 from schemas.settings import SettingsIn, SettingsOut
-from services.llm.client import DEFAULT_OLLAMA_URL, list_ollama_models
+from services.llm.client import DEFAULT_OLLAMA_URL, list_ollama_models_status
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -29,12 +29,14 @@ def list_models(db: Session = Depends(get_db)):
     row = settings_repo.get_settings(db)
     base = (row.ollama_base_url or "").strip() or DEFAULT_OLLAMA_URL
 
+    status = list_ollama_models_status(base)
     options = [
         {"value": f"local|{model_id}", "label": f"{model_id} · local",
          "provider": "local", "model": model_id}
-        for model_id in list_ollama_models(base)
+        for model_id in status["models"]
     ]
-    return {"options": options}
+    # ollamaReachable lets the UI tell "Ollama is down" from "Ollama is up but has no models".
+    return {"options": options, "ollamaReachable": status["reachable"]}
 
 
 @router.put("", response_model=SettingsOut)

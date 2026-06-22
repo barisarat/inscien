@@ -18,19 +18,31 @@ async function getErrorMessage(res: Response): Promise<string> {
     return data.detail
   }
 
-  return `API error: ${res.status}`
+  return `API error ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`
+}
+
+// A failed fetch (backend down / network / CORS) throws a raw TypeError ("Failed to fetch")
+// — turn it into an actionable message that names the likely cause.
+const BACKEND_UNREACHABLE = `Couldn't reach the InScien backend at ${API_BASE}. Is it running?`
+
+async function doFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE}${path}`, init)
+  } catch {
+    throw new Error(BACKEND_UNREACHABLE)
+  }
 }
 
 // InScien is single-user/local with no auth — these are plain calls (the backend
 // chat endpoints are unauthenticated).
 async function authedGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: "GET" })
+  const res = await doFetch(path, { method: "GET" })
   if (!res.ok) throw new Error(await getErrorMessage(res))
   return res.json()
 }
 
 async function authedAction<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await doFetch(path, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -124,7 +136,7 @@ export interface ModelOption {
   model: string
 }
 
-export async function getModelOptions(): Promise<{ options: ModelOption[] }> {
+export async function getModelOptions(): Promise<{ options: ModelOption[]; ollamaReachable: boolean }> {
   return authedGet("/api/settings/models")
 }
 

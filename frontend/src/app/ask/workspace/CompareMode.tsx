@@ -32,6 +32,8 @@ export default function CompareMode() {
   const [dimensions, setDimensions] = useState<string[]>([])
   const [dimDraft, setDimDraft] = useState("")
   const [result, setResult] = useState<CompareResult | null>(null)
+  // True when the finished comparison couldn't be persisted to History (result still shows).
+  const [saveWarning, setSaveWarning] = useState(false)
 
   const { progress, error, setError, newRun, isStale, track } = useSkillJob()
   const loaded = activeArtifact?.kind === "comparison" ? activeArtifact : null
@@ -80,6 +82,7 @@ export default function CompareMode() {
 
   const run = useCallback(async () => {
     const token = newRun()
+    setSaveWarning(false)
     setPhase("running")
     try {
       const { jobId } = await startCompare(docIds, dimensions)
@@ -89,7 +92,9 @@ export default function CompareMode() {
             setResult(s.result)
             setPhase("done")
             const title = `Compare: ${papers.map((p) => p.title).join(" · ")}`
-            void saveRun("comparison", title, { result: s.result, papers, dimensions })
+            void saveRun("comparison", title, { result: s.result, papers, dimensions }).then(
+              (sid) => { if (sid === null) setSaveWarning(true) },
+            )
           } else {
             setError("No result returned.")
             setPhase("error")
@@ -123,6 +128,9 @@ export default function CompareMode() {
             </button>
           )}
         </div>
+        {!loaded && saveWarning ? (
+          <div className={styles.saveWarning}>Couldn’t save this comparison to History.</div>
+        ) : null}
         <div className={styles.modeBody}>
           <ComparisonView
             data={shown}

@@ -43,6 +43,8 @@ export default function WriteMode() {
   const [dimensions, setDimensions] = useState<string[]>([])
   const [dimDraft, setDimDraft] = useState("")
   const [result, setResult] = useState<WriteResult | null>(null)
+  // True when the finished draft couldn't be persisted to History (draft still shows).
+  const [saveWarning, setSaveWarning] = useState(false)
   const { progress, error, setError, newRun, isStale, track } = useSkillJob()
 
   const openCitation = useCallback(
@@ -94,6 +96,7 @@ export default function WriteMode() {
 
   const run = useCallback(async () => {
     const token = newRun()
+    setSaveWarning(false)
     setPhase("running")
     try {
       const { jobId } = await startWriteup(topic.trim(), scope, dimensions)
@@ -105,7 +108,7 @@ export default function WriteMode() {
             void saveRun("writeup", `Review: ${topic.trim()}`, {
               answer: s.result.answer,
               citations: s.result.citations,
-            })
+            }).then((sid) => { if (sid === null) setSaveWarning(true) })
           } else {
             setError("No draft returned.")
             setPhase("error")
@@ -149,6 +152,9 @@ export default function WriteMode() {
             New review
           </button>
         </div>
+        {saveWarning ? (
+          <div className={styles.saveWarning}>Couldn’t save this review to History.</div>
+        ) : null}
         <div className={styles.readingScroll}>
           <div className={styles.reading}>
             <DraftView answer={result.answer} citations={result.citations} onOpen={openCitation} />

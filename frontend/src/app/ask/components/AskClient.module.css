@@ -604,6 +604,15 @@
   color: var(--text-2);
 }
 
+/* Subtle nudge shown when no papers are selected — a question needs a retrieval scope. */
+.composerHint {
+  margin-top: 8px;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
 .examples {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

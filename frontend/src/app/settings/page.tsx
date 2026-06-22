@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("")
   const [selected, setSelected] = useState("")
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("")
+  const [ollamaReachable, setOllamaReachable] = useState(true)
   const [status, setStatus] = useState<Status>({ kind: "idle" })
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         setDisplayName(s.displayName)
         setOllamaBaseUrl(s.ollamaBaseUrl)
         setOptions(m.options)
+        setOllamaReachable(m.ollamaReachable)
 
         // Map the stored local model back to a dropdown value; fall back to the first
         // available model if it isn't currently offered (e.g. it was removed from Ollama).
@@ -83,13 +85,28 @@ export default function SettingsPage() {
             onChange={(e) => setSelected(e.target.value)}
           >
             {options.length === 0 ? (
-              <option value="">No local models found — is Ollama running?</option>
+              <option value="">
+                {ollamaReachable
+                  ? "Ollama is running but has no models — pull one first"
+                  : "Ollama isn’t reachable — start it and refresh"}
+              </option>
             ) : (
               options.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))
             )}
           </select>
+          {options.length === 0 ? (
+            <p className={styles.errorNote}>
+              {ollamaReachable ? (
+                <>Ollama is running but has no models. Run <code>ollama pull &lt;model&gt;</code> (e.g.{" "}
+                <code>ollama pull qwen2.5:7b</code>), then refresh.</>
+              ) : (
+                <>Couldn’t reach Ollama at <code>{ollamaBaseUrl || "the configured URL"}</code>. Start
+                Ollama on the host (see the README), then refresh this page.</>
+              )}
+            </p>
+          ) : null}
           <p className={styles.hint}>
             Models are read from your running Ollama. A larger model gives better drafts;
             it’s your quality dial — and every model runs fully local and free. Pull a new

@@ -23,6 +23,9 @@ interface ZoteroSelectionValue {
   clear: () => void
   indexedKeys: Set<string>
   markIndexed: (keys: string[]) => void
+  // True when persisting the selection to sessionStorage failed (private mode / quota /
+  // blocked storage): the selection still works in-tab but won't survive a reload.
+  persistError: boolean
 }
 
 const ZoteroSelectionContext = createContext<ZoteroSelectionValue>({
@@ -33,12 +36,14 @@ const ZoteroSelectionContext = createContext<ZoteroSelectionValue>({
   clear: () => {},
   indexedKeys: new Set(),
   markIndexed: () => {},
+  persistError: false,
 })
 
 export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [indexedKeys, setIndexedKeys] = useState<Set<string>>(new Set())
   const [settled, setSettled] = useState(false)
+  const [persistError, setPersistError] = useState(false)
 
   useEffect(() => {
     try {
@@ -49,15 +54,26 @@ export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
       // positive for this intentional pattern.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setSelectedKeys(new Set(JSON.parse(raw) as string[]))
-    } catch {}
+    } catch (e) {
+      console.warn("Couldn't restore saved paper selection from sessionStorage:", e)
+    }
     setSettled(true)
   }, [])
 
   useEffect(() => {
     if (!settled) return
+    let ok = true
     try {
       window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...selectedKeys]))
-    } catch {}
+    } catch (e) {
+      console.warn("Couldn't persist paper selection to sessionStorage:", e)
+      ok = false
+    }
+    // Syncing persist-status to React from an external system (sessionStorage); React bails
+    // out of a re-render when the value is unchanged. Same intentional pattern as the read
+    // effect above.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPersistError(!ok)
   }, [selectedKeys, settled])
 
   const toggle = useCallback((key: string) => {
@@ -90,7 +106,7 @@ export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
 
   return (
     <ZoteroSelectionContext.Provider
-      value={{ selectedKeys, isSelected, toggle, setMany, clear, indexedKeys, markIndexed }}
+      value={{ selectedKeys, isSelected, toggle, setMany, clear, indexedKeys, markIndexed, persistError }}
     >
       {children}
     </ZoteroSelectionContext.Provider>

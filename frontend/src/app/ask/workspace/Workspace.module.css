@@ -133,6 +133,17 @@
   border-radius: var(--radius-sm);
 }
 
+/* Non-blocking notice: the run finished and renders, but persisting it to History failed. */
+.saveWarning {
+  margin: 0 24px;
+  padding: 8px 12px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
+  background: var(--surface-muted);
+  border-left: 2px solid var(--source-amber);
+  border-radius: var(--radius-sm);
+}
+
 
 .spin {
   animation: ws-spin 1s linear infinite;

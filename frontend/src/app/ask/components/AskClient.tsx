@@ -258,7 +258,12 @@ function AskContent() {
   const loadedSessionRef = useRef<string | null>(null)
 
   const hasMessages = messages.length > 0
-  const canSubmit = useMemo(() => input.trim().length >= 2 && !isLoading, [input, isLoading])
+  // A question must be scoped to at least one selected paper (the sidebar selection is the
+  // retrieval scope); the Send button + Enter stay disabled until something is selected.
+  const canSubmit = useMemo(
+    () => input.trim().length >= 2 && !isLoading && selectedKeys.size > 0,
+    [input, isLoading, selectedKeys],
+  )
   const activeSessionTitle = useMemo(() => {
     const title = sessions.find((session) => session.id === activeSessionId)?.title?.trim()
 
@@ -401,6 +406,12 @@ function AskContent() {
       return
     }
 
+    // A question must be scoped to selected papers (the retrieval scope).
+    if (selectedKeysRef.current.size === 0) {
+      setError("Select one or more papers in the sidebar before asking.")
+      return
+    }
+
     // Hard guard against duplicate submissions while a request is in flight.
     if (inFlightRef.current) return
     inFlightRef.current = true
@@ -513,6 +524,10 @@ function AskContent() {
         streamErrorCode = payload.code ?? ""
         throw new Error(payload.message || "Something went wrong.")
       }
+
+      // Unknown event type — ignore it (forward-compatible) but make the drop visible in
+      // the console instead of failing silently.
+      console.warn("Ignoring unknown stream event type:", (payload as { type?: string }).type)
     }
 
     const controller = new AbortController()
@@ -565,6 +580,8 @@ function AskContent() {
           try {
             payload = JSON.parse(json) as LabStreamEvent
           } catch {
+            // Drop the malformed frame but make it visible rather than silent.
+            console.warn("Dropping malformed SSE frame:", json)
             continue
           }
 
@@ -639,7 +656,9 @@ function AskContent() {
 
     event.preventDefault()
 
-    if (canSubmit) {
+    // canSubmit gates on `isLoading` (state, lags a tick); also check the in-flight ref
+    // (set synchronously) so a rapid double-Enter can't slip a second submit through.
+    if (canSubmit && !inFlightRef.current) {
       void submitQuestion()
     }
   }
@@ -806,6 +825,12 @@ function AskContent() {
                     <SendHorizontal size={17} strokeWidth={2} aria-hidden />
                   </button>
                 </div>
+
+                {selectedKeys.size === 0 ? (
+                  <div className={styles.composerHint}>
+                    Select one or more papers in the sidebar to ask a question.
+                  </div>
+                ) : null}
 
                 {!hasMessages ? (
                   <div className={styles.examples}>

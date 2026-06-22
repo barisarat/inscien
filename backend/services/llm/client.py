@@ -53,15 +53,25 @@ def _read_settings():
         session.close()
 
 
-def list_ollama_models(base_url=None):
-    """Model ids served by the local Ollama (empty list if unreachable)."""
+def list_ollama_models_status(base_url=None):
+    """Probe the local Ollama for its model ids, distinguishing *unreachable* from *empty*.
+
+    Returns {"reachable": bool, "models": [...]}. `reachable=False` means the request itself
+    failed (Ollama down / wrong URL); `reachable=True` with an empty list means Ollama is up
+    but has no models pulled. The UI needs that distinction to give the right guidance.
+    """
     base = (base_url or "").strip() or DEFAULT_OLLAMA_URL
     try:
         resp = requests.get(f"{base.rstrip('/')}/models", timeout=1.5)
         data = resp.json()
-        return [m.get("id") for m in data.get("data", []) if m.get("id")]
+        return {"reachable": True, "models": [m.get("id") for m in data.get("data", []) if m.get("id")]}
     except Exception:
-        return []
+        return {"reachable": False, "models": []}
+
+
+def list_ollama_models(base_url=None):
+    """Model ids served by the local Ollama (empty list if unreachable)."""
+    return list_ollama_models_status(base_url)["models"]
 
 
 def resolve_llm_config():
