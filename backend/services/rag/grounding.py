@@ -55,6 +55,10 @@ def grade_sufficiency(query, context_blocks):
             reformulation = reformulation.strip() or None
         else:
             reformulation = None
+        # A weak judge often echoes the original question as its "reformulation"; re-running
+        # the same query just re-retrieves the same passages (a no-op after dedup), so drop it.
+        if reformulation and reformulation.lower() == query.strip().lower():
+            reformulation = None
         return {
             "sufficient": bool(data.get("sufficient", True)),
             "reformulation": reformulation,
