@@ -61,7 +61,7 @@ def extract_cell(title, attribute, results):
     )
 
     try:
-        response = chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200)
+        response = chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200, temperature=0)
         data = extract_json(text_of(response), {})
     except Exception:
         logger.exception("cell extraction failed for attribute=%s", attribute)

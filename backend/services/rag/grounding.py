@@ -47,6 +47,7 @@ def grade_sufficiency(query, context_blocks):
         response = chat_create(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=200,
+            temperature=0,  # deterministic JSON verdict
         )
         data = _parse_json(text_of(response))
         reformulation = data.get("reformulation")
@@ -89,6 +90,7 @@ def verify_grounding(answer, context_blocks):
         response = chat_create(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1200,
+            temperature=0,  # deterministic JSON verdict
         )
         data = _parse_json(text_of(response))
         grounded = bool(data.get("grounded", True))

@@ -88,7 +88,7 @@ def _cluster_themes(topic, doc_ids, titles, dimensions, cells):
     )
     try:
         raw = parse_json(text_of(chat_create(messages=[{"role": "user", "content": prompt}],
-                                            max_tokens=500)), [])
+                                            max_tokens=500, temperature=0)), [])
     except Exception:
         logger.exception("theme clustering failed")
         raw = []

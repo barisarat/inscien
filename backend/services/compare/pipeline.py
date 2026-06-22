@@ -80,7 +80,7 @@ def propose_dimensions(doc_ids):
     )
 
     try:
-        response = chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200)
+        response = chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200, temperature=0)
         raw = _parse_json(text_of(response), [])
     except Exception:
         logger.exception("propose_dimensions failed; falling back to defaults")
