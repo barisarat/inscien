@@ -20,6 +20,7 @@ import {
   listNarrations,
   listPapers,
   mappedKeys,
+  reconcileZotero,
   startZoteroIndex,
   type ZoteroCollection,
   type ZoteroItem,
@@ -57,6 +58,8 @@ export default function ZoteroNavigator({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [indexing, setIndexing] = useState<Set<string>>(new Set())
+  const [reconciling, setReconciling] = useState(false)
+  const [reconcileMsg, setReconcileMsg] = useState<string | null>(null)
   const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
   const [mapped, setMapped] = useState<Set<string>>(new Set())
   const [selectedOpen, setSelectedOpen] = useState(false)
@@ -94,6 +97,27 @@ export default function ZoteroNavigator({
 
   useEffect(() => {
     void load()
+  }, [load])
+
+  // Remove index entries for papers deleted from Zotero (explicit, user-driven).
+  const handleReconcile = useCallback(async () => {
+    setReconciling(true)
+    setReconcileMsg(null)
+    try {
+      const r = await reconcileZotero()
+      if (r.skipped) {
+        setReconcileMsg(r.reason || "Nothing was removed.")
+      } else if (!r.pruned) {
+        setReconcileMsg("Nothing to clean up.")
+      } else {
+        setReconcileMsg(`Removed ${r.pruned} deleted ${r.pruned === 1 ? "paper" : "papers"} from the index.`)
+        await load()
+      }
+    } catch (e) {
+      setReconcileMsg(e instanceof Error ? e.message : "Cleanup failed.")
+    } finally {
+      setReconciling(false)
+    }
   }, [load])
 
   // Index the not-yet-indexed of `keys` in the background, then mark them indexed.
@@ -393,6 +417,25 @@ export default function ZoteroNavigator({
           collections.map((col) => renderCollection(col, 0))
         )}
       </div>
+
+      {!loading && !error && !libraryMissing ? (
+        <div className={styles.footer}>
+          <button
+            type="button"
+            className={styles.footerAction}
+            onClick={() => void handleReconcile()}
+            disabled={reconciling}
+            title="Remove index entries for papers deleted from Zotero"
+          >
+            {reconciling ? (
+              <><Loader2 size={12} className={styles.spin} /> Cleaning up…</>
+            ) : (
+              "Clean up removed items"
+            )}
+          </button>
+          {reconcileMsg ? <div className={styles.footerNote}>{reconcileMsg}</div> : null}
+        </div>
+      ) : null}
     </aside>
   )
 }

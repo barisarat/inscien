@@ -216,6 +216,15 @@ export async function startZoteroIndex(itemKeys: string[]): Promise<{ jobId: str
   return authedAction("/api/zotero/index", "POST", { itemKeys })
 }
 
+export async function reconcileZotero(): Promise<{
+  pruned: number
+  removed?: string[]
+  skipped?: boolean
+  reason?: string
+}> {
+  return authedAction("/api/zotero/reconcile", "POST")
+}
+
 export async function getZoteroIndexJob(jobId: string): Promise<ZoteroIndexJob> {
   return authedGet(`/api/zotero/index/${encodeURIComponent(jobId)}`)
 }

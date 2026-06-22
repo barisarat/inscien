@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from repositories import zotero_repository as ledger
 from services.zotero import reader
-from services.zotero.ingest import reset_index
+from services.zotero.ingest import prune_orphans, reset_index
 from services.zotero.settings import get_zotero_settings
 from services.zotero.jobs import get_job, start_job
 
@@ -134,3 +134,10 @@ def reset():
     """Drop the whole index (Qdrant + manifest + ledger). One-time use to clear the
     pre-Zotero corpus before the first Zotero index. Destructive."""
     return reset_index()
+
+
+@router.post("/reconcile")
+def reconcile():
+    """Remove index entries for papers no longer in the live Zotero library (deleted items).
+    Safe: prunes nothing if the live library is unreadable/empty. Returns a summary."""
+    return prune_orphans()

@@ -45,6 +45,12 @@ def upsert_item(db, item_key, file_hash, title, chunk_count, status="indexed"):
     return row
 
 
+def delete_item(db, item_key):
+    """Remove one ledger row (used when reconciling away an item deleted from Zotero)."""
+    db.query(ZoteroSyncItem).filter(ZoteroSyncItem.item_key == item_key).delete()
+    db.commit()
+
+
 def clear_all(db):
     db.query(ZoteroSyncItem).delete()
     db.commit()

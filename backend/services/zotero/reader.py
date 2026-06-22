@@ -205,6 +205,27 @@ def resolve_collection_items(collection_id, recursive=True):
     return {r["key"] for r in rows}
 
 
+def live_item_keys():
+    """Every item key present in the live library (excluding trash) — the authoritative set
+    of what still exists in Zotero. Used to find indexed items that were deleted from Zotero.
+
+    Returns a superset of valid parent keys (includes attachments/notes), so diffing the
+    indexed set against it can never false-positive a still-present paper.
+    """
+    con = _connect()
+    try:
+        rows = con.execute(
+            """
+            SELECT DISTINCT i.key
+            FROM items i
+            WHERE i.itemID NOT IN (SELECT itemID FROM deletedItems)
+            """
+        ).fetchall()
+    finally:
+        con.close()
+    return {r["key"] for r in rows}
+
+
 def collection_direct_items():
     """One-query map {collectionID: set(itemKey)} of *direct* (non-recursive) membership,
     excluding trash. The collections endpoint folds this up the tree in Python instead of

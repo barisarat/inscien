@@ -18,6 +18,7 @@ from pathlib import Path
 from core.db import SessionLocal
 from repositories.zotero_repository import (
     clear_all,
+    delete_item,
     ensure_table,
     get_ledger,
     upsert_item,
@@ -43,7 +44,7 @@ from services.state_guard import (
     end_reset,
     ensure_current_generation,
 )
-from services.zotero.reader import item_metadata, resolve_pdf_path
+from services.zotero.reader import item_metadata, live_item_keys, resolve_pdf_path
 
 logger = logging.getLogger(__name__)
 
@@ -261,3 +262,64 @@ def reset_index():
         finally:
             end_reset()
     return {"ok": True}
+
+
+def prune_orphans(progress=None):
+    """Remove index entries for items no longer in the live Zotero library (deleted papers).
+
+    Diffs the indexed set (manifest sourceIds ∪ ledger keys) against the live library and
+    drops each orphan's Qdrant points, manifest chunks, and ledger row. Explicit/user-driven.
+
+    Safety: if the live library can't be read or comes back empty, prune NOTHING — an
+    unmounted/empty library must never look like "everything was deleted".
+    """
+    emit = progress or (lambda *_args, **_kwargs: None)
+    generation = current_generation()
+    ensure_table()
+    settings = get_lab_settings()
+    manifest_path = Path(settings["chunk_index_path"])
+
+    try:
+        live = live_item_keys()
+    except Exception:
+        logger.exception("prune_orphans: could not read the live Zotero library")
+        return {"skipped": True, "pruned": 0,
+                "reason": "Couldn't read your Zotero library — nothing was removed."}
+    if not live:
+        return {"skipped": True, "pruned": 0,
+                "reason": "Your Zotero library looks empty or unavailable — nothing was removed."}
+
+    by_source = defaultdict(list)
+    for chunk in read_json_file(manifest_path):
+        by_source[chunk["sourceId"]].append(chunk)
+
+    db = SessionLocal()
+    try:
+        ledger = get_ledger(db)
+        orphans = sorted((set(by_source) | set(ledger)) - live)
+        if not orphans:
+            return {"pruned": 0, "removed": []}
+
+        removed = []
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            for i, key in enumerate(orphans, start=1):
+                title = (ledger.get(key) or {}).get("title") or key
+                try:
+                    delete_lab_points_by_source(key)
+                except Exception:
+                    logger.exception("prune_orphans: Qdrant delete failed for %s", key)
+                by_source.pop(key, None)
+                try:
+                    delete_item(db, key)
+                except Exception:
+                    db.rollback()
+                    logger.exception("prune_orphans: ledger delete failed for %s", key)
+                removed.append(title)
+                emit("pruning", int(i / len(orphans) * 100), f"removed {title[:48]}")
+            # One atomic manifest write reflecting the pruned working set.
+            _write_manifest([c for chunks in by_source.values() for c in chunks], manifest_path)
+        logger.info("prune_orphans: removed %d orphaned item(s)", len(removed))
+        return {"pruned": len(removed), "removed": removed}
+    finally:
+        db.close()

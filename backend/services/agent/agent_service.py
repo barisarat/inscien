@@ -23,6 +23,7 @@ from services.lab.answer_service import (
     make_citation,
     remove_invalid_citation_markers,
 )
+from services.lab.manifest_loader import ManifestCorruptError
 from services.lab.prompt_service import build_context_blocks
 from services.llm.client import chat_create, delta_of, describe_llm_error, text_of
 from services.agent.prompt import build_agent_system_prompt, build_grounding_block
@@ -354,6 +355,14 @@ def stream_agent_answer(
             "sessionId": chat_session_id,
             "verification": verification,
             "insufficientContext": insufficient,
+        }
+    except ManifestCorruptError as exc:
+        logger.exception("agent stream hit a corrupt manifest query=%r", query)
+        yield {
+            "type": "error",
+            "code": "index_corrupt",
+            "retryable": False,
+            "message": str(exc),
         }
     except Exception as exc:
         logger.exception("agent stream failed query=%r session=%s", query, session_id)

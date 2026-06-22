@@ -8,9 +8,22 @@ failing — the app still boots and answers "insufficient sources".
 """
 
 import json
+import logging
+import shutil
+import time
 from pathlib import Path
 
 from services.lab.settings import get_lab_settings
+
+logger = logging.getLogger(__name__)
+
+
+class ManifestCorruptError(RuntimeError):
+    """The chunk manifest exists but is unparseable/not a list — a damaged derived store.
+
+    Carries a user-facing, actionable message: the recovery is a Reset + re-index (which
+    rebuilds the manifest, Qdrant, and the ledger together), not a silent partial rebuild.
+    """
 
 
 REQUIRED_CHUNK_FIELDS = [
@@ -25,15 +38,31 @@ REQUIRED_CHUNK_FIELDS = [
 ]
 
 
+_CORRUPT_MESSAGE = (
+    "Your search index is corrupted. Reset and re-index from the sidebar to rebuild it."
+)
+
+
 def read_json_file(path):
     if not path.exists():
         return []
 
-    with path.open("r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    if not isinstance(data, list):
-        raise ValueError(f"Manifest must contain a list: {path}")
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+        if not isinstance(data, list):
+            raise ValueError(f"Manifest must contain a list: {path}")
+    except (json.JSONDecodeError, ValueError) as exc:
+        # Damaged manifest. Preserve a copy for debugging (a copy, not a move, so a later
+        # Reset still wipes the original cleanly), then fail loudly with an actionable
+        # message rather than crashing with an opaque traceback or limping on bad data.
+        try:
+            backup = path.with_name(f"{path.name}.corrupt-{int(time.time())}")
+            shutil.copy2(path, backup)
+            logger.error("Corrupt manifest at %s (%s); preserved a copy at %s", path, exc, backup)
+        except Exception:
+            logger.exception("Corrupt manifest at %s (%s); failed to preserve a copy", path, exc)
+        raise ManifestCorruptError(_CORRUPT_MESSAGE) from exc
 
     return data
 
