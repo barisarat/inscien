@@ -43,19 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-public/notebooks/Rent_Contracts.csv
-public/notebooks/Transactions.csv
-
-# pythgon notebook runners
-.venv
-.ipynb_checkpoints
-
-
-# large datasets
-Transactions.csv
-Rent_Contracts.csv
-frontend/public/notebooks/transcribe_outputs
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -273,58 +260,10 @@ __marimo__/
 # Temporary files
 *.tmp
 
-# Celery beat scheduler files
-celerybeat-schedule
-celerybeat-schedule.*
+# Celery (scaffolding only — not run in InScien)
+celerybeat-schedule*
 celerybeat.pid
-celerybeat*
-*.pid
 
-# Celery worker state
-celeryd.pid
-celeryd-*.pid
-
-.coverage
-
-# -------------------------
-# Optional large data / artifacts
-# -------------------------
-# Uncomment or edit paths below if you cache data locally
-# data/
-# **/*.parquet
-# **/*.csv
-
-# GDELT article store: runtime data (hot-tier flush target / S3-synced
-# history), never tracked. Distributed via S3 archives — scripts/gdelt_sync.py.
-backend/generated/gdelt/
-
-# large gdelt raw files:
-**/gdelt_daily_out
-**/LEGACYMAIN
-**/atomic_topics_out/daily
-**/briefs_pipeline/v1/raw_cache/
-**/GDELT/raw_cache/
-
-# raw-net GDELT signal pipeline — local DATA outputs (regenerable / S3 / runtime-only), never tracked.
-# Code is kept: ml/ module code + venue_review keeplist.csv & *.md.
-**/gdelt_stories/
-# signal model local cache — fetched from S3 at runtime, never tracked.
-backend/services/signals/_model_cache/
-# ml/ model-dev module: data + model weights gitignored; code, label_space.json &
-# model_card.md stay tracked. ml/data holds the regenerable pipeline artifacts.
-ml/data/
-ml/models/**/model.pt
-# venue_review data (keeps gkg.py / backfill_gdelt.py / keeplist.csv / *.md docs)
-backend/scripts/venue_review/sample*.parquet
-backend/scripts/venue_review/venue_profiles.csv
-backend/scripts/venue_review/denylist.csv
-backend/scripts/venue_review/uncertain.csv
-backend/scripts/venue_review/batches/
-backend/scripts/venue_review/results/
-
-
-
-celerybeat-schedule
 # InScien-specific
 /backend/data/
 *.sqlite
