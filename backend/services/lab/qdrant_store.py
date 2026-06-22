@@ -72,6 +72,45 @@ def recreate_lab_collection():
     }
 
 
+def ensure_lab_collection():
+    """Create the vector collection when missing.
+
+    Normal indexing should work on a fresh Qdrant volume without requiring a destructive
+    reset first. Reset still uses `recreate_lab_collection()` because it intentionally
+    drops existing vectors.
+    """
+    settings = get_lab_settings()
+    client = get_qdrant_client()
+    collection_name = settings["qdrant_collection"]
+
+    existing = client.get_collections()
+    existing_names = [
+        collection.name
+        for collection in existing.collections
+    ]
+
+    if collection_name in existing_names:
+        return {
+            "collection": collection_name,
+            "vector_size": settings["vector_size"],
+            "created": False,
+        }
+
+    client.create_collection(
+        collection_name=collection_name,
+        vectors_config=VectorParams(
+            size=settings["vector_size"],
+            distance=Distance.COSINE,
+        ),
+    )
+
+    return {
+        "collection": collection_name,
+        "vector_size": settings["vector_size"],
+        "created": True,
+    }
+
+
 def build_point(chunk, vector):
     payload = {
         "sourceType": chunk["sourceType"],

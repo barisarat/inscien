@@ -29,6 +29,7 @@ from services.lab.pdf_parser import parse_pdf
 from services.lab.qdrant_store import (
     build_point,
     delete_lab_points_by_source,
+    ensure_lab_collection,
     ensure_source_payload_index,
     recreate_lab_collection,
     upsert_lab_points,
@@ -113,6 +114,7 @@ def index_items(item_keys, progress=None):
 
     with DERIVED_STATE_LOCK:
         ensure_current_generation(generation)
+        ensure_lab_collection()
         ensure_source_payload_index()
     db = SessionLocal()
     indexed = skipped = skipped_no_pdf = failed = 0
