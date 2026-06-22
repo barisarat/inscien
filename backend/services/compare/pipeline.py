@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Bounds — keep the agent honest and the run finite (brief: "don't over-agent").
 MAX_PAPERS = 5
-MAX_DIMENSIONS = 6
+MAX_DIMENSIONS = 5
 
 
 def _resolve_titles(doc_ids):

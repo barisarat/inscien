@@ -12,7 +12,6 @@ RUN apt update && apt install -y \
     curl \
     ca-certificates \
     build-essential \
-    default-libmysqlclient-dev \
     pkg-config \
     ffmpeg \
     espeak-ng \
@@ -39,3 +38,10 @@ RUN mkdir -p /opt/kokoro \
 ENV KOKORO_MODEL_PATH=/opt/kokoro/kokoro-v1.0.onnx
 ENV KOKORO_VOICES_PATH=/opt/kokoro/voices-v1.0.bin
 ENV KOKORO_VOICE=af_heart
+
+# Run the app as the owner of the bind-mounted ./data dir (see entrypoint) so persisted
+# files are host-owned and writable without any manual chown. Kept under /usr/local/bin so
+# the ./backend:/workspace source mount doesn't shadow it.
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

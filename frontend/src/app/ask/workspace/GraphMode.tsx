@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 import {
@@ -11,8 +11,8 @@ import {
   type DiscoveryGraph,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
+import { useSkillJob, JobProgress, JobError } from "./skillJob"
 import GraphView, { type GraphLayout } from "../components/GraphView"
 import compareStyles from "../components/Compare.module.css"
 import styles from "./Workspace.module.css"
@@ -35,25 +35,20 @@ export default function GraphMode() {
   const [unmapped, setUnmapped] = useState<string[]>([])
   const [noDoiCount, setNoDoiCount] = useState(0)
   const [data, setData] = useState<DiscoveryGraph | null>(null)
-  const [progress, setProgress] = useState<{ detail?: string; progress?: number }>({})
-  const [error, setError] = useState<string | null>(null)
   const [layout, setLayout] = useState<GraphLayout>("network")
-  const token = useRef(0)
-  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
-  useEffect(() => () => { token.current += 1 }, [])
+  const { progress, error, setError, newRun, isStale, track } = useSkillJob()
 
   const render = useCallback(async (keys: string[], t: number) => {
     const graph = await fetchDiscoveryGraph(keys)
-    if (t !== token.current) return
+    if (isStale(t)) return
     setData(graph)
     setPhase("ready")
-  }, [])
+  }, [isStale])
 
   // Check coverage whenever the selection changes: all mapped → render directly;
   // otherwise offer the fetch confirmation.
   useEffect(() => {
-    const t = ++token.current
-    setError(null)
+    const t = newRun()
     setData(null)
     if (itemKeys.length === 0) {
       setPhase("need-more")
@@ -63,7 +58,7 @@ export default function GraphMode() {
     void (async () => {
       try {
         const status = await graphFetchStatus(itemKeys)
-        if (t !== token.current) return
+        if (isStale(t)) return
         setUnmapped(status.unmapped)
         setNoDoiCount(status.noDoi.length)
         if (status.unmapped.length === 0) {
@@ -72,7 +67,7 @@ export default function GraphMode() {
           setPhase("confirm")
         }
       } catch (e) {
-        if (t !== token.current) return
+        if (isStale(t)) return
         setError(String(e))
         setPhase("error")
       }
@@ -81,28 +76,21 @@ export default function GraphMode() {
   }, [keysKey])
 
   const build = useCallback(async () => {
-    const t = ++token.current
+    const t = newRun()
     setPhase("fetching")
-    setProgress({})
-    setError(null)
-    const isCancelled = () => t !== token.current
     try {
       const { jobId } = await startGraphFetch(unmapped)
-      await pollJob(jobId, getGraphFetch, {
-        isCancelled,
-        onProgress: (s) => setProgress({ detail: s.detail, progress: s.progress }),
+      await track(t, jobId, getGraphFetch, {
         onDone: () => render(itemKeys, t),
-        onError: (s) => {
-          setError(s.error || "Fetch failed.")
-          setPhase("error")
-        },
+        onError: () => setPhase("error"),
+        fallbackError: "Fetch failed.",
       })
     } catch (e) {
-      if (isCancelled()) return
+      if (isStale(t)) return
       setError(String(e))
       setPhase("error")
     }
-  }, [unmapped, itemKeys, render])
+  }, [unmapped, itemKeys, render, newRun, isStale, track, setError])
 
   // --- Rendered map ---------------------------------------------------------
   if (phase === "ready" && data) {
@@ -200,21 +188,9 @@ export default function GraphMode() {
         ) : null}
 
         {phase === "fetching" ? (
-          <div className={styles.runProgress}>
-            <div className={styles.runStage}>
-              <Loader2 size={13} className={styles.spin} /> {progress.detail || "Fetching references…"}
-            </div>
-            <div className={styles.bar}>
-              <div className={styles.barFill} style={{ width: `${progress.progress ?? 5}%` }} />
-            </div>
-          </div>
+          <JobProgress progress={progress} fallback="Fetching references…" />
         ) : phase === "error" ? (
-          <div className={styles.errorBox}>
-            {error || "Something went wrong."}
-            <button type="button" className={styles.linkBtn} onClick={build}>
-              Retry
-            </button>
-          </div>
+          <JobError error={error} onRetry={build} />
         ) : (
           <div className={compareStyles.confirmActions}>
             <button type="button" className={compareStyles.runBtn} onClick={build}>

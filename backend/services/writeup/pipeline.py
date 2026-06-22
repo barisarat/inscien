@@ -17,7 +17,7 @@ Long-running → driven as a background job (services/writeup/jobs.py) with prog
 import logging
 import re
 
-from services.compare.pipeline import propose_dimensions
+from services.compare.pipeline import MAX_DIMENSIONS, propose_dimensions
 from services.lab.answer_service import accept_revision
 from services.lab.search_service import search_lab
 from services.llm.client import chat_create, text_of
@@ -27,8 +27,7 @@ from services.rag.json_utils import extract_json as parse_json
 
 logger = logging.getLogger(__name__)
 
-MAX_PAPERS = 5
-MAX_DIMENSIONS = 5
+MAX_PAPERS = 5  # MAX_DIMENSIONS is shared from compare.pipeline (single source of truth)
 MAX_THEMES = 5
 DISCOVER_K = 30  # retrieval breadth when auto-selecting candidate papers
 

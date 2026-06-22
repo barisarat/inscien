@@ -75,8 +75,8 @@ def chat_create(messages, tools=None, tool_choice=None, stream=False, max_tokens
     """Single entry point for a Chat Completions call (tool-calling or plain).
 
     tool_choice may be "auto", "none", or a forced {"type":"function", ...} object;
-    defaults to "auto" when tools are supplied. temperature is omitted unless given —
-    some newer hosted models reject a non-default temperature.
+    defaults to "auto" when tools are supplied. temperature is omitted unless explicitly
+    given, so the local model uses its own default.
     """
     client, model, _provider = get_client_and_model()
     kwargs = {

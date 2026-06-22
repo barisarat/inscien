@@ -1,12 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 import { Loader2, X } from "lucide-react"
 
 import { getWriteup, listPapers, proposePlan, startWriteup, type PaperItem, type WriteResult } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
+import { useSkillJob, JobProgress, JobError } from "./skillJob"
 import { AnswerRenderer, CompactSources, type Citation } from "./answer/AnswerRenderer"
 import compareStyles from "../components/Compare.module.css"
 import styles from "./Workspace.module.css"
@@ -42,31 +42,33 @@ export default function WriteMode() {
   const [scope, setScope] = useState<string[]>([])
   const [dimensions, setDimensions] = useState<string[]>([])
   const [dimDraft, setDimDraft] = useState("")
-  const [progress, setProgress] = useState<{ stage?: string; detail?: string; progress?: number }>({})
   const [result, setResult] = useState<WriteResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const runToken = useRef(0)
-  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
-  useEffect(() => () => { runToken.current += 1 }, [])
+  const { progress, error, setError, newRun, isStale, track } = useSkillJob()
 
   const openCitation = useCallback(
     (c: Citation) => openPdf({ sourceId: c.sourceId, title: c.title, page: c.page, passage: c.passage }),
     [openPdf],
   )
 
+  const addDimension = useCallback(() => {
+    const v = dimDraft.trim()
+    if (!v) return
+    setDimensions((d) => (d.includes(v) ? d : [...d, v]))
+    setDimDraft("")
+  }, [dimDraft])
+
   const plan = useCallback(async () => {
     const t = topic.trim()
     if (!t) return
-    const token = ++runToken.current
+    const token = newRun()
     setPhase("planning")
-    setError(null)
     try {
       const selIds = Array.from(selectedKeys)
       const [{ papers: suggested, dimensions: dims }, all] = await Promise.all([
         proposePlan(t),
         selIds.length > 0 ? listPapers() : Promise.resolve({ papers: [] as PaperItem[] }),
       ])
-      if (token !== runToken.current) return
+      if (isStale(token)) return
       // The library selection drives the review: selected papers lead the candidate
       // list (pre-included), with the topic-proposed papers offered after them.
       const titleOf = new Map(all.papers.map((p) => [p.docId, p.title]))
@@ -84,23 +86,18 @@ export default function WriteMode() {
       setDimensions(dims)
       setPhase("configure")
     } catch (e) {
-      if (token !== runToken.current) return
+      if (isStale(token)) return
       setError(String(e))
       setPhase("error")
     }
-  }, [topic, selectedKeys])
+  }, [topic, selectedKeys, newRun, isStale, setError])
 
   const run = useCallback(async () => {
-    const token = ++runToken.current
+    const token = newRun()
     setPhase("running")
-    setProgress({})
-    setError(null)
-    const isCancelled = () => token !== runToken.current
     try {
       const { jobId } = await startWriteup(topic.trim(), scope, dimensions)
-      await pollJob(jobId, getWriteup, {
-        isCancelled,
-        onProgress: (s) => setProgress({ stage: s.stage, detail: s.detail, progress: s.progress }),
+      await track(token, jobId, getWriteup, {
         onDone: (s) => {
           if (s.result) {
             setResult(s.result)
@@ -114,17 +111,15 @@ export default function WriteMode() {
             setPhase("error")
           }
         },
-        onError: (s) => {
-          setError(s.error || "Draft failed.")
-          setPhase("error")
-        },
+        onError: () => setPhase("error"),
+        fallbackError: "Draft failed.",
       })
     } catch (e) {
-      if (isCancelled()) return
+      if (isStale(token)) return
       setError(String(e))
       setPhase("error")
     }
-  }, [topic, scope, dimensions, saveRun])
+  }, [topic, scope, dimensions, saveRun, newRun, isStale, track, setError])
 
   // A run loaded from History.
   if (loaded) {
@@ -213,21 +208,9 @@ export default function WriteMode() {
             <Loader2 size={13} className={styles.spin} /> Finding the most relevant papers…
           </div>
         ) : phase === "running" ? (
-          <div className={styles.runProgress}>
-            <div className={styles.runStage}>
-              <Loader2 size={13} className={styles.spin} /> {progress.detail || progress.stage || "Writing…"}
-            </div>
-            <div className={styles.bar}>
-              <div className={styles.barFill} style={{ width: `${progress.progress ?? 5}%` }} />
-            </div>
-          </div>
+          <JobProgress progress={progress} fallback="Writing…" />
         ) : phase === "error" ? (
-          <div className={styles.errorBox}>
-            {error || "Something went wrong."}
-            <button type="button" className={styles.linkBtn} onClick={() => setPhase("topic")}>
-              Start over
-            </button>
-          </div>
+          <JobError error={error} onRetry={() => setPhase("topic")} retryLabel="Start over" />
         ) : (
           <>
             <div className={compareStyles.confirmLabel}>Papers — most relevant in your library (toggle to include)</div>
@@ -273,11 +256,7 @@ export default function WriteMode() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
-                    const v = dimDraft.trim()
-                    if (v) {
-                      setDimensions((d) => (d.includes(v) ? d : [...d, v]))
-                      setDimDraft("")
-                    }
+                    addDimension()
                   }
                 }}
                 placeholder="Add a dimension…"
@@ -285,13 +264,7 @@ export default function WriteMode() {
               <button
                 type="button"
                 className={compareStyles.dimAddBtn}
-                onClick={() => {
-                  const v = dimDraft.trim()
-                  if (v) {
-                    setDimensions((d) => (d.includes(v) ? d : [...d, v]))
-                    setDimDraft("")
-                  }
-                }}
+                onClick={addDimension}
                 disabled={!dimDraft.trim()}
               >
                 Add

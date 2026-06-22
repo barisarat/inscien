@@ -43,7 +43,9 @@ services:
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_COLLECTION=inscien_lab_chunks
-      - LAB_TOP_K=10
+      # Persist the embedding model on the (host-owned, writable) data mount so it survives
+      # restarts and is writable by the non-root runtime user. See backend/entrypoint.sh.
+      - FASTEMBED_CACHE_PATH=/workspace/data/.fastembed
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}

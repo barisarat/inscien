@@ -447,7 +447,7 @@ function AskContent() {
 
     const handleEvent = (payload: LabStreamEvent) => {
       if (payload.type === "stage") {
-        // Server may send a dynamic label (e.g. "computing QQQ volatility");
+        // Server may send a dynamic label (e.g. "searching 12 papers");
         // fall back to the static stage label when absent.
         updateAssistant({ loadingStage: payload.stage, stageLabel: payload.label })
         return

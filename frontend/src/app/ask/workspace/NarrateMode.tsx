@@ -1,12 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { AudioLines, Loader2 } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { AudioLines } from "lucide-react"
 
 import { activeNarration, getNarration, listNarrations, listPapers, startNarration, API_BASE } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { pollJob as runPollLoop } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
+import { useSkillJob, JobProgress, JobError } from "./skillJob"
 import compareStyles from "../components/Compare.module.css"
 import styles from "./Workspace.module.css"
 
@@ -23,41 +23,29 @@ export default function NarrateMode() {
   const [phase, setPhase] = useState<Phase>("idle")
   const [title, setTitle] = useState("")
   const [jobId, setJobId] = useState("")
-  const [progress, setProgress] = useState<{ stage?: string; detail?: string; progress?: number }>({})
-  const [error, setError] = useState<string | null>(null)
-  const runToken = useRef(0)
-  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
-  useEffect(() => () => { runToken.current += 1 }, [])
+  const { progress, setProgress, error, setError, newRun, isStale, track } = useSkillJob()
 
   // Poll an existing narration job to completion. Shared by a fresh run and by
   // re-attaching to a job that was already running when this mode (re)mounted.
-  const pollJob = useCallback((id: string, token: number) =>
-    runPollLoop(id, getNarration, {
-      isCancelled: () => token !== runToken.current,
-      onProgress: (s) => {
-        setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
-        if (s.title) setTitle(s.title)
-      },
+  const attach = useCallback((id: string, token: number) =>
+    track(token, id, getNarration, {
+      onProgress: (s) => { if (s.title) setTitle(s.title) },
       onDone: () => setPhase("done"),
-      onError: (s) => {
-        setError(s.error || "Narration failed.")
-        setPhase("error")
-      },
-    }), [])
+      onError: () => setPhase("error"),
+      fallbackError: "Narration failed.",
+    }), [track])
 
   // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
   useEffect(() => {
-    const token = ++runToken.current
+    const token = newRun()
     setPhase("idle")
     setJobId("")
-    setProgress({})
-    setError(null)
     setTitle("")
     if (loaded || !docId) return
     void (async () => {
       try {
         const [{ papers }, { job }] = await Promise.all([listPapers(), activeNarration(docId)])
-        if (token !== runToken.current) return
+        if (isStale(token)) return
         setTitle(papers.find((p) => p.docId === docId)?.title || "")
         // Re-attach to a narration started before navigating away (resume its progress)
         // rather than offering to regenerate it.
@@ -66,13 +54,13 @@ export default function NarrateMode() {
           if (job.title) setTitle(job.title)
           setProgress({ stage: job.stage, detail: job.detail, progress: job.progress })
           setPhase("running")
-          void pollJob(job.id, token)
+          void attach(job.id, token)
           return
         }
         // Otherwise auto-detect an already-generated narration so we play it instead of
         // regenerating.
         const { items } = await listNarrations()
-        if (token !== runToken.current) return
+        if (isStale(token)) return
         const existing = items.find((n) => n.docId === docId)
         if (existing) {
           setJobId(existing.jobId)
@@ -87,23 +75,20 @@ export default function NarrateMode() {
 
   const run = useCallback(async () => {
     if (!docId) return
-    const token = ++runToken.current
+    const token = newRun()
     setPhase("running")
-    setProgress({})
-    setError(null)
     try {
       const res = await startNarration({ docId })
-      if (token !== runToken.current) return
+      if (isStale(token)) return
       setJobId(res.jobId)
       if (res.title) setTitle(res.title)
-      await pollJob(res.jobId, token)
+      await attach(res.jobId, token)
     } catch (e) {
-      if (token === runToken.current) {
-        setError(String(e))
-        setPhase("error")
-      }
+      if (isStale(token)) return
+      setError(String(e))
+      setPhase("error")
     }
-  }, [docId, pollJob])
+  }, [docId, attach, newRun, isStale, setError])
 
   if (loaded) {
     const audioUrl = `${API_BASE}/api/narrate/${encodeURIComponent(loaded.jobId)}/audio`
@@ -144,17 +129,13 @@ export default function NarrateMode() {
         </div>
 
         {phase === "running" ? (
-          <div className={styles.runProgress}>
-            <div className={styles.runStage}>
-              <Loader2 size={13} className={styles.spin} /> {progress.detail || progress.stage || "Generating audio…"}
-            </div>
-            <div className={styles.bar}>
-              <div className={styles.barFill} style={{ width: `${Math.max(2, progress.progress ?? 0)}%` }} />
-            </div>
-            <div className={compareStyles.confirmStatus}>
-              Generating audio in the background (a few minutes) — you can keep working.
-            </div>
-          </div>
+          <JobProgress
+            progress={progress}
+            fallback="Generating audio…"
+            minPct={2}
+            defaultPct={0}
+            note="Generating audio in the background (a few minutes) — you can keep working."
+          />
         ) : phase === "done" ? (
           <div className={styles.audioWrap}>
             <audio className={styles.audio} controls src={`${API_BASE}/api/narrate/${encodeURIComponent(jobId)}/audio`} />
@@ -167,12 +148,7 @@ export default function NarrateMode() {
             </a>
           </div>
         ) : phase === "error" ? (
-          <div className={styles.errorBox}>
-            {error || "Something went wrong."}
-            <button type="button" className={styles.linkBtn} onClick={run}>
-              Retry
-            </button>
-          </div>
+          <JobError error={error} onRetry={run} />
         ) : (
           <>
             <div className={compareStyles.confirmStatus}>

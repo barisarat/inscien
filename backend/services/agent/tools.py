@@ -8,7 +8,7 @@ write, narrate, the citation graph) live in their own workspace tabs, not the ch
 
 from dataclasses import dataclass
 
-from services.lab.answer_service import select_answer_context, unique_citations
+from services.lab.answer_service import select_answer_context
 from services.lab.prompt_service import build_context_blocks
 from services.lab.search_service import search_lab
 from services.rag.grounding import grade_sufficiency
@@ -64,11 +64,8 @@ def search_internal_content(query, item_keys=None):
             context_results = select_answer_context(query, union, RESULT_LIMIT)
             context_blocks = build_context_blocks(context_results)
 
-    citations = unique_citations(context_results, RESULT_LIMIT)
-
     return {
         "contextBlocks": context_blocks,
-        "citations": citations,
         "contextResults": context_results,
     }
 

@@ -59,6 +59,12 @@ class JobRunner:
             last = (traceback.format_exc().strip().splitlines() or ["error"])[-1]
             self._log.exception("%s job %s failed", self.name, job_id)
             self._set(job_id, status="error", error=last)
+        finally:
+            # Job is terminal and fully persisted; drop it from memory so the dict only holds
+            # in-flight jobs. `get` falls back to the persisted file, so pollers and the
+            # narration registry (which globs disk) are unaffected.
+            with self._lock:
+                self._jobs.pop(job_id, None)
 
     def start(self, work, extra=None):
         """Queue `work(job_id, progress_cb) -> dict|None`; the returned dict is merged into

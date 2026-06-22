@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Loader2, X } from "lucide-react"
 
 import {
@@ -11,10 +11,10 @@ import {
   type CompareResult,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { pollJob } from "@/lib/pollJob"
 import ComparisonView from "../components/ComparisonView"
 import compareStyles from "../components/Compare.module.css"
 import { useWorkspace } from "./WorkspaceProvider"
+import { useSkillJob, JobProgress, JobError } from "./skillJob"
 import styles from "./Workspace.module.css"
 
 type Phase = "need-more" | "proposing" | "configure" | "running" | "done" | "error"
@@ -31,22 +31,17 @@ export default function CompareMode() {
   const [papers, setPapers] = useState<Paper[]>([])
   const [dimensions, setDimensions] = useState<string[]>([])
   const [dimDraft, setDimDraft] = useState("")
-  const [progress, setProgress] = useState<{ stage?: string; detail?: string; progress?: number }>({})
   const [result, setResult] = useState<CompareResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
-  const runToken = useRef(0)
-  // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
-  useEffect(() => () => { runToken.current += 1 }, [])
+  const { progress, error, setError, newRun, isStale, track } = useSkillJob()
   const loaded = activeArtifact?.kind === "comparison" ? activeArtifact : null
 
   // (Re)propose dimensions when the selected set changes — unless we're showing a
   // run loaded from History (the loaded run wins until the user starts fresh).
   useEffect(() => {
     if (loaded) return
-    const token = ++runToken.current
+    const token = newRun()
     setResult(null)
-    setError(null)
     if (docIds.length < 2) {
       setPhase("need-more")
       return
@@ -58,13 +53,13 @@ export default function CompareMode() {
           listPapers(),
           proposeCompare(docIds),
         ])
-        if (token !== runToken.current) return
+        if (isStale(token)) return
         const titleOf = new Map(all.map((p) => [p.docId, p.title]))
         setPapers(docIds.map((id) => ({ docId: id, title: titleOf.get(id) || id })))
         setDimensions(proposed)
         setPhase("configure")
       } catch (e) {
-        if (token !== runToken.current) return
+        if (isStale(token)) return
         setError(String(e))
         setPhase("error")
       }
@@ -84,16 +79,11 @@ export default function CompareMode() {
   }, [])
 
   const run = useCallback(async () => {
-    const token = ++runToken.current
+    const token = newRun()
     setPhase("running")
-    setProgress({})
-    setError(null)
-    const isCancelled = () => token !== runToken.current
     try {
       const { jobId } = await startCompare(docIds, dimensions)
-      await pollJob(jobId, getCompare, {
-        isCancelled,
-        onProgress: (s) => setProgress({ stage: s.stage, detail: s.detail, progress: s.progress }),
+      await track(token, jobId, getCompare, {
         onDone: (s) => {
           if (s.result) {
             setResult(s.result)
@@ -105,17 +95,16 @@ export default function CompareMode() {
             setPhase("error")
           }
         },
-        onError: (s) => {
-          setError(s.error || "Comparison failed.")
-          setPhase("error")
-        },
+        onError: () => setPhase("error"),
+        fallbackError: "Comparison failed.",
       })
     } catch (e) {
-      if (isCancelled()) return
+      if (isStale(token)) return
       setError(String(e))
       setPhase("error")
     }
-  }, [docIdsKey, dimensions, papers, saveRun])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docIdsKey, dimensions, papers, saveRun, newRun, isStale, track, setError])
 
   const shown = loaded ? loaded.result : phase === "done" ? result : null
 
@@ -180,21 +169,9 @@ export default function CompareMode() {
             <Loader2 size={13} className={styles.spin} /> Proposing comparison dimensions…
           </div>
         ) : phase === "running" ? (
-          <div className={styles.runProgress}>
-            <div className={styles.runStage}>
-              <Loader2 size={13} className={styles.spin} /> {progress.detail || progress.stage || "Comparing…"}
-            </div>
-            <div className={styles.bar}>
-              <div className={styles.barFill} style={{ width: `${progress.progress ?? 5}%` }} />
-            </div>
-          </div>
+          <JobProgress progress={progress} fallback="Comparing…" />
         ) : phase === "error" ? (
-          <div className={styles.errorBox}>
-            {error || "Something went wrong."}
-            <button type="button" className={styles.linkBtn} onClick={run}>
-              Retry
-            </button>
-          </div>
+          <JobError error={error} onRetry={run} />
         ) : (
           <>
             <div className={compareStyles.confirmLabel}>Comparison dimensions — edit before running</div>

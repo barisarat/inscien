@@ -162,28 +162,6 @@ def select_answer_context(query, results, max_items):
     return selected
 
 
-def unique_citations(results, max_items):
-    seen = set()
-    citations = []
-
-    for result in results:
-        key = (
-            result.get("title", ""),
-            result.get("url", ""),
-        )
-
-        if key in seen:
-            continue
-
-        seen.add(key)
-        citations.append(make_citation(result))
-
-        if len(citations) >= max_items:
-            break
-
-    return citations
-
-
 def remove_invalid_citation_markers(answer, citation_count):
     def replace_marker(match):
         citation_number = int(match.group(1))
