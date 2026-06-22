@@ -21,6 +21,7 @@ Reuses the existing machinery: per-document scoped hybrid retrieval (`search_lab
 
 import logging
 
+from services.lab.answer_service import accept_revision
 from services.lab.manifest_loader import load_manifest_chunks
 from services.llm.client import chat_create, text_of
 from services.rag.extraction import extract_cell, retrieve_cell
@@ -128,8 +129,12 @@ def _synthesize(titles, dimensions, cells):
         return ""
 
     check = verify_grounding(synthesis, table_text)
-    if check.get("revised_answer"):
-        synthesis = check["revised_answer"]
+    revised = check.get("revised_answer")
+    # Accept the rewrite only if it keeps the [n] markers and isn't truncated — verify_grounding
+    # now always returns a rewrite when the judge produced one, so this guard (matching the
+    # agent and /write) is what keeps a weak judge from regressing the synthesis.
+    if revised and accept_revision(synthesis, revised):
+        synthesis = revised
     return synthesis
 
 

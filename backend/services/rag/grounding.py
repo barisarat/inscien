@@ -97,13 +97,17 @@ def verify_grounding(answer, context_blocks):
         unsupported = data.get("unsupported") or []
         if not isinstance(unsupported, list):
             unsupported = []
+        unsupported = [str(u) for u in unsupported][:10]
         revised = data.get("revised_answer")
         revised = revised.strip() if isinstance(revised, str) and revised.strip() else None
-        # Only swap in a revision when the judge actually found a problem.
+        # A weak local judge frequently self-contradicts: it returns grounded=true yet still
+        # lists unsupported claims (and hedges them in revised_answer). Treat the draft as
+        # ungrounded whenever any claim is flagged, and always pass the rewrite through — the
+        # caller's accept_revision guard decides whether to actually swap it in.
         return {
-            "grounded": grounded,
-            "unsupported": [str(u) for u in unsupported][:10],
-            "revised_answer": revised if not grounded else None,
+            "grounded": grounded and not unsupported,
+            "unsupported": unsupported,
+            "revised_answer": revised,
         }
     except Exception:
         logger.exception("verify_grounding failed; treating answer as grounded")

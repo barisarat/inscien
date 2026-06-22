@@ -312,14 +312,18 @@ def stream_agent_answer(
                 yield {"type": "stage", "stage": "verifying"}
                 verdict = verify_grounding(answer, build_context_blocks(deduped))
                 revised = verdict.get("revised_answer")
+                applied = False
                 if revised:
                     revised = remove_invalid_citation_markers(revised, len(citations))
                     # Swap in the judge's rewrite only if it doesn't drop citations or
                     # truncate — a weak local judge can otherwise make the answer worse.
                     if accept_revision(answer, revised):
                         answer = revised
+                        applied = True
+                # The final answer is grounded if the draft already was, or we adopted the
+                # judge's hedged rewrite (which removes/softens the flagged claims).
                 verification = {
-                    "grounded": verdict.get("grounded", True),
+                    "grounded": verdict.get("grounded", True) or applied,
                     "unsupported": verdict.get("unsupported", []),
                 }
 
