@@ -16,10 +16,7 @@ import { useWorkspace } from "../workspace/WorkspaceProvider"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import {
   type ChatSessionSummary,
-  type CompareCitation,
   type CompareResult,
-  type NarrationStatus,
-  type PaperItem,
   API_BASE,
   deleteChatSession,
   getChatSession,
@@ -30,7 +27,6 @@ import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
 import { AnswerRenderer, CompactSources, type Citation } from "../workspace/answer/AnswerRenderer"
 import pageStyles from "../ask.module.css"
 import styles from "./AskClient.module.css"
-import compareStyles from "./Compare.module.css"
 
 type LabStreamEvent =
   | { type: "stage"; stage: LoadingStage; tool?: string; label?: string }
@@ -61,83 +57,49 @@ type LabMessage = {
   stageLabel?: string
   streaming?: boolean
   contextSummary?: string
-  // A `/write` draft — shows a Copy-as-markdown action when complete.
-  draft?: boolean
-  narration?: {
-    jobId: string
-    status: NarrationStatus["status"]
-    stage?: string
-    detail?: string
-    progress?: number
-    audioUrl?: string
-    error?: string
-  }
-  comparison?: {
-    jobId: string
-    status: "queued" | "running" | "done" | "error"
-    stage?: string
-    detail?: string
-    progress?: number
-    error?: string
-    papers?: PaperItem[]
-    ready?: boolean
-    // The finished table, stored on the message so its "View" opens THIS turn's data
-    // (live and on reload), not whatever was last in the shared panel state.
-    result?: CompareResult
-  }
-  // A `/write` literature-review job in progress (cleared and replaced by the draft on done).
-  writeup?: {
-    jobId: string
-    status: "queued" | "running" | "done" | "error"
-    stage?: string
-    detail?: string
-    progress?: number
-    error?: string
-  }
 }
 
 
 
-// Reconstruct a saved session's messages into renderable LabMessages.
+// Reconstruct a saved session's plain chat messages into renderable LabMessages. Skill runs
+// (compare/write) are not chat — they are intercepted by detectRun and reopened in their
+// workspace tab, so a session reaching here carries no skill widgets.
 function sessionMessagesToLab(
-  messages: { role: string; content: string; widgets?: unknown[]; citations?: unknown[]; contextSummary?: string }[]
+  messages: { role: string; content: string; citations?: unknown[]; contextSummary?: string }[]
 ): LabMessage[] {
-  return messages.map((m, i) => {
-    const msg: LabMessage = {
-      id: `restored-${i}`,
-      role: m.role === "assistant" ? "assistant" : "user",
-      content: m.content,
-      visibleContent: m.content,
-      citations: (m.citations as Citation[]) ?? [],
-      contextSummary: m.contextSummary ?? "",
-    }
+  return messages.map((m, i) => ({
+    id: `restored-${i}`,
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: m.content,
+    visibleContent: m.content,
+    citations: (m.citations as Citation[]) ?? [],
+    contextSummary: m.contextSummary ?? "",
+  }))
+}
 
-    // Translate saved skill payloads back into the dedicated message fields so each
-    // skill output rehydrates exactly as it rendered live (the `widgets` column is the
-    // carrier). Unknown kinds are ignored.
-    const widgets = (m.widgets ?? []) as Array<{ kind?: string } & Record<string, unknown>>
-    for (const w of widgets) {
-      if (w.kind === "draft") {
-        msg.draft = true
-      } else if (w.kind === "narration") {
-        const jobId = String(w.jobId ?? "")
-        msg.narration = {
-          jobId,
-          status: "done",
-          audioUrl: `${API_BASE}/api/narrate/${encodeURIComponent(jobId)}/audio`,
-        }
-      } else if (w.kind === "comparison") {
-        msg.comparison = {
-          jobId: "",
-          status: "done",
-          papers: (w.papers as PaperItem[]) ?? [],
-          result: w.result as CompareResult,
+// Detect a saved skill run from its persisted widgets so the session-load effect can reopen
+// it in the matching workspace tab (Compare/Write) instead of rendering it as chat.
+function detectRun(messages: { widgets?: unknown[] }[]):
+  | { kind: "comparison"; result: CompareResult; papers: { docId: string; title: string }[]; dimensions: string[] }
+  | { kind: "writeup"; answer: string; citations: unknown[] }
+  | null {
+  for (const m of messages) {
+    for (const w of (m.widgets || []) as Array<Record<string, unknown>>) {
+      if (w?.kind === "comparison" && w.result) {
+        const result = w.result as CompareResult
+        return {
+          kind: "comparison",
+          result,
+          papers: (w.papers as { docId: string; title: string }[]) || result.papers || [],
+          dimensions: (w.dimensions as string[]) || result.dimensions || [],
         }
       }
+      if (w?.kind === "writeup" && w.answer != null) {
+        return { kind: "writeup", answer: String(w.answer), citations: (w.citations as unknown[]) || [] }
+      }
     }
-
-    return msg
-  })
+  }
+  return null
 }
 
 const LOADING_STAGE_LABELS: Record<LoadingStage, string> = {
@@ -162,157 +124,12 @@ function makeMessageId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-function IconCopy() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function IconCheck() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function NarrationCard({ narration }: { narration: NonNullable<LabMessage["narration"]> }) {
-  const { status, detail, stage, progress, audioUrl, error } = narration
-
-  if (status === "error") {
-    return (
-      <div className={styles.warning}>
-        Couldn’t generate the audio. {error || ""}
-      </div>
-    )
-  }
-
-  if (status === "done" && audioUrl) {
-    return (
-      <div className={styles.narration}>
-        <div className={styles.narrationTitle}>Audio narration</div>
-        <audio className={styles.narrationAudio} controls src={audioUrl} />
-        <a className={styles.narrationDownload} href={audioUrl} download>
-          Download mp3
-        </a>
-      </div>
-    )
-  }
-
-  const pct = Math.max(2, Math.min(100, progress ?? 0))
-  return (
-    <div className={styles.narration}>
-      <div className={styles.narrationStage}>{detail || stage || "Starting…"}</div>
-      <div className={styles.narrationBar}>
-        <div className={styles.narrationBarFill} style={{ width: `${pct}%` }} />
-      </div>
-      <div className={styles.narrationHint}>
-        Generating audio in the background (a few minutes) — you can keep working.
-      </div>
-    </div>
-  )
-}
-
-function ComparisonCard({
-  comparison,
-  onView,
-}: {
-  comparison: NonNullable<LabMessage["comparison"]>
-  onView?: () => void
-}) {
-  const { status, detail, stage, progress, error, papers } = comparison
-  const count = papers?.length ?? 0
-
-  if (status === "error") {
-    return (
-      <div className={styles.warning}>
-        Couldn’t build the comparison. {error || ""}
-      </div>
-    )
-  }
-
-  if (status === "done") {
-    return (
-      <div className={styles.narration}>
-        <div className={styles.narrationTitle}>
-          Comparison ready{count ? ` · ${count} papers` : ""}
-        </div>
-        <button type="button" className={compareStyles.viewBtn} onClick={onView}>
-          View comparison →
-        </button>
-      </div>
-    )
-  }
-
-  const pct = Math.max(2, Math.min(100, progress ?? 0))
-  return (
-    <div className={styles.narration}>
-      <div className={styles.narrationStage}>{detail || stage || "Starting…"}</div>
-      <div className={styles.narrationBar}>
-        <div className={styles.narrationBarFill} style={{ width: `${pct}%` }} />
-      </div>
-      <div className={styles.narrationHint}>
-        Comparing {count || "your"} papers cell by cell in the background — you can keep working.
-      </div>
-    </div>
-  )
-}
-
-function WriteupCard({ writeup }: { writeup: NonNullable<LabMessage["writeup"]> }) {
-  const { status, detail, stage, progress, error } = writeup
-
-  if (status === "error") {
-    return (
-      <div className={styles.warning}>
-        Couldn’t generate the draft. {error || ""}
-      </div>
-    )
-  }
-
-  const pct = Math.max(2, Math.min(100, progress ?? 0))
-  return (
-    <div className={styles.narration}>
-      <div className={styles.narrationStage}>{detail || stage || "Starting…"}</div>
-      <div className={styles.narrationBar}>
-        <div className={styles.narrationBarFill} style={{ width: `${pct}%` }} />
-      </div>
-      <div className={styles.narrationHint}>
-        Extracting, comparing and synthesizing across your papers, then writing — you can keep working.
-      </div>
-    </div>
-  )
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <button
-      type="button"
-      className={compareStyles.copyBtn}
-      onClick={() => {
-        navigator.clipboard.writeText(text).then(() => {
-          setCopied(true)
-          window.setTimeout(() => setCopied(false), 1600)
-        })
-      }}
-    >
-      {copied ? <IconCheck /> : <IconCopy />}
-      {copied ? "Copied" : "Copy as markdown"}
-    </button>
-  )
-}
-
 function MessageBubble({
   message,
   onOpenSource,
-  onViewComparison,
 }: {
   message: LabMessage
   onOpenSource?: (citation: Citation) => void
-  onViewComparison?: (result?: CompareResult) => void
 }) {
   if (message.role === "user") {
     return (
@@ -327,39 +144,6 @@ function MessageBubble({
   const text = message.visibleContent ?? message.content
   const citations = message.citations ?? []
   const isComplete = !message.streaming
-
-  if (message.narration) {
-    return (
-      <div className={`${styles.row} ${styles.rowAssistant}`}>
-        <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-          <NarrationCard narration={message.narration} />
-        </div>
-      </div>
-    )
-  }
-
-  if (message.comparison) {
-    return (
-      <div className={`${styles.row} ${styles.rowAssistant}`}>
-        <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-          <ComparisonCard
-            comparison={message.comparison}
-            onView={() => onViewComparison?.(message.comparison?.result)}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (message.writeup) {
-    return (
-      <div className={`${styles.row} ${styles.rowAssistant}`}>
-        <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-          <WriteupCard writeup={message.writeup} />
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className={`${styles.row} ${styles.rowAssistant}`}>
@@ -376,12 +160,6 @@ function MessageBubble({
             {isComplete && message.insufficientContext ? (
               <div className={styles.warning}>
                 Available source context is limited for this question.
-              </div>
-            ) : null}
-
-            {isComplete && message.draft ? (
-              <div className={compareStyles.draftActions}>
-                <CopyButton text={text} />
               </div>
             ) : null}
 
@@ -407,9 +185,6 @@ function AskContent() {
   // Right work-panel: PDF tabs (one per doc, keyed by sourceId).
   const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
   const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
-  // Comparison work-panel: the latest grounded table + whether its tab is showing.
-  const [comparison, setComparison] = useState<CompareResult | null>(null)
-  const [comparisonActive, setComparisonActive] = useState(false)
 
   const handleOpenSource = useCallback((citation: Citation) => {
     if (!citation.sourceId) return
@@ -427,19 +202,7 @@ function AskContent() {
       prev.some((t) => t.id === id) ? prev.map((t) => (t.id === id ? tab : t)) : [...prev, tab]
     )
     setActivePdfTabId(id)
-    setComparisonActive(false)
   }, [])
-
-  // Open a comparison cell's source PDF at its cited page (CompareCitation shape).
-  const handleOpenComparisonSource = useCallback((c: CompareCitation) => {
-    handleOpenSource({
-      sourceId: c.sourceId,
-      title: c.title,
-      url: c.url ?? "",
-      page: c.page ?? 1,
-      passage: c.passage,
-    })
-  }, [handleOpenSource])
 
   const handleClosePdfTab = useCallback((id: string) => {
     // Drop the tab; if it was active, clear the id — the panel falls back to the
@@ -448,21 +211,9 @@ function AskContent() {
     setActivePdfTabId((cur) => (cur === id ? null : cur))
   }, [])
 
-  const handleCloseComparison = useCallback(() => {
-    setComparison(null)
-    setComparisonActive(false)
-  }, [])
-
-  const handleViewComparison = useCallback((result?: CompareResult) => {
-    if (result) setComparison(result)
-    setComparisonActive(true)
-  }, [])
-
   const handleClosePdfPanel = useCallback(() => {
     setPdfTabs([])
     setActivePdfTabId(null)
-    setComparison(null)
-    setComparisonActive(false)
   }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -945,8 +696,8 @@ function AskContent() {
         style={{ marginLeft: navWidth, paddingTop: 52 }}
       >
         {mode === "ask" ? (
-        <div className={`${pageStyles.page} ${pdfTabs.length > 0 || comparison ? pageStyles.pageSplit : ""}`}>
-          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 || comparison ? pageStyles.mainSplit : ""}`}>
+        <div className={`${pageStyles.page} ${pdfTabs.length > 0 ? pageStyles.pageSplit : ""}`}>
+          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 ? pageStyles.mainSplit : ""}`}>
             <section className={`${styles.chatShell} ${hasMessages ? styles.hasMessages : styles.isEmpty}`}>
               {!hasMessages ? (
                 <header className={`${pageStyles.header} ${pageStyles.headerHero}`}>
@@ -977,7 +728,6 @@ function AskContent() {
                         key={message.id}
                         message={message}
                         onOpenSource={handleOpenSource}
-                        onViewComparison={handleViewComparison}
                       />
                     ))}
                   </div>
@@ -1057,21 +807,13 @@ function AskContent() {
             </section>
           </main>
 
-          {pdfTabs.length > 0 || comparison ? (
+          {pdfTabs.length > 0 ? (
             <PdfViewerPanel
               tabs={pdfTabs}
               activeTabId={activePdfTabId}
-              onSelectTab={(id) => {
-                setActivePdfTabId(id)
-                setComparisonActive(false)
-              }}
+              onSelectTab={(id) => setActivePdfTabId(id)}
               onCloseTab={handleClosePdfTab}
               onClosePanel={handleClosePdfPanel}
-              comparison={comparison}
-              comparisonActive={comparisonActive}
-              onSelectComparison={handleViewComparison}
-              onCloseComparison={handleCloseComparison}
-              onOpenComparisonSource={handleOpenComparisonSource}
             />
           ) : null}
 
