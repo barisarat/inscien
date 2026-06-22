@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AudioLines, Loader2 } from "lucide-react"
 
-import { getNarration, listNarrations, listPapers, startNarration } from "@/lib/api"
+import { activeNarration, getNarration, listNarrations, listPapers, startNarration } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import compareStyles from "../components/Compare.module.css"
@@ -29,44 +29,13 @@ export default function NarrateMode() {
   // Stop any in-flight poll loop when this mode unmounts (e.g. switching to Ask).
   useEffect(() => () => { runToken.current += 1 }, [])
 
-  // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
-  useEffect(() => {
-    const token = ++runToken.current
-    setPhase("idle")
-    setJobId("")
-    setProgress({})
-    setError(null)
-    setTitle("")
-    if (loaded || !docId) return
-    // Auto-detect an already-generated narration for this paper so we play it instead
-    // of regenerating.
-    void Promise.all([listPapers(), listNarrations()])
-      .then(([{ papers }, { items }]) => {
-        if (token !== runToken.current) return
-        setTitle(papers.find((p) => p.docId === docId)?.title || "")
-        const existing = items.find((n) => n.docId === docId)
-        if (existing) {
-          setJobId(existing.jobId)
-          setPhase("done")
-        }
-      })
-      .catch(() => {})
-  }, [docId, loaded])
-
-  const run = useCallback(async () => {
-    if (!docId) return
-    const token = ++runToken.current
-    setPhase("running")
-    setProgress({})
-    setError(null)
+  // Poll an existing narration job to completion. Shared by a fresh run and by
+  // re-attaching to a job that was already running when this mode (re)mounted.
+  const pollJob = useCallback(async (id: string, token: number) => {
     try {
-      const res = await startNarration({ docId })
-      if (token !== runToken.current) return
-      setJobId(res.jobId)
-      if (res.title) setTitle(res.title)
       for (;;) {
         if (token !== runToken.current) return
-        const s = await getNarration(res.jobId)
+        const s = await getNarration(id)
         if (token !== runToken.current) return
         setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
         if (s.title) setTitle(s.title)
@@ -87,7 +56,67 @@ export default function NarrateMode() {
         setPhase("error")
       }
     }
-  }, [docId])
+  }, [])
+
+  // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
+  useEffect(() => {
+    const token = ++runToken.current
+    setPhase("idle")
+    setJobId("")
+    setProgress({})
+    setError(null)
+    setTitle("")
+    if (loaded || !docId) return
+    void (async () => {
+      try {
+        const [{ papers }, { job }] = await Promise.all([listPapers(), activeNarration(docId)])
+        if (token !== runToken.current) return
+        setTitle(papers.find((p) => p.docId === docId)?.title || "")
+        // Re-attach to a narration started before navigating away (resume its progress)
+        // rather than offering to regenerate it.
+        if (job) {
+          setJobId(job.id)
+          if (job.title) setTitle(job.title)
+          setProgress({ stage: job.stage, detail: job.detail, progress: job.progress })
+          setPhase("running")
+          void pollJob(job.id, token)
+          return
+        }
+        // Otherwise auto-detect an already-generated narration so we play it instead of
+        // regenerating.
+        const { items } = await listNarrations()
+        if (token !== runToken.current) return
+        const existing = items.find((n) => n.docId === docId)
+        if (existing) {
+          setJobId(existing.jobId)
+          setPhase("done")
+        }
+      } catch {
+        /* leave idle; the user can generate manually */
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, loaded])
+
+  const run = useCallback(async () => {
+    if (!docId) return
+    const token = ++runToken.current
+    setPhase("running")
+    setProgress({})
+    setError(null)
+    try {
+      const res = await startNarration({ docId })
+      if (token !== runToken.current) return
+      setJobId(res.jobId)
+      if (res.title) setTitle(res.title)
+      await pollJob(res.jobId, token)
+    } catch (e) {
+      if (token === runToken.current) {
+        setError(String(e))
+        setPhase("error")
+      }
+    }
+  }, [docId, pollJob])
 
   if (loaded) {
     const audioUrl = `${API_BASE}/api/narrate/${encodeURIComponent(loaded.jobId)}/audio`

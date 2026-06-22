@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from routers.papers import corpus_papers
-from services.narration.jobs import audio_path, get_job, list_narrations, start_job
+from services.narration.jobs import active_narration, audio_path, get_job, list_narrations, start_job
 
 router = APIRouter(prefix="/api/narrate", tags=["narrate"])
 
@@ -90,6 +90,14 @@ def registry():
         for n in list_narrations()
     ]
     return {"items": items}
+
+
+@router.get("/active")
+def active(docId: str):
+    """The in-progress (queued/running) narration for a paper, or {job: null} — lets the
+    UI re-attach to a narration started before the user navigated away. Defined before the
+    /{job_id} route so it isn't shadowed by the catch-all."""
+    return {"job": active_narration(docId)}
 
 
 @router.get("/{job_id}")

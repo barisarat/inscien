@@ -99,6 +99,27 @@ def list_narrations():
     return [v[1] for v in out.values()]
 
 
+def active_narration(doc_id):
+    """The newest queued/running narration job for a paper (public shape), or None.
+    Lets the UI re-attach to an in-progress narration after navigating away and back."""
+    if not doc_id:
+        return None
+    best = None
+    for f in JOBS_DIR.glob("*.json"):
+        try:
+            job = json.loads(f.read_text())
+        except Exception:
+            continue
+        if job.get("docId") != doc_id or job.get("status") not in ("queued", "running"):
+            continue
+        mtime = f.stat().st_mtime
+        if best is None or mtime > best[0]:
+            best = (mtime, job)
+    if best is None:
+        return None
+    return {k: best[1].get(k) for k in _PUBLIC_FIELDS}
+
+
 def get_job(job_id):
     with _lock:
         job = _jobs.get(job_id)

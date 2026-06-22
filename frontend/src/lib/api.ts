@@ -211,6 +211,12 @@ export async function getNarration(jobId: string): Promise<NarrationStatus> {
   return authedGet(`/api/narrate/${encodeURIComponent(jobId)}`)
 }
 
+// The in-progress (queued/running) narration for a paper, or null — used to re-attach to
+// a narration started before the user navigated away.
+export async function activeNarration(docId: string): Promise<{ job: NarrationStatus | null }> {
+  return authedGet(`/api/narrate/active?docId=${encodeURIComponent(docId)}`)
+}
+
 export interface NarrationRegistryItem {
   docId: string
   jobId: string
