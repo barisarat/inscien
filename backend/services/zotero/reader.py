@@ -25,6 +25,16 @@ from services.zotero.settings import BOOK_ITEM_TYPES, get_zotero_settings
 
 _snapshot_lock = threading.Lock()
 _YEAR_RE = re.compile(r"(\d{4})")
+_DOI_PREFIX_RE = re.compile(r"^(?:https?://)?(?:dx\.)?doi\.org/", re.IGNORECASE)
+
+
+def _normalize_doi(value):
+    """Bare lowercase DOI (no scheme/host), or None. DOIs are case-insensitive."""
+    doi = (value or "").strip()
+    if not doi:
+        return None
+    doi = _DOI_PREFIX_RE.sub("", doi).strip()
+    return doi.lower() or None
 
 
 # --- snapshot + connection -------------------------------------------------
@@ -229,6 +239,7 @@ def item_metadata(item_key):
         item_type = type_row["typeName"] if type_row else None
         title = _field_value(con, item_id, "title")
         date = _field_value(con, item_id, "date")
+        doi = _normalize_doi(_field_value(con, item_id, "DOI"))
         authors = _authors(con, item_id)
     finally:
         con.close()
@@ -241,6 +252,7 @@ def item_metadata(item_key):
         "year": year_match.group(1) if year_match else None,
         "itemType": item_type,
         "isBookDefaultOff": item_type in BOOK_ITEM_TYPES,
+        "doi": doi,
     }
 
 

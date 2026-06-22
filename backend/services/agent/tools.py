@@ -20,7 +20,7 @@ _NOT_BUILT = {
     "error": "not_built",
     "message": (
         "The reference graph hasn't been built yet. Run the reference build first "
-        "(scripts/build_references.py, or POST /api/graph/build), then try again."
+        "(scripts/build_references.py), then try again."
     ),
 }
 

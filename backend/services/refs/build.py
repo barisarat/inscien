@@ -71,9 +71,23 @@ def build_references(progress=None):
     documents = {}
     identities = {}
     for index, (doc_id, info) in enumerate(docs.items(), start=1):
-        path = papers_dir / Path(info["fileName"]).name
         emit(f"[{index}/{len(docs)}] {info['fileName']} …")
-        if not path.exists():
+        # Resolve the PDF: Zotero items live in storage/ (by itemKey); loose files in
+        # papers_dir (by filename). Without the Zotero branch only papers_dir files build,
+        # so a Zotero corpus collapses to whatever happens to be copied into papers/.
+        path = None
+        try:
+            from services.zotero.reader import resolve_pdf_path
+            zotero_path = resolve_pdf_path(doc_id)
+            if zotero_path:
+                path = Path(zotero_path)
+        except Exception:
+            path = None
+        if path is None:
+            candidate = papers_dir / Path(info["fileName"]).name
+            if candidate.exists():
+                path = candidate
+        if path is None or not path.exists():
             emit("    file missing — skipped")
             continue
 

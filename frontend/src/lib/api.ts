@@ -740,21 +740,64 @@ export async function listNarrations(): Promise<{ items: NarrationRegistryItem[]
   return authedGet("/api/narrate/registry")
 }
 
-// ---- Citation graph ----
-export async function getGraph(): Promise<{
-  graph: { nodes: { id: string; title: string }[]; edges: { from: string; to: string }[] } | null
-}> {
-  return authedGet("/api/graph")
+// ---- Literature discovery graph (OpenAlex, selection-scoped) ----
+
+export interface GraphNode {
+  id: string
+  label: string
+  type: "owned" | "external"
+  year?: string | number | null
+  date?: string | null // OpenAlex publication_date (YYYY-MM-DD) — drives the timeline x-axis
+  citedBy?: number | null // external: within-selection degree (shared anchors render bigger)
+  globalCitedBy?: number | null // global OpenAlex cited-by count
+  doi?: string | null
 }
 
-export async function buildGraph(): Promise<{ jobId: string }> {
-  return authedAction("/api/graph/build", "POST")
+export interface DiscoveryGraph {
+  nodes: GraphNode[]
+  edges: { from: string; to: string }[]
+  unmapped: string[]
+  noDoi: string[]
 }
 
-export async function getGraphBuild(
-  jobId: string,
-): Promise<{ id: string; status: "queued" | "running" | "done" | "error"; error?: string }> {
-  return authedGet(`/api/graph/build/${encodeURIComponent(jobId)}`)
+export interface GraphFetchStatus {
+  mapped: string[]
+  unmapped: string[]
+  noDoi: string[]
+}
+
+export interface GraphFetchJob {
+  id: string
+  status: "queued" | "running" | "done" | "error"
+  stage?: string
+  progress?: number
+  detail?: string
+  error?: string
+  result?: { mapped: string[] } | null
+}
+
+// Pre-fetch coverage of a selection — how many papers already have a cached map.
+export async function graphFetchStatus(itemKeys: string[]): Promise<GraphFetchStatus> {
+  return authedAction("/api/graph/fetch-status", "POST", { itemKeys })
+}
+
+// Kick off the OpenAlex reference fetch for the unmapped papers as a background job.
+export async function startGraphFetch(itemKeys: string[]): Promise<{ jobId: string }> {
+  return authedAction("/api/graph/fetch", "POST", { itemKeys })
+}
+
+export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
+  return authedGet(`/api/graph/fetch/${encodeURIComponent(jobId)}`)
+}
+
+// Assemble the discovery map over the mapped subset of the selection.
+export async function fetchDiscoveryGraph(itemKeys: string[]): Promise<DiscoveryGraph> {
+  return authedAction("/api/graph", "POST", { itemKeys })
+}
+
+// itemKeys that already have a cached OpenAlex map (navigator 'mapped' dot).
+export async function mappedKeys(): Promise<{ keys: string[] }> {
+  return authedGet("/api/graph/mapped-keys")
 }
 
 // ---- Compare (cross-paper grounded comparison table, background job) ----

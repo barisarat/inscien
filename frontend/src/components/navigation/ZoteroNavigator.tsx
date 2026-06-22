@@ -8,6 +8,7 @@ import {
   PanelLeftClose,
   Play,
   RefreshCw,
+  X,
 } from "lucide-react"
 
 import {
@@ -17,6 +18,8 @@ import {
   fetchZoteroSyncState,
   getZoteroIndexJob,
   listNarrations,
+  listPapers,
+  mappedKeys,
   startZoteroIndex,
   type ZoteroCollection,
   type ZoteroItem,
@@ -41,7 +44,7 @@ export default function ZoteroNavigator({
   leftOffset,
   topOffset = 0,
 }: Props) {
-  const { selectedKeys, toggle, setMany, indexedKeys, markIndexed } = useZoteroSelection()
+  const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
@@ -51,19 +54,30 @@ export default function ZoteroNavigator({
   const [error, setError] = useState<string | null>(null)
   const [indexing, setIndexing] = useState<Set<string>>(new Set())
   const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
+  const [mapped, setMapped] = useState<Set<string>>(new Set())
+  const [selectedOpen, setSelectedOpen] = useState(false)
+  const [titleByKey, setTitleByKey] = useState<Map<string, string>>(new Map())
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [cols, sync, narr] = await Promise.all([
+      const [cols, sync, narr, corpus, maps] = await Promise.all([
         fetchZoteroCollections(),
         fetchZoteroSyncState(),
         listNarrations(),
+        listPapers(),
+        mappedKeys(),
       ])
       setCollections(cols.collections)
       markIndexed(sync.indexedKeys)
       setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
+      setMapped(new Set(maps.keys))
+      setTitleByKey((prev) => {
+        const next = new Map(prev)
+        corpus.papers.forEach((p) => next.set(p.docId, p.title))
+        return next
+      })
     } catch {
       setError("Couldn't load your Zotero library. Is the mount set?")
     } finally {
@@ -113,6 +127,13 @@ export default function ZoteroNavigator({
       if (items[collectionId]) return items[collectionId]
       const r = await fetchZoteroItems(collectionId)
       setItems((prev) => ({ ...prev, [collectionId]: r.items }))
+      setTitleByKey((prev) => {
+        const next = new Map(prev)
+        r.items.forEach((it) => {
+          if (it.title) next.set(it.itemKey, it.title)
+        })
+        return next
+      })
       return r.items
     },
     [items],
@@ -254,6 +275,13 @@ export default function ZoteroNavigator({
                         <Play size={12} />
                       </button>
                     ) : null}
+                    {mapped.has(item.itemKey) ? (
+                      <span
+                        className={styles.mappedDot}
+                        title="Mapped — references fetched from OpenAlex"
+                        aria-label="Mapped"
+                      />
+                    ) : null}
                     {isBusy ? (
                       <Loader2 size={12} className={styles.spin} />
                     ) : isIdx ? (
@@ -286,9 +314,44 @@ export default function ZoteroNavigator({
       </header>
 
       {selectedKeys.size > 0 ? (
-        <div className={styles.scopeBar}>
-          {selectedKeys.size} paper{selectedKeys.size === 1 ? "" : "s"} in scope
-          {indexing.size > 0 ? <span className={styles.scopeIndexing}> · indexing {indexing.size}…</span> : null}
+        <div className={styles.selected}>
+          <div className={styles.selectedHead}>
+            <button
+              type="button"
+              className={styles.selectedToggle}
+              onClick={() => setSelectedOpen((v) => !v)}
+              aria-expanded={selectedOpen}
+            >
+              <ChevronRight size={13} className={selectedOpen ? styles.selectedChevronOpen : styles.selectedChevron} />
+              Selected · {selectedKeys.size}
+              {indexing.size > 0 ? (
+                <span className={styles.scopeIndexing}> · indexing {indexing.size}…</span>
+              ) : null}
+            </button>
+            <button type="button" className={styles.clearBtn} onClick={clear}>
+              Clear
+            </button>
+          </div>
+          {selectedOpen ? (
+            <div className={styles.selectedList}>
+              {Array.from(selectedKeys).map((key) => (
+                <div key={key} className={styles.selectedRow}>
+                  <span className={styles.selectedTitle} title={titleByKey.get(key) || key}>
+                    {titleByKey.get(key) || key}
+                  </span>
+                  {indexing.has(key) ? <Loader2 size={11} className={styles.spin} /> : null}
+                  <button
+                    type="button"
+                    className={styles.selectedRemove}
+                    aria-label="Remove from selection"
+                    onClick={() => setMany([key], false)}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className={styles.scopeBarMuted}>Select papers to scope your questions</div>

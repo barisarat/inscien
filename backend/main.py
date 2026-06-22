@@ -77,12 +77,12 @@ def on_startup():
     from services.writeup.jobs import recover_stale as recover_writeup
     from services.narration.jobs import recover_stale as recover_narration
     from services.zotero.jobs import recover_stale as recover_zotero
-    from services.refs.graph_jobs import recover_stale as recover_graph
+    from services.refs.fetch_jobs import recover_stale as recover_graph_fetch
     recover_compare()
     recover_writeup()
     recover_narration()
     recover_zotero()
-    recover_graph()
+    recover_graph_fetch()
 
 
 @app.get("/health")
