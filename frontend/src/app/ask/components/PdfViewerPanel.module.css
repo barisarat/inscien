@@ -111,10 +111,38 @@
 }
 
 .pageWrap {
+  position: relative; /* anchor for the absolutely-positioned bbox overlay + locate note */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   border-radius: 2px;
   overflow: hidden;
   background: #fff;
+}
+
+/* Coordinate-based passage highlight: a region box at the cited bbox. Translucent fill so
+   the underlying text stays readable; pointer-events:none keeps text selection working. */
+.bboxOverlay {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 2px solid var(--accent);
+  background: rgba(37, 99, 235, 0.12);
+  border-radius: 3px;
+}
+
+/* Shown only on the text-match fallback path when nothing could be located on the page. */
+.locateNote {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 3;
+  padding: 6px 10px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
+  background: var(--surface-muted);
+  border-left: 2px solid var(--source-amber);
+  border-radius: var(--radius-sm);
 }
 
 .docStatus {

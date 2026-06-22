@@ -31,6 +31,10 @@ def make_citation(result):
         # exact retrieved passage so the UI can show it on click.
         "page": meta.get("page"),
         "passage": _passage_snippet(result.get("text", "")),
+        # The passage's bounding box [x0, y0, x1, y1] in PDF points (PyMuPDF top-left
+        # origin) so the viewer can highlight by geometry instead of fragile text-matching.
+        # None for sources without a captured bbox; the UI falls back to text-matching.
+        "bbox": meta.get("bbox"),
     }
 
 

@@ -19,6 +19,9 @@ export type Citation = {
   sourceId?: string
   page?: number | null
   passage?: string
+  // Passage bounding box [x0, y0, x1, y1] in PDF points (top-left origin) for
+  // coordinate-based highlighting; absent → viewer falls back to text-matching.
+  bbox?: number[] | null
 }
 
 const CITATION_CLASS = "lab-citation"

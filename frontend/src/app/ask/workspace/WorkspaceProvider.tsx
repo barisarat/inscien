@@ -22,7 +22,7 @@ export type ActiveArtifact =
 interface WorkspaceValue {
   mode: WorkspaceMode
   setMode: (m: WorkspaceMode) => void
-  openPdf: (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string }) => void
+  openPdf: (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string; bbox?: number[] | null }) => void
   pdfTabs: PdfTab[]
   activePdfTabId: string | null
   hasOpenPdf: boolean
@@ -64,7 +64,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const openPdf = useCallback(
-    (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string }) => {
+    (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string; bbox?: number[] | null }) => {
       if (!t.sourceId) return
       const id = t.sourceId
       const tab: PdfTab = {
@@ -73,6 +73,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         sourceId: id,
         targetPage: t.page ?? 1,
         passage: t.passage,
+        bbox: t.bbox ?? null,
       }
       setPdfTabs((prev) =>
         prev.some((existing) => existing.id === id)

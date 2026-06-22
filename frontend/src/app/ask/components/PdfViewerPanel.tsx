@@ -13,6 +13,8 @@ export type PdfTab = {
   sourceId: string
   targetPage: number
   passage?: string
+  // Passage bbox [x0, y0, x1, y1] in PDF points (top-left origin) for coordinate highlight.
+  bbox?: number[] | null
 }
 
 export default function PdfViewerPanel({
@@ -92,6 +94,7 @@ export default function PdfViewerPanel({
           fileUrl={fileUrl}
           targetPage={activePdf.targetPage}
           passage={activePdf.passage}
+          bbox={activePdf.bbox}
         />
       ) : null}
     </aside>

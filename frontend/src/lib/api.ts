@@ -309,6 +309,7 @@ export interface CompareCitation {
   sourceId?: string
   page?: number | null
   passage?: string
+  bbox?: number[] | null
 }
 
 export interface CompareCell {
@@ -367,6 +368,7 @@ export interface LabCitationDTO {
   contentMode?: string
   page?: number | null
   passage?: string
+  bbox?: number[] | null
 }
 
 export interface WriteStatus {
