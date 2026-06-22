@@ -15,15 +15,15 @@ import GraphMode from "../workspace/GraphMode"
 import { useWorkspace } from "../workspace/WorkspaceProvider"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import {
-  type ChatSessionSummary,
-  type CompareResult,
   API_BASE,
   deleteChatSession,
   getChatSession,
   listChatSessions,
   renameChatSession,
+  type ChatSessionSummary,
+  type CompareResult,
 } from "@/lib/api"
-import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
+import PdfViewerPanel from "./PdfViewerPanel"
 import { AnswerRenderer, CompactSources, type Citation } from "../workspace/answer/AnswerRenderer"
 import pageStyles from "../ask.module.css"
 import styles from "./AskClient.module.css"
@@ -181,40 +181,6 @@ function AskContent() {
   const sessionParam = searchParams.get("session")
   const [input, setInput] = useState(initialQuery)
   const [messages, setMessages] = useState<LabMessage[]>([])
-
-  // Right work-panel: PDF tabs (one per doc, keyed by sourceId).
-  const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
-  const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
-
-  const handleOpenSource = useCallback((citation: Citation) => {
-    if (!citation.sourceId) return
-    const id = citation.sourceId
-    const tab: PdfTab = {
-      id,
-      title: citation.title || "Document",
-      sourceId: id,
-      targetPage: citation.page ?? 1,
-      passage: citation.passage,
-    }
-    // Reuse an existing tab for the same doc, updating its page/passage to the new
-    // citation (re-scrolls + re-highlights); otherwise open a new tab.
-    setPdfTabs((prev) =>
-      prev.some((t) => t.id === id) ? prev.map((t) => (t.id === id ? tab : t)) : [...prev, tab]
-    )
-    setActivePdfTabId(id)
-  }, [])
-
-  const handleClosePdfTab = useCallback((id: string) => {
-    // Drop the tab; if it was active, clear the id — the panel falls back to the
-    // first remaining tab (and unmounts entirely once none are left).
-    setPdfTabs((prev) => prev.filter((t) => t.id !== id))
-    setActivePdfTabId((cur) => (cur === id ? null : cur))
-  }, [])
-
-  const handleClosePdfPanel = useCallback(() => {
-    setPdfTabs([])
-    setActivePdfTabId(null)
-  }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([])
@@ -226,7 +192,18 @@ function AskContent() {
   useEffect(() => {
     selectedKeysRef.current = selectedKeys
   }, [selectedKeys])
-  const { mode, setMode, setActiveArtifact } = useWorkspace()
+  const {
+    mode,
+    setMode,
+    openPdf,
+    pdfTabs,
+    activePdfTabId,
+    hasOpenPdf,
+    selectPdfTab,
+    closePdfTab,
+    closePdfPanel,
+    setActiveArtifact,
+  } = useWorkspace()
   const [navCollapsed, setNavCollapsed] = useState(false)
   useEffect(() => {
     try {
@@ -695,9 +672,9 @@ function AskContent() {
         className={pageStyles.mainContent}
         style={{ marginLeft: navWidth, paddingTop: 52 }}
       >
-        {mode === "ask" ? (
-        <div className={`${pageStyles.page} ${pdfTabs.length > 0 ? pageStyles.pageSplit : ""}`}>
-          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 ? pageStyles.mainSplit : ""}`}>
+        <div className={`${pageStyles.page} ${hasOpenPdf ? pageStyles.pageSplit : ""}`}>
+          {mode === "ask" ? (
+          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${hasOpenPdf ? pageStyles.mainSplit : ""}`}>
             <section className={`${styles.chatShell} ${hasMessages ? styles.hasMessages : styles.isEmpty}`}>
               {!hasMessages ? (
                 <header className={`${pageStyles.header} ${pageStyles.headerHero}`}>
@@ -727,7 +704,7 @@ function AskContent() {
                       <MessageBubble
                         key={message.id}
                         message={message}
-                        onOpenSource={handleOpenSource}
+                        onOpenSource={openPdf}
                       />
                     ))}
                   </div>
@@ -806,27 +783,30 @@ function AskContent() {
               <div ref={pageEndRef} className={styles.composerEndAnchor} aria-hidden />
             </section>
           </main>
+          ) : (
+            <div className={`${pageStyles.modeContent} ${hasOpenPdf ? pageStyles.modeContentSplit : ""}`}>
+              {mode === "compare" ? (
+                <CompareMode />
+              ) : mode === "write" ? (
+                <WriteMode />
+              ) : mode === "narrate" ? (
+                <NarrateMode />
+              ) : (
+                <GraphMode />
+              )}
+            </div>
+          )}
 
-          {pdfTabs.length > 0 ? (
+          {hasOpenPdf ? (
             <PdfViewerPanel
               tabs={pdfTabs}
               activeTabId={activePdfTabId}
-              onSelectTab={(id) => setActivePdfTabId(id)}
-              onCloseTab={handleClosePdfTab}
-              onClosePanel={handleClosePdfPanel}
+              onSelectTab={selectPdfTab}
+              onCloseTab={closePdfTab}
+              onClosePanel={closePdfPanel}
             />
           ) : null}
-
         </div>
-        ) : mode === "compare" ? (
-          <CompareMode />
-        ) : mode === "write" ? (
-          <WriteMode />
-        ) : mode === "narrate" ? (
-          <NarrateMode />
-        ) : (
-          <GraphMode />
-        )}
       </div>
     </div>
   )

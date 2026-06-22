@@ -3,10 +3,8 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 
 import { saveChatTurn, type CompareResult } from "@/lib/api"
+import { type PdfTab } from "../components/PdfViewerPanel"
 import { type WorkspaceMode } from "./ActionBar"
-import PdfDrawer from "./PdfDrawer"
-
-export type PdfTarget = { sourceId: string; title: string; page: number; passage?: string }
 
 // A finished run loaded from History, handed to its mode to render directly.
 export type ActiveArtifact =
@@ -25,7 +23,12 @@ interface WorkspaceValue {
   mode: WorkspaceMode
   setMode: (m: WorkspaceMode) => void
   openPdf: (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string }) => void
-  closePdf: () => void
+  pdfTabs: PdfTab[]
+  activePdfTabId: string | null
+  hasOpenPdf: boolean
+  selectPdfTab: (id: string) => void
+  closePdfTab: (id: string) => void
+  closePdfPanel: () => void
   // Persist a finished run to History (a typed ChatSession). Returns its session id.
   saveRun: (kind: "comparison" | "writeup", title: string, widget: Record<string, unknown>) => Promise<number | null>
   activeArtifact: ActiveArtifact
@@ -36,7 +39,12 @@ const WorkspaceContext = createContext<WorkspaceValue>({
   mode: "ask",
   setMode: () => {},
   openPdf: () => {},
-  closePdf: () => {},
+  pdfTabs: [],
+  activePdfTabId: null,
+  hasOpenPdf: false,
+  selectPdfTab: () => {},
+  closePdfTab: () => {},
+  closePdfPanel: () => {},
   saveRun: async () => null,
   activeArtifact: null,
   setActiveArtifact: () => {},
@@ -44,7 +52,8 @@ const WorkspaceContext = createContext<WorkspaceValue>({
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [mode, setModeRaw] = useState<WorkspaceMode>("ask")
-  const [pdf, setPdf] = useState<PdfTarget | null>(null)
+  const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
+  const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
   const [activeArtifact, setActiveArtifact] = useState<ActiveArtifact>(null)
 
   // Switching mode via the action bar starts fresh — drop any loaded run. (loadRun
@@ -57,11 +66,37 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const openPdf = useCallback(
     (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string }) => {
       if (!t.sourceId) return
-      setPdf({ sourceId: t.sourceId, title: t.title || "Source", page: t.page ?? 1, passage: t.passage })
+      const id = t.sourceId
+      const tab: PdfTab = {
+        id,
+        title: t.title || "Source",
+        sourceId: id,
+        targetPage: t.page ?? 1,
+        passage: t.passage,
+      }
+      setPdfTabs((prev) =>
+        prev.some((existing) => existing.id === id)
+          ? prev.map((existing) => (existing.id === id ? tab : existing))
+          : [...prev, tab]
+      )
+      setActivePdfTabId(id)
     },
     [],
   )
-  const closePdf = useCallback(() => setPdf(null), [])
+
+  const selectPdfTab = useCallback((id: string) => {
+    setActivePdfTabId(id)
+  }, [])
+
+  const closePdfTab = useCallback((id: string) => {
+    setPdfTabs((prev) => prev.filter((tab) => tab.id !== id))
+    setActivePdfTabId((current) => (current === id ? null : current))
+  }, [])
+
+  const closePdfPanel = useCallback(() => {
+    setPdfTabs([])
+    setActivePdfTabId(null)
+  }, [])
 
   const saveRun = useCallback(
     async (kind: "comparison" | "writeup", title: string, widget: Record<string, unknown>) => {
@@ -82,10 +117,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceContext.Provider
-      value={{ mode, setMode, openPdf, closePdf, saveRun, activeArtifact, setActiveArtifact }}
+      value={{
+        mode,
+        setMode,
+        openPdf,
+        pdfTabs,
+        activePdfTabId,
+        hasOpenPdf: pdfTabs.length > 0,
+        selectPdfTab,
+        closePdfTab,
+        closePdfPanel,
+        saveRun,
+        activeArtifact,
+        setActiveArtifact,
+      }}
     >
       {children}
-      {pdf ? <PdfDrawer target={pdf} onClose={closePdf} /> : null}
     </WorkspaceContext.Provider>
   )
 }

@@ -3,10 +3,11 @@
 A local-first, private research assistant over your own **Zotero library**. Ask
 questions in a multi-turn chat and get answers with **page-precise, verifiable citations**.
 Everything — retrieval *and* generation — runs on your machine against a local
-[Ollama](https://ollama.com); no API keys, no cloud, no data ever leaves your computer.
+[Ollama](https://ollama.com); no API keys or cloud LLM provider are required.
 
-- **Private by construction.** There is no cloud/provider code path. Privacy, zero cost, and
-  offline operation are architectural guarantees, not settings.
+- **Private by construction.** Chat, retrieval, indexing, writing, comparison, and narration
+  run locally over your Zotero PDFs. The only optional online feature is the Discovery Map,
+  which can send selected papers' public DOIs to OpenAlex to fetch public reference metadata.
 - **Page-precise citations.** Answers cite the document and page, with the source passage on
   click, so every claim is traceable.
 - **No GPU required.** Chat, retrieval, and audio narration all run on CPU. Quality scales
@@ -58,6 +59,16 @@ Pull any model into Ollama (`ollama pull <model>`), then pick it from the in-app
 page, which lists every model your local Ollama is serving. Small models are fast and light;
 larger models give better answers and narration. There is no cloud option by design.
 
+## Discovery Map and OpenAlex
+
+The **Discovery Map** is the one feature that can use the internet. When you choose to build
+a map, InScien sends each selected paper's public DOI to [OpenAlex](https://openalex.org/)
+to fetch public reference metadata, then caches the result locally. It does **not** send your
+PDFs, notes, Zotero database, chat history, extracted passages, or prompts.
+
+If you never build a Discovery Map, InScien's normal chat, indexing, comparison, writing, and
+narration workflows remain fully local.
+
 ## Narration
 
 Ask InScien to read a paper aloud — type `/narrate <paper title>` in the chat. It parses the
@@ -84,6 +95,8 @@ setup beyond installing Docker and Ollama.
   answer with inline `[n]` citations. Chat history is SQLite; narration runs here too.
 - **Retrieval** (`backend/services/lab/`) — hybrid dense (Qdrant) + BM25 retrieval over PDF
   passages tagged with page + bounding box, so citations land on the right page.
+- **Discovery Map** (`backend/services/refs/`) — optional OpenAlex-backed reference mapping
+  over selected papers, using DOI-only lookups and a local cache.
 - **Ingestion** (`backend/services/zotero/`) — reads your Zotero library, then parses the
   selected items' PDFs (`pdf_parser.py`, PyMuPDF, two-column reading-order aware) →
   sub-page passages → embeddings → Qdrant. Additive: indexing more items never disturbs

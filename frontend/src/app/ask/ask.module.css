@@ -95,6 +95,17 @@
   overflow: hidden;
 }
 
+.modeContent {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.modeContentSplit {
+  flex: 1 1 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .footer {
   width: auto;
   min-height: 71.5px;
