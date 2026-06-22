@@ -40,9 +40,6 @@ STOP_WORDS = {
 }
 
 
-SOURCE_BOOSTS = {}
-
-
 INSUFFICIENT_PHRASES = [
     "could not find",
     "do not contain",
@@ -163,10 +160,9 @@ def score_group(group, query_tokens, token_frequency, group_count):
         coverage_score += rarity_weight
 
     normalized_coverage = coverage_score / max(len(query_tokens), 1)
-    source_boost = SOURCE_BOOSTS.get(group.get("source_type", ""), 0)
     multi_chunk_bonus = min(len(group["results"]), 3) * 0.015
 
-    return float(group["best_score"]) + normalized_coverage + source_boost + multi_chunk_bonus
+    return float(group["best_score"]) + normalized_coverage + multi_chunk_bonus
 
 
 def select_answer_context(query, results, max_items):

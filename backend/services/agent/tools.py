@@ -27,11 +27,16 @@ class ToolContext:
     item_keys: object = None
 
 
+# How many passages to select as answer context. Not model-tunable — the agent calls
+# the tool with just a query; this is the fixed retrieval breadth.
+RESULT_LIMIT = 4
+
+
 def _raw_search(query, item_keys=None):
     return search_lab(query, 20, item_keys=item_keys).get("results", [])
 
 
-def search_internal_content(query, limit=4, item_keys=None):
+def search_internal_content(query, item_keys=None):
     """Hybrid (dense + BM25) retrieval over the user's PDF library, with the
     retrieval-sufficiency judge loop (judge loop #1) built in.
 
@@ -46,7 +51,7 @@ def search_internal_content(query, limit=4, item_keys=None):
     if not raw:
         return {"contextBlocks": "", "citations": [], "contextResults": []}
 
-    context_results = select_answer_context(query, raw, limit)
+    context_results = select_answer_context(query, raw, RESULT_LIMIT)
     context_blocks = build_context_blocks(context_results)
 
     verdict = grade_sufficiency(query, context_blocks)
@@ -56,10 +61,10 @@ def search_internal_content(query, limit=4, item_keys=None):
             seen = {r.get("chunkId") for r in raw}
             union = raw + [r for r in extra if r.get("chunkId") not in seen]
             # Re-select against the ORIGINAL question so the answer stays on-topic.
-            context_results = select_answer_context(query, union, limit)
+            context_results = select_answer_context(query, union, RESULT_LIMIT)
             context_blocks = build_context_blocks(context_results)
 
-    citations = unique_citations(context_results, limit)
+    citations = unique_citations(context_results, RESULT_LIMIT)
 
     return {
         "contextBlocks": context_blocks,

@@ -9,9 +9,9 @@ import {
   type ReactNode,
 } from "react"
 
-// The active "working set" — the Zotero items every skill is scoped to. Mirrors the
-// SidebarProvider pattern: a small client context, sessionStorage-backed for in-tab
-// continuity. `indexedKeys` tracks what the backend has indexed so the navigator can
+// The active "working set" — the Zotero items every skill is scoped to. A small client
+// context, sessionStorage-backed for in-tab continuity. `indexedKeys` tracks what the
+// backend has indexed so the navigator can
 // badge items and auto-index only the not-yet-indexed ones.
 const STORAGE_KEY = "inscien-zotero-selection"
 

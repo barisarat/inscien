@@ -48,10 +48,6 @@ STOP_WORDS = {
 }
 
 
-# Single source type ("pdf") in InScien, so there is no per-type boosting.
-SOURCE_BOOSTS = {}
-
-
 def tokenize(value):
     if not value:
         return []
@@ -211,8 +207,7 @@ def get_keyword_candidates(query, max_items, doc_id=None, item_keys=None):
             continue
 
         chunk = document["chunk"]
-        source_boost = SOURCE_BOOSTS.get(chunk.get("sourceType", ""), 0)
-        result = make_result_from_chunk(chunk, score + source_boost)
+        result = make_result_from_chunk(chunk, score)
         candidates.append(result)
 
     candidates.sort(key=lambda item: item["score"], reverse=True)
@@ -232,11 +227,9 @@ def combine_results(vector_results, keyword_results):
 
     for result in vector_results:
         chunk_id = result["chunkId"]
-        source_boost = SOURCE_BOOSTS.get(result.get("sourceType", ""), 0)
-
         combined[chunk_id] = {
             **result,
-            "score": result["score"] * 0.65 + source_boost,
+            "score": result["score"] * 0.65,
         }
 
     for result in keyword_results:
@@ -246,10 +239,9 @@ def combine_results(vector_results, keyword_results):
         if chunk_id in combined:
             combined[chunk_id]["score"] = combined[chunk_id]["score"] + keyword_score
         else:
-            source_boost = SOURCE_BOOSTS.get(result.get("sourceType", ""), 0)
             combined[chunk_id] = {
                 **result,
-                "score": keyword_score + source_boost,
+                "score": keyword_score,
             }
 
     ranked = list(combined.values())

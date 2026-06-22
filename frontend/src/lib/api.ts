@@ -112,9 +112,9 @@ export async function updateSettings(body: AppSettingsUpdate): Promise<AppSettin
 }
 
 export interface ModelOption {
-  value: string     // "provider|model", e.g. "local|qwen2.5:7b", "openai|gpt-5.4-nano", "auto|"
+  value: string     // "local|<model>", e.g. "local|qwen2.5:7b" — InScien is local-only
   label: string
-  provider: string
+  provider: string  // always "local"
   model: string
 }
 

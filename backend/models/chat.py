@@ -12,8 +12,8 @@ class ChatSession(Base):
     # one implicit local user so existing repository filters keep working.
     user_id = Column(Integer, nullable=True, index=True, default=1)
     title = Column(String(200), nullable=False, default="New chat", server_default="New chat")
-    # Chat-scoped inventory of entities in play (assets/ranges/frequencies/strategies),
-    # derived from executed tool calls; carried across turns to resolve references.
+    # Chat-scoped state carried across turns to resolve references — currently the
+    # active Zotero selection (itemKeys) the agent should scope retrieval to.
     working_set = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
@@ -33,10 +33,7 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
-        # History loads ORDER BY (seq, id); without this index MySQL filesorts
-        # whole rows — widget JSON included — through the small sort buffer
-        # (error 1038 once intraday widgets made messages large). InnoDB
-        # appends the PK to secondary indexes, so (session_id, seq) covers
-        # the (seq, id) ordering.
+        # History loads ORDER BY (seq, id) per session; index the lookup+sort path
+        # so loading a session's messages (widget JSON included) stays cheap.
         Index("ix_chat_messages_session_seq", "session_id", "seq"),
     )

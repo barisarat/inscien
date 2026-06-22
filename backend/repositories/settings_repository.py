@@ -8,9 +8,7 @@ def get_settings(db):
     """Return the singleton settings row, creating it with defaults if absent."""
     row = db.query(AppSettings).filter(AppSettings.id == SETTINGS_ID).first()
     if row is None:
-        # InScien is local-only; the legacy provider column is unused but kept for the
-        # existing schema. Marked "local" for honesty.
-        row = AppSettings(id=SETTINGS_ID, llm_provider="local")
+        row = AppSettings(id=SETTINGS_ID)
         db.add(row)
         db.commit()
         db.refresh(row)

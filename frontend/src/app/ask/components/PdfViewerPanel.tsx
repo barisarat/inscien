@@ -1,10 +1,9 @@
 "use client"
 
-import { Columns3, ExternalLink, Network, PanelRightClose, X } from "lucide-react"
+import { Columns3, ExternalLink, PanelRightClose, X } from "lucide-react"
 
 import { type CompareCitation, type CompareResult } from "@/lib/api"
 import ComparisonView from "./ComparisonView"
-import GraphView, { type GraphData } from "./GraphView"
 import PdfDocument from "./PdfDocument"
 import styles from "./PdfViewerPanel.module.css"
 
@@ -24,11 +23,6 @@ export default function PdfViewerPanel({
   onSelectTab,
   onCloseTab,
   onClosePanel,
-  graph,
-  graphActive,
-  onSelectGraph,
-  onCloseGraph,
-  onOpenNode,
   comparison,
   comparisonActive,
   onSelectComparison,
@@ -40,18 +34,12 @@ export default function PdfViewerPanel({
   onSelectTab: (id: string) => void
   onCloseTab: (id: string) => void
   onClosePanel: () => void
-  graph: GraphData | null
-  graphActive: boolean
-  onSelectGraph: () => void
-  onCloseGraph: () => void
-  onOpenNode: (node: { id: string; title: string }) => void
   comparison: CompareResult | null
   comparisonActive: boolean
   onSelectComparison: () => void
   onCloseComparison: () => void
   onOpenComparisonSource: (citation: CompareCitation) => void
 }) {
-  const showGraph = graphActive && graph !== null
   const showComparison = comparisonActive && comparison !== null
   const activePdf = tabs.find((t) => t.id === activeTabId) ?? tabs[0]
   const fileUrl = activePdf
@@ -62,30 +50,6 @@ export default function PdfViewerPanel({
     <aside className={styles.panel}>
       <div className={styles.tabBar}>
         <div className={styles.tabs}>
-          {graph ? (
-            <button
-              type="button"
-              className={`${styles.tab} ${showGraph ? styles.tabActive : ""}`}
-              onClick={onSelectGraph}
-              title="Citation map"
-            >
-              <Network size={13} strokeWidth={1.75} aria-hidden />
-              <span className={styles.tabTitle}>Citation map</span>
-              <span
-                className={styles.tabClose}
-                role="button"
-                tabIndex={-1}
-                aria-label="Close citation map"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCloseGraph()
-                }}
-              >
-                <X size={13} strokeWidth={2} aria-hidden />
-              </span>
-            </button>
-          ) : null}
-
           {comparison ? (
             <button
               type="button"
@@ -114,7 +78,7 @@ export default function PdfViewerPanel({
             <button
               key={tab.id}
               type="button"
-              className={`${styles.tab} ${!showGraph && !showComparison && tab.id === activePdf?.id ? styles.tabActive : ""}`}
+              className={`${styles.tab} ${!showComparison && tab.id === activePdf?.id ? styles.tabActive : ""}`}
               onClick={() => onSelectTab(tab.id)}
               title={tab.title}
             >
@@ -135,7 +99,7 @@ export default function PdfViewerPanel({
           ))}
         </div>
         <div className={styles.panelActions}>
-          {!showGraph && !showComparison && fileUrl ? (
+          {!showComparison && fileUrl ? (
             <a
               className={styles.panelAction}
               href={`${fileUrl}#page=${activePdf?.targetPage ?? 1}`}
@@ -159,9 +123,7 @@ export default function PdfViewerPanel({
         </div>
       </div>
 
-      {showGraph && graph ? (
-        <GraphView data={graph} onOpenNode={onOpenNode} />
-      ) : showComparison && comparison ? (
+      {showComparison && comparison ? (
         <ComparisonView data={comparison} onOpenCell={onOpenComparisonSource} />
       ) : activePdf ? (
         <PdfDocument

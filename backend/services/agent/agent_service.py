@@ -327,8 +327,6 @@ def stream_agent_answer(
             "contextSummary": summary,
             "sessionId": chat_session_id,
             "verification": verification,
-            "related": [],
-            "retrievedCount": len(deduped),
             "insufficientContext": insufficient,
         }
     except Exception:

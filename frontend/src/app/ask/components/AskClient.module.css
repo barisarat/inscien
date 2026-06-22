@@ -23,11 +23,6 @@
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-.chatScrollResetting {
-  opacity: 0;
-  transform: translateY(6px);
-}
-
 .chatStream {
   display: grid;
   gap: 18px;
@@ -176,94 +171,17 @@
   outline: none;
 }
 
-.codeBlock {
-  position: relative;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 14px 0 18px;
-}
-
-.codeBlockHeader {
-  display: inline-flex;
-  align-items: center;
-  min-height: 31px;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-3);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  background: var(--surface);
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .pre {
-  margin: 0;
+  margin: 14px 0 18px;
   padding: 18px 20px;
   overflow-x: auto;
   font-size: var(--text-xs);
   line-height: 1.7;
   font-family: var(--mono);
   color: var(--text);
-}
-
-.codeCopyBtn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--surface);
+  background: var(--surface-subtle);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-3);
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-  z-index: 1;
-}
-
-.codeCopyBtn:hover {
-  color: var(--text);
-  border-color: var(--border-hover);
-}
-
-.iconBtnActive {
-  color: var(--text-3);
-  border-color: var(--border);
-}
-
-.kw {
-  color: var(--accent);
-}
-
-.str {
-  color: var(--source-green);
-}
-
-.comment {
-  color: var(--text-3);
-  font-style: italic;
-}
-
-.special {
-  color: var(--source-purple);
-}
-
-.num {
-  color: var(--source-amber);
-}
-
-.fn {
-  color: var(--source-cyan);
-}
-
-.plain {
-  color: var(--text);
+  border-radius: 8px;
 }
 
 .warning {

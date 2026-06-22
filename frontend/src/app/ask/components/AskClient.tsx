@@ -29,7 +29,6 @@ import {
   renameChatSession,
 } from "@/lib/api"
 import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
-import { type GraphData } from "./GraphView"
 import pageStyles from "../ask.module.css"
 import styles from "./AskClient.module.css"
 import compareStyles from "./Compare.module.css"
@@ -60,8 +59,6 @@ type LabStreamEvent =
       citations: LabCitation[]
       contextSummary?: string
       sessionId?: number | null
-      related: LabCitation[]
-      retrievedCount: number
       insufficientContext: boolean
     }
   | { type: "error"; message: string }
@@ -74,8 +71,6 @@ type LabMessage = {
   content: string
   visibleContent?: string
   citations?: LabCitation[]
-  related?: LabCitation[]
-  retrievedCount?: number
   insufficientContext?: boolean
   isTyping?: boolean
   loadingStage?: LoadingStage
@@ -118,15 +113,6 @@ type LabMessage = {
 }
 
 
-type CodeToken = {
-  text: string
-  className: string
-}
-
-type TokenPattern = {
-  pattern: RegExp
-  className: string
-}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -181,102 +167,6 @@ const LOADING_STAGE_LABELS: Record<LoadingStage, string> = {
   tool: "Working…",
 }
 
-const PYTHON_TOKENS: TokenPattern[] = [
-  {
-    pattern: /\b(from|import|def|with|as|if|return|True|False|None|and|or|not|in|is|for|while|class|pass|raise|try|except|finally|yield|lambda|global|nonlocal|del|assert|break|continue|elif|else)\b/g,
-    className: "kw",
-  },
-  {
-    pattern: /("""[\s\S]*?"""|'''[\s\S]*?'''|"[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')/g,
-    className: "str",
-  },
-  {
-    pattern: /#.*/g,
-    className: "comment",
-  },
-  {
-    pattern: /\b(__name__|__main__)\b/g,
-    className: "special",
-  },
-  {
-    pattern: /\b\d+(\.\d+)?\b/g,
-    className: "num",
-  },
-  {
-    pattern: /\b([a-z_][a-zA-Z0-9_]*)\s*(?=\()/g,
-    className: "fn",
-  },
-]
-
-const BASH_TOKENS: TokenPattern[] = [
-  {
-    pattern: /#.*/g,
-    className: "comment",
-  },
-  {
-    pattern: /\b(git|cd|cp|touch|nano|grep|source|chmod|docker|python|jupyter|pip|sudo|mkdir|rm|mv|cat|ls|curl|wget|systemctl|journalctl)\b/g,
-    className: "fn",
-  },
-  {
-    pattern: /\b(clone|add|commit|push|pull|fetch|branch|remote|show-ref|set-url|restore|clean|switch|status|compose|logs|exec|build|up|down|restart|start|stop|install|run)\b/g,
-    className: "fn",
-  },
-  {
-    pattern: /(--mirror|--bare|--show-current|--track|--tail|--follow|--no-input|--execute|--to|--output-dir|-u|-v|-a|-m|-f|-d|-fd|-fdn|-c|-lc|-s|-S)\b/g,
-    className: "kw",
-  },
-  {
-    pattern: /(https?:\/\/[^\s]+)/g,
-    className: "str",
-  },
-  {
-    pattern: /\b(origin|HEAD|true|false|null)\b/g,
-    className: "special",
-  },
-  {
-    pattern: /('[^']*'|"[^"]*")/g,
-    className: "str",
-  },
-]
-
-const JSON_TOKENS: TokenPattern[] = [
-  {
-    pattern: /"[^"\\]*(?:\\.[^"\\]*)*"(?=\s*:)/g,
-    className: "kw",
-  },
-  {
-    pattern: /"[^"\\]*(?:\\.[^"\\]*)*"/g,
-    className: "str",
-  },
-  {
-    pattern: /\b(true|false|null)\b/g,
-    className: "special",
-  },
-  {
-    pattern: /\b\d+(\.\d+)?\b/g,
-    className: "num",
-  },
-]
-
-const SQL_TOKENS: TokenPattern[] = [
-  {
-    pattern: /\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|ON|GROUP|BY|ORDER|LIMIT|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|PRIMARY|KEY|FOREIGN|REFERENCES|ALTER|DROP|AND|OR|NOT|NULL|IS|AS|DISTINCT|COUNT|SUM|AVG|MIN|MAX)\b/gi,
-    className: "kw",
-  },
-  {
-    pattern: /('[^']*'|"[^"]*")/g,
-    className: "str",
-  },
-  {
-    pattern: /--.*/g,
-    className: "comment",
-  },
-  {
-    pattern: /\b\d+(\.\d+)?\b/g,
-    className: "num",
-  },
-]
-
 // Use-case starters for the new-chat screen. Each chip submits a full prompt so the
 // empty state demonstrates the kind of grounded, cited questions InScien answers.
 const startCapabilities = [
@@ -288,83 +178,6 @@ const startCapabilities = [
 
 function makeMessageId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
-function getTokenSet(language: string) {
-  const normalized = language.toLowerCase()
-
-  if (normalized === "bash" || normalized === "sh" || normalized === "shell" || normalized === "zsh") {
-    return BASH_TOKENS
-  }
-
-  if (normalized === "json") {
-    return JSON_TOKENS
-  }
-
-  if (normalized === "sql") {
-    return SQL_TOKENS
-  }
-
-  return PYTHON_TOKENS
-}
-
-function tokenizeCode(code: string, language: string): CodeToken[] {
-  const tokenSet = getTokenSet(language)
-  type Span = { start: number; end: number; className: string }
-  const spans: Span[] = []
-
-  for (const { pattern, className } of tokenSet) {
-    const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`)
-    let match: RegExpExecArray | null
-
-    while ((match = re.exec(code)) !== null) {
-      spans.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        className,
-      })
-    }
-  }
-
-  spans.sort((a, b) => a.start - b.start || b.end - a.end)
-
-  const accepted: Span[] = []
-  let cursor = 0
-
-  for (const span of spans) {
-    if (span.start >= cursor) {
-      accepted.push(span)
-      cursor = span.end
-    }
-  }
-
-  const tokens: CodeToken[] = []
-  let position = 0
-
-  for (const span of accepted) {
-    if (span.start > position) {
-      tokens.push({
-        text: code.slice(position, span.start),
-        className: "plain",
-      })
-    }
-
-    tokens.push({
-      text: code.slice(span.start, span.end),
-      className: span.className,
-    })
-
-    position = span.end
-  }
-
-  if (position < code.length) {
-    tokens.push({
-      text: code.slice(position),
-      className: "plain",
-    })
-  }
-
-  return tokens
 }
 
 function IconCopy() {
@@ -381,46 +194,6 @@ function IconCheck() {
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  )
-}
-
-function CodeBlock({ code, language }: { code: string; language: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const tokens = useMemo(() => tokenizeCode(code, language), [code, language])
-
-  function handleCopy() {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1600)
-    })
-  }
-
-  return (
-    <div className={styles.codeBlock}>
-      <button
-        type="button"
-        className={`${styles.codeCopyBtn} ${copied ? styles.iconBtnActive : ""}`}
-        onClick={handleCopy}
-        aria-label="Copy code"
-      >
-        {copied ? <IconCheck /> : <IconCopy />}
-      </button>
-
-      <div className={styles.codeBlockHeader}>
-        {language || "text"}
-      </div>
-
-      <pre className={styles.pre}>
-        <code>
-          {tokens.map((token, index) => (
-            <span key={`${token.className}-${index}`} className={styles[token.className as keyof typeof styles] ?? ""}>
-              {token.text}
-            </span>
-          ))}
-        </code>
-      </pre>
-    </div>
   )
 }
 
@@ -586,12 +359,16 @@ function buildMarkdownComponents(
     // Fenced/block code has a language class or spans multiple lines; everything
     // else is inline. (react-markdown v9 dropped the `inline` prop.)
     if (language || text.includes("\n")) {
-      return <CodeBlock code={text.replace(/\n$/, "")} language={language || "text"} />
+      return (
+        <pre className={styles.pre}>
+          <code>{text.replace(/\n$/, "")}</code>
+        </pre>
+      )
     }
     return <code className={styles.inlineCode}>{children}</code>
   },
-  // CodeBlock (from the `code` override) renders its own <pre>; unwrap the
-  // default <pre> wrapper to avoid nested <pre> and extra UA styling.
+  // The `code` override renders its own <pre>; unwrap the default <pre> wrapper
+  // to avoid nested <pre> and extra UA styling.
   pre: ({ children }) => <>{children}</>,
   h1: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
   h2: ({ children }) => <h3 className={styles.answerHeading}>{children}</h3>,
@@ -969,12 +746,9 @@ function AskContent() {
   const [input, setInput] = useState(initialQuery)
   const [messages, setMessages] = useState<LabMessage[]>([])
 
-  // Right work-panel: PDF tabs (one per doc, keyed by sourceId) + an optional
-  // citation-graph tab.
+  // Right work-panel: PDF tabs (one per doc, keyed by sourceId).
   const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
   const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
-  const [graph, setGraph] = useState<GraphData | null>(null)
-  const [graphActive, setGraphActive] = useState(false)
   // Comparison work-panel: the latest grounded table + whether its tab is showing.
   const [comparison, setComparison] = useState<CompareResult | null>(null)
   const [comparisonActive, setComparisonActive] = useState(false)
@@ -995,7 +769,6 @@ function AskContent() {
       prev.some((t) => t.id === id) ? prev.map((t) => (t.id === id ? tab : t)) : [...prev, tab]
     )
     setActivePdfTabId(id)
-    setGraphActive(false) // opening a doc (incl. a graph-node click) shows the PDF
     setComparisonActive(false)
   }, [])
 
@@ -1021,11 +794,6 @@ function AskContent() {
     setActivePdfTabId((cur) => (cur === id ? null : cur))
   }, [])
 
-  const handleCloseGraph = useCallback(() => {
-    setGraph(null)
-    setGraphActive(false)
-  }, [])
-
   const handleCloseComparison = useCallback(() => {
     setComparison(null)
     setComparisonActive(false)
@@ -1034,21 +802,16 @@ function AskContent() {
   const handleViewComparison = useCallback((result?: CompareResult) => {
     if (result) setComparison(result)
     setComparisonActive(true)
-    setGraphActive(false)
   }, [])
 
   const handleClosePdfPanel = useCallback(() => {
     setPdfTabs([])
     setActivePdfTabId(null)
-    setGraph(null)
-    setGraphActive(false)
     setComparison(null)
     setComparisonActive(false)
   }, [])
   const [isLoading, setIsLoading] = useState(false)
-  const [answerIsComplete, setAnswerIsComplete] = useState(false)
   const [error, setError] = useState("")
-  const [isResetting, setIsResetting] = useState(false)
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([])
   const [activeSessionId, setActiveSessionId] = useState<number | null>(
     sessionParam ? Number(sessionParam) : null
@@ -1076,7 +839,6 @@ function AskContent() {
   }, [])
   const navWidth = navCollapsed ? NAV_WIDTH_COLLAPSED : NAV_WIDTH_EXPANDED
   const streamRef = useRef<HTMLDivElement | null>(null)
-  const transcriptEndRef = useRef<HTMLDivElement | null>(null)
   const pageEndRef = useRef<HTMLDivElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const submittedQueryRef = useRef("")
@@ -1147,7 +909,6 @@ function AskContent() {
         loadedSessionRef.current = null
         setMessages([])
         setActiveSessionId(null)
-        setAnswerIsComplete(false)
       }
       return
     }
@@ -1175,7 +936,6 @@ function AskContent() {
         } else {
           setMode("ask")
           setMessages(sessionMessagesToLab(detail.messages))
-          setAnswerIsComplete(true)
         }
       } catch {
         setError("Could not load that chat.")
@@ -1261,9 +1021,7 @@ function AskContent() {
     setMessages((prev) => [...prev, userMessage, loadingMessage])
     setInput("")
     setIsLoading(true)
-    setAnswerIsComplete(false)
     setError("")
-    setIsResetting(false)
 
     const updateAssistant = (patch: Partial<LabMessage>) => {
       setMessages((current) =>
@@ -1319,11 +1077,8 @@ function AskContent() {
           visibleContent: payload.answer,
           citations: payload.citations,
           contextSummary: payload.contextSummary,
-          related: payload.related,
-          retrievedCount: payload.retrievedCount,
           insufficientContext: payload.insufficientContext,
         })
-        setAnswerIsComplete(true)
         adoptSession(payload.sessionId ?? null)
         return
       }
@@ -1390,7 +1145,6 @@ function AskContent() {
       if (!finalized) {
         if (accumulated) {
           updateAssistant({ isTyping: false, streaming: false })
-          setAnswerIsComplete(true)
         } else {
           throw new Error("No response received.")
         }
@@ -1399,7 +1153,6 @@ function AskContent() {
       // Keep the conversation; drop only the failed assistant placeholder.
       setMessages((prev) => prev.filter((message) => message.id !== assistantId))
       setError(nextError instanceof Error ? nextError.message : "Something went wrong.")
-      setAnswerIsComplete(true)
     } finally {
       setIsLoading(false)
       inFlightRef.current = false
@@ -1462,7 +1215,6 @@ function AskContent() {
     setInput("")
     setMessages([])
     setError("")
-    setAnswerIsComplete(false)
     setActiveSessionId(null)
     activeSessionIdRef.current = null
     router.replace("/ask")
@@ -1520,8 +1272,8 @@ function AskContent() {
         style={{ marginLeft: navWidth, paddingTop: 52 }}
       >
         {mode === "ask" ? (
-        <div className={`${pageStyles.page} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.pageSplit : ""}`}>
-          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 || graph || comparison ? pageStyles.mainSplit : ""}`}>
+        <div className={`${pageStyles.page} ${pdfTabs.length > 0 || comparison ? pageStyles.pageSplit : ""}`}>
+          <main className={`${pageStyles.main} ${hasMessages ? pageStyles.mainChat : ""} ${pdfTabs.length > 0 || comparison ? pageStyles.mainSplit : ""}`}>
             <section className={`${styles.chatShell} ${hasMessages ? styles.hasMessages : styles.isEmpty}`}>
               {!hasMessages ? (
                 <header className={`${pageStyles.header} ${pageStyles.headerHero}`}>
@@ -1537,7 +1289,7 @@ function AskContent() {
               {hasMessages ? (
                 <div
                   ref={streamRef}
-                  className={`${styles.chatScroll} ${isResetting ? styles.chatScrollResetting : ""}`}
+                  className={styles.chatScroll}
                   onScroll={() => {
                     const node = streamRef.current
                     if (!node) return
@@ -1555,7 +1307,6 @@ function AskContent() {
                         onViewComparison={handleViewComparison}
                       />
                     ))}
-                    <div ref={transcriptEndRef} aria-hidden />
                   </div>
                 </div>
               ) : null}
@@ -1633,36 +1384,16 @@ function AskContent() {
             </section>
           </main>
 
-          {pdfTabs.length > 0 || graph || comparison ? (
+          {pdfTabs.length > 0 || comparison ? (
             <PdfViewerPanel
               tabs={pdfTabs}
               activeTabId={activePdfTabId}
               onSelectTab={(id) => {
                 setActivePdfTabId(id)
-                setGraphActive(false)
                 setComparisonActive(false)
               }}
               onCloseTab={handleClosePdfTab}
               onClosePanel={handleClosePdfPanel}
-              graph={graph}
-              graphActive={graphActive}
-              onSelectGraph={() => {
-                setGraphActive(true)
-                setComparisonActive(false)
-              }}
-              onCloseGraph={handleCloseGraph}
-              onOpenNode={(node) =>
-                handleOpenSource({
-                  sourceId: node.id,
-                  title: node.title,
-                  url: "",
-                  sourceType: "pdf",
-                  category: "",
-                  sectionTitle: "",
-                  contentMode: "full_text",
-                  page: 1,
-                })
-              }
               comparison={comparison}
               comparisonActive={comparisonActive}
               onSelectComparison={handleViewComparison}
