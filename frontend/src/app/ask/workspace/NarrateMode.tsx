@@ -5,6 +5,7 @@ import { AudioLines, Loader2 } from "lucide-react"
 
 import { activeNarration, getNarration, listNarrations, listPapers, startNarration, API_BASE } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { pollJob as runPollLoop } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
 import compareStyles from "../components/Compare.module.css"
 import styles from "./Workspace.module.css"
@@ -30,32 +31,19 @@ export default function NarrateMode() {
 
   // Poll an existing narration job to completion. Shared by a fresh run and by
   // re-attaching to a job that was already running when this mode (re)mounted.
-  const pollJob = useCallback(async (id: string, token: number) => {
-    try {
-      for (;;) {
-        if (token !== runToken.current) return
-        const s = await getNarration(id)
-        if (token !== runToken.current) return
+  const pollJob = useCallback((id: string, token: number) =>
+    runPollLoop(id, getNarration, {
+      isCancelled: () => token !== runToken.current,
+      onProgress: (s) => {
         setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
         if (s.title) setTitle(s.title)
-        if (s.status === "done") {
-          setPhase("done")
-          return
-        }
-        if (s.status === "error") {
-          setError(s.error || "Narration failed.")
-          setPhase("error")
-          return
-        }
-        await new Promise((r) => setTimeout(r, 1500))
-      }
-    } catch (e) {
-      if (token === runToken.current) {
-        setError(String(e))
+      },
+      onDone: () => setPhase("done"),
+      onError: (s) => {
+        setError(s.error || "Narration failed.")
         setPhase("error")
-      }
-    }
-  }, [])
+      },
+    }), [])
 
   // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
   useEffect(() => {

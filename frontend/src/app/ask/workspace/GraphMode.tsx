@@ -11,6 +11,7 @@ import {
   type DiscoveryGraph,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
 import GraphView, { type GraphLayout } from "../components/GraphView"
 import compareStyles from "../components/Compare.module.css"
@@ -84,26 +85,20 @@ export default function GraphMode() {
     setPhase("fetching")
     setProgress({})
     setError(null)
+    const isCancelled = () => t !== token.current
     try {
       const { jobId } = await startGraphFetch(unmapped)
-      for (;;) {
-        if (t !== token.current) return
-        const s = await getGraphFetch(jobId)
-        if (t !== token.current) return
-        setProgress({ detail: s.detail, progress: s.progress })
-        if (s.status === "done") {
-          await render(itemKeys, t)
-          return
-        }
-        if (s.status === "error") {
+      await pollJob(jobId, getGraphFetch, {
+        isCancelled,
+        onProgress: (s) => setProgress({ detail: s.detail, progress: s.progress }),
+        onDone: () => render(itemKeys, t),
+        onError: (s) => {
           setError(s.error || "Fetch failed.")
           setPhase("error")
-          return
-        }
-        await new Promise((r) => setTimeout(r, 1500))
-      }
+        },
+      })
     } catch (e) {
-      if (t !== token.current) return
+      if (isCancelled()) return
       setError(String(e))
       setPhase("error")
     }

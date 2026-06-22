@@ -5,6 +5,7 @@ import { Loader2, X } from "lucide-react"
 
 import { getWriteup, listPapers, proposePlan, startWriteup, type PaperItem, type WriteResult } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "./WorkspaceProvider"
 import { AnswerRenderer, CompactSources, type Citation } from "./answer/AnswerRenderer"
 import compareStyles from "../components/Compare.module.css"
@@ -94,14 +95,13 @@ export default function WriteMode() {
     setPhase("running")
     setProgress({})
     setError(null)
+    const isCancelled = () => token !== runToken.current
     try {
       const { jobId } = await startWriteup(topic.trim(), scope, dimensions)
-      for (;;) {
-        if (token !== runToken.current) return
-        const s = await getWriteup(jobId)
-        if (token !== runToken.current) return
-        setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
-        if (s.status === "done") {
+      await pollJob(jobId, getWriteup, {
+        isCancelled,
+        onProgress: (s) => setProgress({ stage: s.stage, detail: s.detail, progress: s.progress }),
+        onDone: (s) => {
           if (s.result) {
             setResult(s.result)
             setPhase("done")
@@ -113,17 +113,14 @@ export default function WriteMode() {
             setError("No draft returned.")
             setPhase("error")
           }
-          return
-        }
-        if (s.status === "error") {
+        },
+        onError: (s) => {
           setError(s.error || "Draft failed.")
           setPhase("error")
-          return
-        }
-        await new Promise((r) => setTimeout(r, 1500))
-      }
+        },
+      })
     } catch (e) {
-      if (token !== runToken.current) return
+      if (isCancelled()) return
       setError(String(e))
       setPhase("error")
     }

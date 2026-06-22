@@ -11,6 +11,7 @@ import {
   type CompareResult,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { pollJob } from "@/lib/pollJob"
 import ComparisonView from "../components/ComparisonView"
 import compareStyles from "../components/Compare.module.css"
 import { useWorkspace } from "./WorkspaceProvider"
@@ -87,14 +88,13 @@ export default function CompareMode() {
     setPhase("running")
     setProgress({})
     setError(null)
+    const isCancelled = () => token !== runToken.current
     try {
       const { jobId } = await startCompare(docIds, dimensions)
-      for (;;) {
-        if (token !== runToken.current) return
-        const s = await getCompare(jobId)
-        if (token !== runToken.current) return
-        setProgress({ stage: s.stage, detail: s.detail, progress: s.progress })
-        if (s.status === "done") {
+      await pollJob(jobId, getCompare, {
+        isCancelled,
+        onProgress: (s) => setProgress({ stage: s.stage, detail: s.detail, progress: s.progress }),
+        onDone: (s) => {
           if (s.result) {
             setResult(s.result)
             setPhase("done")
@@ -104,17 +104,14 @@ export default function CompareMode() {
             setError("No result returned.")
             setPhase("error")
           }
-          return
-        }
-        if (s.status === "error") {
+        },
+        onError: (s) => {
           setError(s.error || "Comparison failed.")
           setPhase("error")
-          return
-        }
-        await new Promise((r) => setTimeout(r, 1500))
-      }
+        },
+      })
     } catch (e) {
-      if (token !== runToken.current) return
+      if (isCancelled()) return
       setError(String(e))
       setPhase("error")
     }

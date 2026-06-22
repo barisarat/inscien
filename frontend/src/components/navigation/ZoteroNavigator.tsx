@@ -25,6 +25,7 @@ import {
   type ZoteroItem,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
+import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "@/app/ask/workspace/WorkspaceProvider"
 import styles from "./ZoteroNavigator.module.css"
 
@@ -99,18 +100,11 @@ export default function ZoteroNavigator({
       setIndexing((prev) => new Set([...prev, ...fresh]))
       try {
         const { jobId } = await startZoteroIndex(fresh)
-        for (;;) {
-          await new Promise((r) => setTimeout(r, 1200))
-          const job = await getZoteroIndexJob(jobId)
-          if (job.status === "done") {
-            markIndexed(fresh)
-            break
-          }
-          if (job.status === "error") {
-            setError(`Indexing failed: ${job.error ?? ""}`)
-            break
-          }
-        }
+        await pollJob(jobId, getZoteroIndexJob, {
+          intervalMs: 1200,
+          onDone: () => markIndexed(fresh),
+          onError: (job) => setError(`Indexing failed: ${job.error ?? ""}`),
+        })
       } catch {
         setError("Indexing failed.")
       } finally {
