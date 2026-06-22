@@ -17,6 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from services.refs.openalex import fetch_work, resolve_works
+from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
 from services.zotero.reader import item_metadata
 
 CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH", "/workspace/data/openalex.json"))
@@ -86,6 +87,7 @@ def fetch_items(item_keys, progress=None):
     `progress(stage, percent, detail)`.
     """
     emit = progress or (lambda *_a, **_k: None)
+    generation = current_generation()
     cache = _load()
     todo = [k for k in item_keys if not _is_mapped(cache.get(k))]
     total = max(len(todo), 1)
@@ -112,7 +114,9 @@ def fetch_items(item_keys, progress=None):
                               "status": "mapped", "fetchedAt": time.time(), "v": SCHEMA_VERSION}
         # Persist after each paper so an interrupted batch isn't lost (each record is
         # one polite OpenAlex round-trip); the atomic _save makes this safe.
-        _save(cache)
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            _save(cache)
 
     # Resolve reference ids → metadata for every requested mapped record whose references
     # are still raw ids. Covers this run AND any left unresolved by a prior interrupted run
@@ -135,7 +139,9 @@ def fetch_items(item_keys, progress=None):
                                for f in ("title", "year", "date", "doi", "citedBy")}}
                 for rid in rec["references"]
             ]
-        _save(cache)
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            _save(cache)
 
     emit("done", 100, "done")
     return {"mapped": [k for k in item_keys if _is_mapped(cache.get(k))]}

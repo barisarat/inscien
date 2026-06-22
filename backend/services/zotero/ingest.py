@@ -34,6 +34,14 @@ from services.lab.qdrant_store import (
     upsert_lab_points,
 )
 from services.lab.settings import get_lab_settings
+from services.state_guard import (
+    DERIVED_STATE_LOCK,
+    DerivedStateReset,
+    begin_reset,
+    current_generation,
+    end_reset,
+    ensure_current_generation,
+)
 from services.zotero.reader import item_metadata, resolve_pdf_path
 
 logger = logging.getLogger(__name__)
@@ -93,6 +101,7 @@ def index_items(item_keys, progress=None):
     """
     emit = progress or (lambda *_args, **_kwargs: None)
     item_keys = list(item_keys)
+    generation = current_generation()
     ensure_table()
     settings = get_lab_settings()
     manifest_path = Path(settings["chunk_index_path"])
@@ -102,7 +111,9 @@ def index_items(item_keys, progress=None):
     for chunk in read_json_file(manifest_path):
         by_source[chunk["sourceId"]].append(chunk)
 
-    ensure_source_payload_index()
+    with DERIVED_STATE_LOCK:
+        ensure_current_generation(generation)
+        ensure_source_payload_index()
     db = SessionLocal()
     indexed = skipped = skipped_no_pdf = failed = 0
     total = max(len(item_keys), 1)
@@ -116,6 +127,7 @@ def index_items(item_keys, progress=None):
     try:
         ledger = get_ledger(db)
         for i, key in enumerate(item_keys, start=1):
+            ensure_current_generation(generation)
             pct = int(i / total * 100)
             meta = {"itemKey": key}
             file_hash = None
@@ -139,38 +151,52 @@ def index_items(item_keys, progress=None):
                 meta = item_metadata(key) or {"itemKey": key}
                 chunks, _ = build_chunks_for_item(key, pdf, meta)
 
-                delete_lab_points_by_source(key)  # clear stale points if re-indexing
+                point_batches = []
                 for batch in _batched(chunks, BATCH_SIZE):
                     vectors = embed_texts([c["text"] for c in batch])
-                    upsert_lab_points([build_point(c, v) for c, v in zip(batch, vectors)])
+                    point_batches.append([build_point(c, v) for c, v in zip(batch, vectors)])
 
-                by_source[key] = chunks
-                upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
+                with DERIVED_STATE_LOCK:
+                    ensure_current_generation(generation)
+                    delete_lab_points_by_source(key)  # clear stale points if re-indexing
+                    for points in point_batches:
+                        upsert_lab_points(points)
+
+                    by_source[key] = chunks
+                    upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
+                    # Persist after each item so a later crash leaves a manifest matching
+                    # exactly the items committed to Qdrant + the ledger (resumable).
+                    _flush_manifest()
                 indexed += 1
-                # Persist after each item so a later crash leaves a manifest matching
-                # exactly the items committed to Qdrant + the ledger (resumable).
-                _flush_manifest()
                 emit("indexing", pct, f"{(meta.get('title') or key)[:48]} — {len(chunks)} chunks")
+            except DerivedStateReset:
+                db.rollback()
+                emit("cancelled", pct, "indexing cancelled by reset")
+                raise
             except Exception:
                 logger.exception("index_items: failed to index %s", key)
                 db.rollback()
                 # Leave the item in a consistent unindexed state: clear any (partial or
                 # stale) Qdrant points, drop its chunks from the manifest, and mark it
                 # failed so the next run retries it.
-                by_source.pop(key, None)
-                try:
-                    delete_lab_points_by_source(key)
-                except Exception:
-                    logger.exception("index_items: cleanup delete failed for %s", key)
-                try:
-                    upsert_item(db, key, file_hash, meta.get("title"), 0, "failed")
-                except Exception:
-                    db.rollback()
+                with DERIVED_STATE_LOCK:
+                    ensure_current_generation(generation)
+                    by_source.pop(key, None)
+                    try:
+                        delete_lab_points_by_source(key)
+                    except Exception:
+                        logger.exception("index_items: cleanup delete failed for %s", key)
+                    try:
+                        upsert_item(db, key, file_hash, meta.get("title"), 0, "failed")
+                    except Exception:
+                        db.rollback()
+                    _flush_manifest()
                 failed += 1
-                _flush_manifest()
                 emit("indexing", pct, f"{key}: failed — skipped")
 
-        merged = _flush_manifest()
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            merged = _flush_manifest()
         summary = {
             "indexed": indexed,
             "skipped": skipped,
@@ -180,6 +206,9 @@ def index_items(item_keys, progress=None):
         }
         emit("done", 100, f"indexed {indexed}, skipped {skipped}, no-PDF {skipped_no_pdf}, failed {failed}")
         return summary
+    except DerivedStateReset:
+        logger.info("index_items: cancelled by reset")
+        raise
     finally:
         db.close()
 
@@ -190,37 +219,43 @@ def reset_index():
     index-job files, and the compare/writeup/narration/graph-fetch job files + narration
     mp3s). Everything after this is additive via `index_items`.
     """
-    ensure_table()
-    recreate_lab_collection()
-    ensure_source_payload_index()
-    _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
-    # Clear the ledger right after wiping Qdrant + the manifest so the three index-state
-    # stores stay consistent. (Done before the OpenAlex reset below, which is best-effort:
-    # a failure there must not leave the ledger claiming items are still indexed.)
-    db = SessionLocal()
-    try:
-        clear_all(db)
-    finally:
-        db.close()
-    # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
-    # Rebuildable, so failure here is non-fatal (logged, not raised).
-    try:
-        from services.refs.refstore import reset_cache
-        reset_cache()
-    except Exception:
-        logger.exception("reset_index: OpenAlex cache reset failed (non-fatal)")
-    # Clear derived job artifacts (the Zotero index jobs, plus compare/writeup/narration
-    # incl. audio and graph fetch) so the reset is a true clean slate. Best-effort, like
-    # the OpenAlex cache above. The zotero-jobs import is local to avoid a circular import
-    # (services.zotero.jobs imports index_items from this module).
-    from services.zotero.jobs import clear_jobs as _clear_zotero
-    from services.compare.jobs import clear_jobs as _clear_compare
-    from services.writeup.jobs import clear_jobs as _clear_writeup
-    from services.narration.jobs import clear_jobs as _clear_narration
-    from services.refs.fetch_jobs import clear_jobs as _clear_graph_fetch
-    for clear in (_clear_zotero, _clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch):
+    with DERIVED_STATE_LOCK:
+        # Invalidate any running background writer before wiping stores. Writers that were
+        # doing parse/embed work outside the lock will observe this before their next commit.
+        begin_reset()
         try:
-            clear()
-        except Exception:
-            logger.exception("reset_index: skill-artifact cleanup failed (non-fatal)")
+            # Clear job records first so queued work cannot start after reset begins. Active
+            # work has an older generation and will fail before its next guarded commit.
+            from services.zotero.jobs import clear_jobs as _clear_zotero
+            from services.compare.jobs import clear_jobs as _clear_compare
+            from services.writeup.jobs import clear_jobs as _clear_writeup
+            from services.narration.jobs import clear_jobs as _clear_narration
+            from services.refs.fetch_jobs import clear_jobs as _clear_graph_fetch
+            for clear in (_clear_zotero, _clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch):
+                try:
+                    clear()
+                except Exception:
+                    logger.exception("reset_index: skill-artifact cleanup failed (non-fatal)")
+
+            ensure_table()
+            recreate_lab_collection()
+            ensure_source_payload_index()
+            _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
+            # Clear the ledger right after wiping Qdrant + the manifest so the three index-state
+            # stores stay consistent. (Done before the OpenAlex reset below, which is best-effort:
+            # a failure there must not leave the ledger claiming items are still indexed.)
+            db = SessionLocal()
+            try:
+                clear_all(db)
+            finally:
+                db.close()
+            # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
+            # Rebuildable, so failure here is non-fatal (logged, not raised).
+            try:
+                from services.refs.refstore import reset_cache
+                reset_cache()
+            except Exception:
+                logger.exception("reset_index: OpenAlex cache reset failed (non-fatal)")
+        finally:
+            end_reset()
     return {"ok": True}

@@ -12,6 +12,8 @@ import re
 import numpy as np
 from pydub import AudioSegment
 
+from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
+
 MODEL_PATH = os.getenv("KOKORO_MODEL_PATH", "/opt/kokoro/kokoro-v1.0.onnx")
 VOICES_PATH = os.getenv("KOKORO_VOICES_PATH", "/opt/kokoro/voices-v1.0.bin")
 VOICE = os.getenv("KOKORO_VOICE", "af_heart")
@@ -77,6 +79,7 @@ def _to_segment(samples, sample_rate):
 
 def synthesize(script, out_path, progress):
     """Synthesize the script to an mp3 at out_path; return its duration in minutes."""
+    generation = current_generation()
     kokoro = _get_kokoro()
     chunks = split_into_chunks(script)
     total = len(chunks)
@@ -91,5 +94,7 @@ def synthesize(script, out_path, progress):
         progress("synthesizing", 55 + int(44 * (i + 1) / max(total, 1)),
                  f"synthesizing ({i + 1}/{total})")
 
-    full.export(out_path, format="mp3", bitrate=BITRATE)
+    with DERIVED_STATE_LOCK:
+        ensure_current_generation(generation)
+        full.export(out_path, format="mp3", bitrate=BITRATE)
     return round(len(full) / 1000.0 / 60.0, 2)

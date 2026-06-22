@@ -16,6 +16,8 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from services.state_guard import DerivedStateReset, claim_generation, ensure_current_generation
+
 
 class JobRunner:
     def __init__(self, name, jobs_dir, public_fields):
@@ -40,21 +42,30 @@ class JobRunner:
             job.update(fields)
             self._persist(job)
 
-    def _progress(self, job_id):
+    def _progress(self, job_id, generation):
         # A progress update never flips the job to its terminal "done" status — even when a
         # pipeline reports stage="done" as its last step. The "done" transition is owned
         # solely by `_run` *after* `work` returns, so a poller can't observe status="done"
         # before the result dict has been merged into the job.
         def cb(stage, percent, detail=""):
+            ensure_current_generation(generation)
             self._set(job_id, stage=stage, progress=percent, detail=detail, status="running")
         return cb
 
     # --- lifecycle ---------------------------------------------------------
     def _run(self, job_id, work):
-        self._set(job_id, status="running", stage="queued", progress=0)
+        with self._lock:
+            if job_id not in self._jobs:
+                return
         try:
-            done_fields = work(job_id, self._progress(job_id)) or {}
+            generation = claim_generation()
+            self._set(job_id, status="running", stage="queued", progress=0)
+            done_fields = work(job_id, self._progress(job_id, generation)) or {}
+            ensure_current_generation(generation)
             self._set(job_id, status="done", stage="done", progress=100, **done_fields)
+        except DerivedStateReset as exc:
+            self._log.info("%s job %s cancelled by reset", self.name, job_id)
+            self._set(job_id, status="error", error=str(exc))
         except Exception:
             last = (traceback.format_exc().strip().splitlines() or ["error"])[-1]
             self._log.exception("%s job %s failed", self.name, job_id)
