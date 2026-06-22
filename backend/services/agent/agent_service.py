@@ -2,11 +2,12 @@
 
 `stream_agent_answer` is a tool-calling loop over the OpenAI-compatible chat-completions
 API (the local Ollama, via `services.llm.client`) that emits an SSE protocol (`stage` /
-`citations` / `delta` / `final` / `error`). The tools are library retrieval
-(`search_internal_content`) plus reference-graph lookups (`citation_graph`,
-`search_references`), whose results ground a streamed, page-cited final answer. Multi-turn
-chat is preserved: each turn is persisted to SQLite and prior turns (plus a compact
-`(context: …)` recap) are replayed as history so follow-ups resolve naturally.
+`citations` / `delta` / `final` / `error`). The chat agent has a single tool — library
+retrieval (`search_internal_content`) — and always produces a streamed, page-cited final
+answer. (Structured skills — compare, write, narrate, the citation graph — live in their
+own workspace tabs, not the chat.) Multi-turn chat is preserved: each turn is persisted to
+SQLite and prior turns (plus a compact `(context: …)` recap) are replayed as history so
+follow-ups resolve naturally.
 
 Like the lab streamer it opens its own DB session because a streaming response
 outlives a request-scoped session. There is no auth — a single implicit local user
@@ -46,13 +47,6 @@ MAX_HISTORY_CHARS = 2000
 
 # Single-user/local: every session is owned by one implicit user.
 LOCAL_USER_ID = 1
-
-# A `/skill` from the client forces its tool on the first round.
-_SKILL_TOOL = {
-    "ask": "search_internal_content",
-    "graph": "citation_graph",
-    "refs": "search_references",
-}
 
 
 def _parse_arguments(raw):
@@ -141,14 +135,11 @@ def stream_agent_answer(
     credentials=None,
     anonymous_id="",
     request_metadata=None,
-    skill=None,
     item_keys=None,
 ):
     db = SessionLocal()
 
     context_results = []
-    graph_payload = None   # set if the citation_graph skill ran
-    refs_payload = None    # set if the search_references skill ran
     executed = {}
     chat_session_id = None
 
@@ -185,42 +176,9 @@ def stream_agent_answer(
             item_keys = set(stored) if stored else None
         ctx.item_keys = item_keys
 
-        # --- Skill routing ----------------------------------------------------
-        # An explicit `/skill` is dispatched DETERMINISTICALLY here — local models
-        # (Ollama) don't reliably honor a forced tool_choice, so we don't route /skill
-        # through the model at all. Plain NL falls through to the model-driven loop.
-        forced_tool = _SKILL_TOOL.get(skill)
-        if forced_tool:
-            args = {"query": query}
-            yield {"type": "stage", "stage": "tool", "tool": forced_tool,
-                   "label": stage_label(forced_tool, args)}
-            handler = TOOL_DISPATCH.get(forced_tool)
-            try:
-                result = handler(args, ctx) if handler else {}
-            except Exception:
-                logger.exception("skill %s failed", forced_tool)
-                result = {"error": "tool_failed"}
-            executed[(forced_tool, json.dumps(args, sort_keys=True))] = result
-            if forced_tool == "search_internal_content":
-                context_results.extend(result.get("contextResults", []))
-            elif forced_tool == "citation_graph" and isinstance(result, dict) and result.get("graph"):
-                graph_payload = result["graph"]
-                messages.append({"role": "user", "content": (
-                    f"(citation_graph result) {len(graph_payload['nodes'])} papers, "
-                    f"{len(graph_payload['edges'])} citation links among them.")})
-            elif forced_tool == "search_references" and isinstance(result, dict) and "matches" in result:
-                refs_payload = result["matches"]
-                messages.append({"role": "user", "content": (
-                    f"(search_references result) {len(refs_payload)} matching reference(s) "
-                    f"for '{query}'.")})
-            elif isinstance(result, dict) and result.get("message"):
-                messages.append({"role": "user", "content": f"(tool note) {result['message']}"})
-
-        # --- NL tool-calling loop (Chat Completions) --------------------------
-        # Only for plain NL — the model infers which skill to call ("auto").
+        # --- Tool-calling loop (Chat Completions) -----------------------------
+        # The model infers when to call the library-retrieval tool ("auto").
         for _round in range(MAX_TOOL_ROUNDS):
-            if forced_tool:
-                break  # explicit skill already dispatched above
             response = chat_create(
                 messages=messages,
                 tools=TOOL_SCHEMAS,
@@ -282,23 +240,10 @@ def stream_agent_answer(
 
                     if name == "search_internal_content":
                         context_results.extend(result.get("contextResults", []))
-                    elif name == "citation_graph" and isinstance(result, dict) and result.get("graph"):
-                        graph_payload = result["graph"]
-                    elif name == "search_references" and isinstance(result, dict) and "matches" in result:
-                        refs_payload = result["matches"]
 
-                # Keep the model's context compact: full passages for search; a short
-                # recap for graph/refs (the structured payload streams to the UI instead).
+                # Keep the model's context compact: pass the full passages for search.
                 if name == "search_internal_content":
                     model_payload = result.get("contextBlocks", "")
-                elif name == "citation_graph" and isinstance(result, dict) and result.get("graph"):
-                    g = result["graph"]
-                    model_payload = (
-                        f"Citation map: {len(g['nodes'])} papers, "
-                        f"{len(g['edges'])} citation links among them."
-                    )
-                elif name == "search_references" and isinstance(result, dict) and "matches" in result:
-                    model_payload = {"matchCount": len(result["matches"]), "matches": result["matches"][:10]}
                 else:
                     model_payload = result
 
@@ -308,118 +253,73 @@ def stream_agent_answer(
                     "content": json.dumps(model_payload),
                 })
 
-        # Mode = which skill produced output. graph/refs render a structured panel/list
-        # and get a short summary; everything else is a grounded Q&A answer.
-        mode = "graph" if graph_payload is not None else ("refs" if refs_payload is not None else "answer")
-
-        if mode == "answer":
-            # Safety net: if the model never retrieved (a small model that ignored the
-            # forced tool, or a malformed call), force one search so the answer is grounded.
-            if not context_results:
-                fallback = search_internal_content(query, item_keys=item_keys)
-                context_results.extend(fallback.get("contextResults", []))
-            deduped = _dedupe_context(context_results)[:MAX_CITATIONS]
-            citations = unique_citations(deduped, MAX_CITATIONS)
-        else:
-            deduped = []
-            citations = []
+        # Safety net: if the model never retrieved (a small model that ignored the
+        # tool, or a malformed call), force one search so the answer is grounded.
+        if not context_results:
+            fallback = search_internal_content(query, item_keys=item_keys)
+            context_results.extend(fallback.get("contextResults", []))
+        deduped = _dedupe_context(context_results)[:MAX_CITATIONS]
+        citations = unique_citations(deduped, MAX_CITATIONS)
 
         yield {"type": "stage", "stage": "drafting"}
 
-        # Stream the structured payload for the skill that ran (the UI renders it).
-        if mode == "graph":
-            yield {"type": "graph", "nodes": graph_payload["nodes"], "edges": graph_payload["edges"]}
-        elif mode == "refs":
-            yield {"type": "refs", "matches": refs_payload}
-        elif citations:
+        if citations:
             yield {"type": "citations", "citations": citations}
 
         # --- Final answer -----------------------------------------------------
-        # graph/refs get a DETERMINISTIC summary computed from the actual results, so
-        # the headline can never contradict the rendered panel/list (a small model
-        # would otherwise hallucinate counts). Only Q&A goes through the model.
         verification = {"grounded": True, "unsupported": []}
 
-        if mode == "graph":
-            nodes = graph_payload["nodes"]
-            edges = graph_payload["edges"]
-            connected = len({x for e in edges for x in (e["from"], e["to"])})
-            answer = (
-                f"Built the citation map of your library: {len(nodes)} paper(s), "
-                f"{len(edges)} citation link(s) among them ({len(nodes) - connected} unconnected). "
-                f"Open the Citation map tab to explore — click a node to open the paper."
+        grounding = build_grounding_block(build_context_blocks(deduped)) if deduped else ""
+        final_messages = messages + [{
+            "role": "user",
+            "content": (
+                "Write the final answer now for the user's question, grounded ONLY in the "
+                "sources below. Cite each claim with [n] and its page. Never invent facts "
+                "or page numbers." + grounding
+            ),
+        }]
+
+        accumulated = ""
+        try:
+            stream = chat_create(
+                messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS, stream=True,
             )
-            yield {"type": "delta", "text": answer}
-        elif mode == "refs":
-            papers = {m.get("paperTitle") for m in refs_payload}
-            if not refs_payload:
-                answer = f"None of your papers cite a work matching “{query}”."
-            else:
-                answer = (
-                    f"{len(refs_payload)} matching reference(s) across {len(papers)} of your "
-                    f"paper(s) cite a work matching “{query}” — see the list below."
-                )
-            yield {"type": "delta", "text": answer}
-        else:
-            grounding = build_grounding_block(build_context_blocks(deduped)) if deduped else ""
-            final_messages = messages + [{
-                "role": "user",
-                "content": (
-                    "Write the final answer now for the user's question, grounded ONLY in the "
-                    "sources below. Cite each claim with [n] and its page. Never invent facts "
-                    "or page numbers." + grounding
-                ),
-            }]
-
+            for chunk in stream:
+                delta = delta_of(chunk)
+                if delta:
+                    accumulated += delta
+                    yield {"type": "delta", "text": delta}
+        except Exception:
+            logger.exception("agent final-stream failed; falling back to non-streaming")
             accumulated = ""
-            try:
-                stream = chat_create(
-                    messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS, stream=True,
-                )
-                for chunk in stream:
-                    delta = delta_of(chunk)
-                    if delta:
-                        accumulated += delta
-                        yield {"type": "delta", "text": delta}
-            except Exception:
-                logger.exception("agent final-stream failed; falling back to non-streaming")
-                accumulated = ""
 
-            if not accumulated:
-                response = chat_create(messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS)
-                accumulated = text_of(response)
+        if not accumulated:
+            response = chat_create(messages=final_messages, max_tokens=MAX_OUTPUT_TOKENS)
+            accumulated = text_of(response)
 
-            answer = accumulated or "I could not generate an answer from the available sources."
-            answer = remove_invalid_citation_markers(answer, len(citations))
+        answer = accumulated or "I could not generate an answer from the available sources."
+        answer = remove_invalid_citation_markers(answer, len(citations))
 
-            # Judge loop #2: answer-grounding verification (Q&A only).
-            if deduped and accumulated:
-                yield {"type": "stage", "stage": "verifying"}
-                verdict = verify_grounding(answer, build_context_blocks(deduped))
-                if verdict.get("revised_answer"):
-                    answer = remove_invalid_citation_markers(verdict["revised_answer"], len(citations))
-                verification = {
-                    "grounded": verdict.get("grounded", True),
-                    "unsupported": verdict.get("unsupported", []),
-                }
+        # Judge loop #2: answer-grounding verification.
+        if deduped and accumulated:
+            yield {"type": "stage", "stage": "verifying"}
+            verdict = verify_grounding(answer, build_context_blocks(deduped))
+            if verdict.get("revised_answer"):
+                answer = remove_invalid_citation_markers(verdict["revised_answer"], len(citations))
+            verification = {
+                "grounded": verdict.get("grounded", True),
+                "unsupported": verdict.get("unsupported", []),
+            }
 
         insufficient = detect_insufficient(answer)
 
         summary = _context_summary(executed)
 
-        # Persist the structured payload so graph/refs rehydrate on reload (not just text).
-        persist_widgets = None
-        if mode == "graph":
-            persist_widgets = [{"kind": "graph", "nodes": graph_payload["nodes"],
-                                "edges": graph_payload["edges"]}]
-        elif mode == "refs":
-            persist_widgets = [{"kind": "refs", "matches": refs_payload}]
-
         if chat_session_id is not None:
             try:
                 chats.append_message(
                     db, chat_session_id, "assistant", answer,
-                    widgets=persist_widgets, citations=citations, context_summary=summary,
+                    citations=citations, context_summary=summary,
                 )
             except Exception:
                 db.rollback()

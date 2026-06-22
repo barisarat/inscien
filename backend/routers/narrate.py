@@ -13,7 +13,6 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from services.refs.build import _tokens
 from routers.papers import corpus_papers
 from services.narration.jobs import audio_path, get_job, list_narrations, start_job
 
@@ -26,9 +25,13 @@ class NarrateIn(BaseModel):
     query: str | None = None
 
 
+def _tokens(title):
+    return [t for t in re.sub(r"[^a-z0-9 ]", " ", (title or "").lower()).split() if t]
+
+
 def _resolve_paper(doc_id=None, query=None):
     """Exact docId when the picker provides it; else fuzzy-match the typed title against
-    both the chunk-manifest title and the real references.json title."""
+    the chunk-manifest (Zotero) title."""
     docs = corpus_papers()
     if not docs:
         return None

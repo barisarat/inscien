@@ -27,18 +27,8 @@ import {
   type PaperItem,
   deleteChatSession,
   getChatSession,
-  getCompare,
-  getNarration,
-  getWriteup,
   listChatSessions,
-  listPapers,
-  proposeCompare,
-  proposePlan,
   renameChatSession,
-  saveChatTurn,
-  startCompare,
-  startNarration,
-  startWriteup,
 } from "@/lib/api"
 import PdfViewerPanel, { type PdfTab } from "./PdfViewerPanel"
 import { type GraphData } from "./GraphView"
@@ -65,8 +55,6 @@ type LabStreamEvent =
   | { type: "stage"; stage: LoadingStage; tool?: string; label?: string }
   | { type: "citations"; citations: LabCitation[] }
   | { type: "delta"; text: string }
-  | { type: "graph"; nodes: GraphData["nodes"]; edges: GraphData["edges"] }
-  | { type: "refs"; matches: RefMatch[] }
   | {
       type: "final"
       query: string
@@ -79,14 +67,6 @@ type LabStreamEvent =
       insufficientContext: boolean
     }
   | { type: "error"; message: string }
-
-type RefMatch = {
-  paperDocId: string
-  paperTitle: string
-  reference: { title: string; authors?: string; year?: string; doi?: string }
-  inCorpus: boolean
-  matchedDocId?: string | null
-}
 
 type LoadingStage = "thinking" | "searching" | "reading" | "drafting" | "verifying" | "tool"
 
@@ -104,7 +84,6 @@ type LabMessage = {
   stageLabel?: string
   streaming?: boolean
   contextSummary?: string
-  refResults?: RefMatch[]
   // A `/write` draft — shows a Copy-as-markdown action when complete.
   draft?: boolean
   narration?: {
@@ -138,8 +117,6 @@ type LabMessage = {
     progress?: number
     error?: string
   }
-  // A `/graph` turn's citation map, so its "View citation map" reopens this turn's graph.
-  graphData?: GraphData
 }
 
 
@@ -217,13 +194,6 @@ function sessionMessagesToLab(
           papers: (w.papers as PaperItem[]) ?? [],
           result: w.result as CompareResult,
         }
-      } else if (w.kind === "graph") {
-        msg.graphData = {
-          nodes: (w.nodes as GraphData["nodes"]) ?? [],
-          edges: (w.edges as GraphData["edges"]) ?? [],
-        }
-      } else if (w.kind === "refs") {
-        msg.refResults = (w.matches as RefMatch[]) ?? []
       }
     }
 
@@ -558,31 +528,6 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 const CITATION_CLASS = "lab-citation"
 
 const isExternalUrl = (url: string) => /^https?:\/\//i.test(url)
-
-// Slash commands shown in the composer menu. `insert` ends with a space so picking it
-// closes the menu (and, for /graph, is immediately submittable with no argument).
-// `/ask` (plain Q&A) is just typing without a slash, so the menu shows only the two
-// distinctive skills. The backend still understands `/ask` if typed.
-const SLASH_COMMANDS = [
-  { cmd: "/write", insert: "/write ", desc: "Draft a grounded, cited synthesis on a topic" },
-  { cmd: "/compare", insert: "/compare ", desc: "Compare papers side by side in a grounded table" },
-  { cmd: "/graph", insert: "/graph ", desc: "Map how your papers cite each other" },
-  { cmd: "/refs", insert: "/refs ", desc: "Find which papers cite a title or DOI" },
-  { cmd: "/narrate", insert: "/narrate ", desc: "Narrate a paper as audio" },
-]
-
-// A leading `/command` routes deterministically to a skill; anything else is plain
-// NL that the agent routes itself. `/graph` needs no argument.
-function parseSkill(text: string): { skill?: string; query: string } {
-  const m = /^\/(\w+)\s*([\s\S]*)$/.exec(text)
-  if (!m) return { query: text }
-  const cmd = m[1].toLowerCase()
-  const rest = m[2].trim()
-  if (cmd === "refs") return { skill: "refs", query: rest || text }
-  if (cmd === "ask") return { skill: "ask", query: rest || text }
-  // compare / write / narrate / graph are dedicated workspace modes now, not chat skills.
-  return { query: text } // unknown command — treat as ordinary text
-}
 
 // Absolute URL to the source PDF, opened at the cited page via the `#page=N`
 // fragment (the browser's native PDF viewer honors it). Empty if not a PDF source.
@@ -1028,12 +973,10 @@ function MessageBubble({
   message,
   onOpenSource,
   onViewComparison,
-  onViewGraph,
 }: {
   message: LabMessage
   onOpenSource?: (citation: LabCitation) => void
   onViewComparison?: (result?: CompareResult) => void
-  onViewGraph?: (data: GraphData) => void
 }) {
   if (message.role === "user") {
     return (
@@ -1094,18 +1037,6 @@ function MessageBubble({
           <>
             <AnswerRenderer text={text} citations={citations} onOpenSource={onOpenSource} />
 
-            {isComplete && message.graphData ? (
-              <div className={compareStyles.draftActions}>
-                <button
-                  type="button"
-                  className={compareStyles.viewBtn}
-                  onClick={() => message.graphData && onViewGraph?.(message.graphData)}
-                >
-                  View citation map →
-                </button>
-              </div>
-            ) : null}
-
             {isComplete && message.insufficientContext ? (
               <div className={styles.warning}>
                 Available source context is limited for this question.
@@ -1121,57 +1052,10 @@ function MessageBubble({
             {isComplete ? (
               <CompactSources citations={citations} onOpenSource={onOpenSource} />
             ) : null}
-
-            {isComplete && message.refResults && message.refResults.length > 0 ? (
-              <RefResults matches={message.refResults} onOpenSource={onOpenSource} />
-            ) : null}
           </>
         )}
       </div>
     </div>
-  )
-}
-
-function RefResults({
-  matches,
-  onOpenSource,
-}: {
-  matches: RefMatch[]
-  onOpenSource?: (citation: LabCitation) => void
-}) {
-  return (
-    <section className={styles.compactSources}>
-      <div className={styles.compactSourcesTitle}>Found in these papers</div>
-      <div className={styles.compactSourceList}>
-        {matches.map((m, index) => (
-          <button
-            key={`${m.paperDocId}-${index}`}
-            type="button"
-            className={styles.compactSourceLink}
-            title={m.reference.title}
-            onClick={() =>
-              onOpenSource?.({
-                sourceId: m.paperDocId,
-                title: m.paperTitle,
-                url: "",
-                sourceType: "pdf",
-                category: "",
-                sectionTitle: "",
-                contentMode: "full_text",
-                page: 1,
-              })
-            }
-          >
-            <span className={styles.numberChip}>{index + 1}</span>
-            <span className={styles.compactSourceText}>
-              {m.paperTitle}
-              <span className={styles.compactSourcePage}> · cites “{m.reference.title.slice(0, 60)}”</span>
-            </span>
-            {m.inCorpus ? <span className={styles.numberChip}>in library</span> : null}
-          </button>
-        ))}
-      </div>
-    </section>
   )
 }
 
@@ -1183,35 +1067,6 @@ function AskContent() {
   const initialQuery = searchParams.get("q")?.trim() || ""
   const sessionParam = searchParams.get("session")
   const [input, setInput] = useState(initialQuery)
-  const [slashIndex, setSlashIndex] = useState(0)
-  const [slashDismissed, setSlashDismissed] = useState(false)
-  // Inline paper picker for `/narrate <filter>`.
-  const [papers, setPapers] = useState<PaperItem[]>([])
-  const papersLoadedRef = useRef(false)
-  const [paperIndex, setPaperIndex] = useState(0)
-  const [paperDismissed, setPaperDismissed] = useState(false)
-  // Multi-select picker + confirm flow for `/compare <filter>`.
-  const [compareSelection, setCompareSelection] = useState<PaperItem[]>([])
-  const [compareIndex, setCompareIndex] = useState(0)
-  const [compareDismissed, setCompareDismissed] = useState(false)
-  // The dimension-confirm card: papers chosen + the proposed (editable) dimensions.
-  const [comparePrompt, setComparePrompt] = useState<{
-    papers: PaperItem[]
-    dimensions: string[]
-    status: "proposing" | "confirming" | "error"
-    error?: string
-  } | null>(null)
-  const [dimDraft, setDimDraft] = useState("")
-  // `/write` confirm card: topic + auto-selected papers (toggle) + proposed (editable) dimensions.
-  const [writePrompt, setWritePrompt] = useState<{
-    topic: string
-    papers: PaperItem[]
-    dimensions: string[]
-    status: "planning" | "confirming" | "error"
-    error?: string
-  } | null>(null)
-  const [writeDimDraft, setWriteDimDraft] = useState("")
-  const [writeScope, setWriteScope] = useState<string[]>([])  // selected docIds for the review
   const [messages, setMessages] = useState<LabMessage[]>([])
 
   // Right work-panel: PDF tabs (one per doc, keyed by sourceId) + an optional
@@ -1280,12 +1135,6 @@ function AskContent() {
     if (result) setComparison(result)
     setComparisonActive(true)
     setGraphActive(false)
-  }, [])
-
-  const handleViewGraph = useCallback((data: GraphData) => {
-    setGraph(data)
-    setGraphActive(true)
-    setComparisonActive(false)
   }, [])
 
   const handleClosePdfPanel = useCallback(() => {
@@ -1483,311 +1332,11 @@ function AskContent() {
     node.style.height = `${Math.min(node.scrollHeight, 148)}px`
   }, [input])
 
-  // Narration is a multi-minute BACKGROUND job (not the SSE chat flow): start it,
-  // release the composer, and poll a card. Reused by typed `/narrate` and the picker.
-  const startNarrationJob = useCallback(
-    async (opts: { docId?: string; query?: string; userText: string }) => {
-      if (inFlightRef.current) return
-      inFlightRef.current = true
-
-      const userMessage: LabMessage = {
-        id: makeMessageId("user"),
-        role: "user",
-        content: opts.userText,
-      }
-      const assistantId = makeMessageId("assistant")
-      const loadingMessage: LabMessage = {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        isTyping: true,
-        loadingStage: "thinking",
-      }
-      shouldAutoScrollRef.current = true
-      setMessages((prev) => [...prev, userMessage, loadingMessage])
-      setInput("")
-      setError("")
-
-      const updateAssistant = (patch: Partial<LabMessage>) => {
-        setMessages((current) =>
-          current.map((m) => (m.id === assistantId ? { ...m, ...patch } : m))
-        )
-      }
-
-      let jobId = ""
-      let narrationTitle = opts.userText
-      try {
-        const res = await startNarration({ docId: opts.docId, query: opts.query })
-        jobId = res.jobId
-        narrationTitle = res.title || opts.userText
-        updateAssistant({ isTyping: false, narration: { jobId, status: "queued" } })
-      } catch (err) {
-        updateAssistant({
-          isTyping: false,
-          narration: { jobId: "", status: "error", error: String(err) },
-        })
-        inFlightRef.current = false
-        return
-      }
-      setAnswerIsComplete(true)
-      inFlightRef.current = false
-
-      const poll = async () => {
-        try {
-          const s = await getNarration(jobId)
-          updateAssistant({
-            narration: {
-              jobId,
-              status: s.status,
-              stage: s.stage,
-              detail: s.detail,
-              progress: s.progress,
-              audioUrl: s.status === "done" ? `${API_BASE}/api/narrate/${jobId}/audio` : undefined,
-              error: s.error,
-            },
-          })
-          if (s.status === "done") {
-            try {
-              const saved = await saveChatTurn({
-                sessionId: activeSessionIdRef.current,
-                title: opts.userText,
-                userContent: opts.userText,
-                widgets: [{ kind: "narration", jobId, title: narrationTitle }],
-              })
-              adoptSession(saved.sessionId)
-            } catch { /* best-effort persistence */ }
-            return
-          }
-          if (s.status === "error") return
-        } catch {
-          // transient — keep polling
-        }
-        window.setTimeout(() => void poll(), 1500)
-      }
-      window.setTimeout(() => void poll(), 1200)
-    },
-    [adoptSession],
-  )
-
-  // Comparison is also a BACKGROUND job (per-cell grounded extraction takes a while):
-  // push a progress card, poll it, and on completion open the table in the work-panel.
-  const startCompareJob = useCallback(
-    async (selected: PaperItem[], dimensions: string[]) => {
-      if (inFlightRef.current) return
-      inFlightRef.current = true
-
-      const userMessage: LabMessage = {
-        id: makeMessageId("user"),
-        role: "user",
-        content: `Compare: ${selected.map((p) => p.title).join("  ·  ")}`,
-      }
-      const assistantId = makeMessageId("assistant")
-      const loadingMessage: LabMessage = {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        isTyping: true,
-        loadingStage: "thinking",
-      }
-      shouldAutoScrollRef.current = true
-      setMessages((prev) => [...prev, userMessage, loadingMessage])
-      setInput("")
-      setError("")
-
-      const updateAssistant = (patch: Partial<LabMessage>) => {
-        setMessages((current) =>
-          current.map((m) => (m.id === assistantId ? { ...m, ...patch } : m))
-        )
-      }
-
-      let jobId = ""
-      try {
-        const res = await startCompare(selected.map((p) => p.docId), dimensions)
-        jobId = res.jobId
-        updateAssistant({
-          isTyping: false,
-          comparison: { jobId, status: "queued", papers: selected },
-        })
-      } catch (err) {
-        updateAssistant({
-          isTyping: false,
-          comparison: { jobId: "", status: "error", error: String(err), papers: selected },
-        })
-        inFlightRef.current = false
-        return
-      }
-      setAnswerIsComplete(true)
-      inFlightRef.current = false
-
-      const poll = async () => {
-        try {
-          const s = await getCompare(jobId)
-          updateAssistant({
-            comparison: {
-              jobId,
-              status: s.status,
-              stage: s.stage,
-              detail: s.detail,
-              progress: s.progress,
-              error: s.error,
-              papers: selected,
-            },
-          })
-          if (s.status === "done") {
-            if (s.result) {
-              const result = s.result
-              // Store the table on the message so its "View" reopens THIS turn's data.
-              updateAssistant({
-                comparison: { jobId, status: "done", papers: selected, result },
-              })
-              setComparison(result)
-              setComparisonActive(true)
-              try {
-                const saved = await saveChatTurn({
-                  sessionId: activeSessionIdRef.current,
-                  title: `Compare: ${selected.map((p) => p.title).join(" · ")}`,
-                  userContent: `Compare: ${selected.map((p) => p.title).join("  ·  ")}`,
-                  widgets: [{ kind: "comparison", result, papers: selected }],
-                })
-                adoptSession(saved.sessionId)
-              } catch { /* best-effort persistence */ }
-            }
-            return
-          }
-          if (s.status === "error") return
-        } catch {
-          // transient — keep polling
-        }
-        window.setTimeout(() => void poll(), 1500)
-      }
-      window.setTimeout(() => void poll(), 1200)
-    },
-    [adoptSession],
-  )
-
-  // `/write`: the agentic literature-review job (extract→compare→synthesize→write). Push a
-  // progress card, poll it, and on completion replace the card with the finished draft
-  // (which renders through the normal cited-answer path + a Copy button).
-  const startWriteupJob = useCallback(
-    async (topic: string, docIds: string[], dimensions: string[]) => {
-      if (inFlightRef.current) return
-      inFlightRef.current = true
-
-      const userMessage: LabMessage = {
-        id: makeMessageId("user"),
-        role: "user",
-        content: topic,
-      }
-      const assistantId = makeMessageId("assistant")
-      const loadingMessage: LabMessage = {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        isTyping: true,
-        loadingStage: "thinking",
-      }
-      shouldAutoScrollRef.current = true
-      setMessages((prev) => [...prev, userMessage, loadingMessage])
-      setInput("")
-      setError("")
-
-      const updateAssistant = (patch: Partial<LabMessage>) => {
-        setMessages((current) =>
-          current.map((m) => (m.id === assistantId ? { ...m, ...patch } : m))
-        )
-      }
-
-      let jobId = ""
-      try {
-        const res = await startWriteup(topic, docIds, dimensions)
-        jobId = res.jobId
-        updateAssistant({ isTyping: false, writeup: { jobId, status: "queued" } })
-      } catch (err) {
-        updateAssistant({
-          isTyping: false,
-          writeup: { jobId: "", status: "error", error: String(err) },
-        })
-        inFlightRef.current = false
-        return
-      }
-      setAnswerIsComplete(true)
-      inFlightRef.current = false
-
-      const poll = async () => {
-        try {
-          const s = await getWriteup(jobId)
-          if (s.status === "done") {
-            if (s.result) {
-              const result = s.result
-              const citations = result.citations as unknown as LabCitation[]
-              updateAssistant({
-                writeup: undefined,
-                isTyping: false,
-                streaming: false,
-                content: result.answer,
-                visibleContent: result.answer,
-                citations,
-                draft: true,
-              })
-              try {
-                const saved = await saveChatTurn({
-                  sessionId: activeSessionIdRef.current,
-                  title: topic,
-                  userContent: topic,
-                  assistantContent: result.answer,
-                  citations: result.citations as unknown as unknown[],
-                  widgets: [{ kind: "draft" }],
-                })
-                adoptSession(saved.sessionId)
-              } catch { /* best-effort persistence */ }
-            } else {
-              updateAssistant({ writeup: { jobId, status: "error", error: "no result produced" } })
-            }
-            return
-          }
-          if (s.status === "error") {
-            updateAssistant({ writeup: { jobId, status: "error", stage: s.stage, error: s.error } })
-            return
-          }
-          updateAssistant({
-            writeup: { jobId, status: s.status, stage: s.stage, detail: s.detail, progress: s.progress },
-          })
-        } catch {
-          // transient — keep polling
-        }
-        window.setTimeout(() => void poll(), 1500)
-      }
-      window.setTimeout(() => void poll(), 1200)
-    },
-    [adoptSession],
-  )
-
   const submitQuestion = useCallback(async (nextQuery?: string) => {
     const finalQuery = (nextQuery ?? input).trim()
 
     if (finalQuery.length < 2) {
       setError("Please enter a question.")
-      return
-    }
-
-    const { skill: parsedSkill, query: backendQuery } = parseSkill(finalQuery)
-
-    // Narration is a background job — delegate before the standard chat-message setup.
-    if (parsedSkill === "narrate") {
-      void startNarrationJob({ query: backendQuery, userText: finalQuery })
-      return
-    }
-
-    // Compare is driven by the inline multi-select picker + confirm card, not a plain
-    // submit. Swallow a stray Enter/Send on `/compare …` so it never hits the chat API.
-    if (parsedSkill === "compare") {
-      return
-    }
-
-    // `/write` opens a confirm card (top-N papers + dimensions); the card's "Generate
-    // draft" starts the background literature-review job. Never a plain submit.
-    if (parsedSkill === "write") {
-      void runProposePlan(backendQuery)
       return
     }
 
@@ -1853,22 +1402,6 @@ function AskContent() {
         return
       }
 
-
-      if (payload.type === "graph") {
-        // Open the citation map in the right work-panel, and stash it on the message so
-        // its "View citation map" button reopens this turn's graph (live + on reload).
-        const data = { nodes: payload.nodes, edges: payload.edges }
-        setGraph(data)
-        setGraphActive(true)
-        updateAssistant({ graphData: data })
-        return
-      }
-
-      if (payload.type === "refs") {
-        updateAssistant({ refResults: payload.matches })
-        return
-      }
-
       if (payload.type === "delta") {
         accumulated += payload.text
 
@@ -1914,11 +1447,10 @@ function AskContent() {
         method: "POST",
         headers: buildLabRequestHeaders(),
         body: JSON.stringify({
-          query: backendQuery,
+          query: finalQuery,
           history,
           session_id: activeSessionIdRef.current ?? undefined,
           limit: 10,
-          skill: parsedSkill,
           item_keys:
             selectedKeysRef.current.size > 0 ? Array.from(selectedKeysRef.current) : undefined,
         }),
@@ -2020,260 +1552,7 @@ function AskContent() {
     void submitQuestion(lastQueryRef.current)
   }
 
-  // Slash menu: open while typing a command (leading "/", no space yet).
-  const slashQuery =
-    input.startsWith("/") && !input.includes(" ") ? input.slice(1).toLowerCase() : null
-  const slashMatches =
-    slashQuery !== null
-      ? SLASH_COMMANDS.filter((c) => c.cmd.slice(1).startsWith(slashQuery))
-      : []
-  const slashOpen = false  // slash menu retired — modes live in the top action bar
-  const slashSelected = Math.min(slashIndex, Math.max(0, slashMatches.length - 1))
-
-  // Paper picker: active once you're typing the argument of `/narrate ` (command + space).
-  const narrateArg = /^\/narrate\s+([\s\S]*)$/i.exec(input)
-  const paperFilter = narrateArg ? narrateArg[1].trim().toLowerCase() : null
-  const paperFilterTokens = paperFilter ? paperFilter.split(/\s+/).filter(Boolean) : []
-  const paperMatches =
-    paperFilter !== null
-      ? papers.filter((p) => {
-          const t = (p.title || "").toLowerCase()
-          return paperFilterTokens.every((tok) => t.includes(tok))
-        }).slice(0, 8)
-      : []
-  const paperPickerOpen = false  // /narrate picker retired — Narrate is a workspace mode
-  const paperSelected = Math.min(paperIndex, Math.max(0, paperMatches.length - 1))
-
-  // Compare multi-select picker: active while typing the argument of `/compare `.
-  const compareArg = /^\/compare\s+([\s\S]*)$/i.exec(input)
-  const compareFilter = compareArg ? compareArg[1].trim().toLowerCase() : null
-  const compareFilterTokens = compareFilter ? compareFilter.split(/\s+/).filter(Boolean) : []
-  const compareSelectedIds = useMemo(
-    () => new Set(compareSelection.map((p) => p.docId)),
-    [compareSelection]
-  )
-  const compareMatches =
-    compareFilter !== null
-      ? papers
-          .filter((p) => !compareSelectedIds.has(p.docId))
-          .filter((p) => {
-            const t = (p.title || "").toLowerCase()
-            return compareFilterTokens.every((tok) => t.includes(tok))
-          })
-          .slice(0, 8)
-      : []
-  const comparePickerOpen = false  // /compare picker retired — Compare is a workspace mode
-  const compareHighlighted = Math.min(compareIndex, Math.max(0, compareMatches.length - 1))
-
-  // Lazily load the library the first time either picker (narrate/compare) is needed.
-  useEffect(() => {
-    if ((paperFilter !== null || compareFilter !== null) && !papersLoadedRef.current) {
-      papersLoadedRef.current = true
-      listPapers()
-        .then((r) => setPapers(r.papers))
-        .catch(() => { papersLoadedRef.current = false })
-    }
-  }, [paperFilter, compareFilter])
-
-  function selectPaper(p: PaperItem) {
-    setPaperDismissed(true)
-    void startNarrationJob({ docId: p.docId, userText: `Narrate: ${p.title}` })
-  }
-
-  // Add a paper to the comparison set, then reset the filter (keep the picker open) so
-  // the user can keep picking. Capped at the backend's MAX_PAPERS.
-  function addCompare(p: PaperItem) {
-    setCompareSelection((prev) =>
-      prev.some((x) => x.docId === p.docId) ? prev : [...prev, p].slice(0, 5)
-    )
-    setInput("/compare ")
-    setCompareDismissed(false)
-    setCompareIndex(0)
-    requestAnimationFrame(() => textareaRef.current?.focus())
-  }
-
-  function removeCompare(docId: string) {
-    setCompareSelection((prev) => prev.filter((p) => p.docId !== docId))
-  }
-
-  // Confirm step: propose the comparison dimensions for the chosen papers, then show the
-  // editable confirm card. Clears the picker; the run starts only after confirmation.
-  async function runPropose(selected: PaperItem[]) {
-    if (selected.length < 2) return
-    setCompareDismissed(true)
-    setInput("")
-    setCompareSelection([])
-    setComparePrompt({ papers: selected, dimensions: [], status: "proposing" })
-    try {
-      const { dimensions } = await proposeCompare(selected.map((p) => p.docId))
-      setComparePrompt({ papers: selected, dimensions, status: "confirming" })
-    } catch (err) {
-      setComparePrompt({ papers: selected, dimensions: [], status: "error", error: String(err) })
-    }
-  }
-
-  function addDimension() {
-    const value = dimDraft.trim()
-    if (!value) return
-    setComparePrompt((prev) =>
-      prev && !prev.dimensions.some((d) => d.toLowerCase() === value.toLowerCase())
-        ? { ...prev, dimensions: [...prev.dimensions, value].slice(0, 6) }
-        : prev
-    )
-    setDimDraft("")
-  }
-
-  function removeDimension(dim: string) {
-    setComparePrompt((prev) =>
-      prev ? { ...prev, dimensions: prev.dimensions.filter((d) => d !== dim) } : prev
-    )
-  }
-
-  function runCompare() {
-    if (!comparePrompt) return
-    const { papers: selected, dimensions } = comparePrompt
-    const dims = dimensions.filter((d) => d.trim())
-    if (selected.length < 2 || dims.length === 0) return
-    setComparePrompt(null)
-    setDimDraft("")
-    void startCompareJob(selected, dims)
-  }
-
-  // `/write`: propose the plan (top-N papers + dimensions) → confirm card → "Generate draft"
-  // starts the background extract→compare→synthesize→write job.
-  async function runProposePlan(topic: string) {
-    setWritePrompt({ topic, papers: [], dimensions: [], status: "planning" })
-    setWriteScope([])
-    setInput("")
-    try {
-      const { papers, dimensions } = await proposePlan(topic)
-      setWritePrompt({ topic, papers, dimensions, status: "confirming" })
-      setWriteScope(papers.map((p) => p.docId))
-    } catch (err) {
-      setWritePrompt({ topic, papers: [], dimensions: [], status: "error", error: String(err) })
-    }
-  }
-
-  function toggleWritePaper(docId: string) {
-    setWriteScope((prev) =>
-      prev.includes(docId) ? prev.filter((d) => d !== docId) : [...prev, docId]
-    )
-  }
-
-  function addWriteDimension() {
-    const value = writeDimDraft.trim()
-    if (!value) return
-    setWritePrompt((prev) =>
-      prev && !prev.dimensions.some((d) => d.toLowerCase() === value.toLowerCase())
-        ? { ...prev, dimensions: [...prev.dimensions, value].slice(0, 5) }
-        : prev
-    )
-    setWriteDimDraft("")
-  }
-
-  function removeWriteDimension(dim: string) {
-    setWritePrompt((prev) =>
-      prev ? { ...prev, dimensions: prev.dimensions.filter((d) => d !== dim) } : prev
-    )
-  }
-
-  function runWriteup() {
-    if (!writePrompt) return
-    const dims = writePrompt.dimensions.filter((d) => d.trim())
-    const docIds = writeScope
-    if (docIds.length === 0 || dims.length === 0) return
-    const topic = writePrompt.topic
-    setWritePrompt(null)
-    setWriteDimDraft("")
-    setWriteScope([])
-    void startWriteupJob(topic, docIds, dims)
-  }
-
-  function applyCommand(insert: string) {
-    setInput(insert)
-    setSlashDismissed(false)
-    setSlashIndex(0)
-    requestAnimationFrame(() => textareaRef.current?.focus())
-  }
-
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (comparePickerOpen) {
-      if (compareMatches.length > 0) {
-        if (event.key === "ArrowDown") {
-          event.preventDefault()
-          setCompareIndex((i) => (i + 1) % compareMatches.length)
-          return
-        }
-        if (event.key === "ArrowUp") {
-          event.preventDefault()
-          setCompareIndex((i) => (i - 1 + compareMatches.length) % compareMatches.length)
-          return
-        }
-        if (event.key === "Enter" || event.key === "Tab") {
-          event.preventDefault()
-          addCompare(compareMatches[compareHighlighted])
-          return
-        }
-      }
-      // No filter text + enough papers picked: Enter confirms and proposes dimensions.
-      if (event.key === "Enter" && !compareFilter && compareSelection.length >= 2) {
-        event.preventDefault()
-        void runPropose(compareSelection)
-        return
-      }
-      if (event.key === "Escape") {
-        event.preventDefault()
-        setCompareDismissed(true)
-        return
-      }
-    }
-
-    if (paperPickerOpen && paperMatches.length > 0) {
-      if (event.key === "ArrowDown") {
-        event.preventDefault()
-        setPaperIndex((i) => (i + 1) % paperMatches.length)
-        return
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault()
-        setPaperIndex((i) => (i - 1 + paperMatches.length) % paperMatches.length)
-        return
-      }
-      if (event.key === "Enter" || event.key === "Tab") {
-        event.preventDefault()
-        selectPaper(paperMatches[paperSelected])
-        return
-      }
-      if (event.key === "Escape") {
-        event.preventDefault()
-        setPaperDismissed(true)
-        return
-      }
-    }
-
-    if (slashOpen) {
-      if (event.key === "ArrowDown") {
-        event.preventDefault()
-        setSlashIndex((i) => (i + 1) % slashMatches.length)
-        return
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault()
-        setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
-        return
-      }
-      if (event.key === "Enter" || event.key === "Tab") {
-        event.preventDefault()
-        applyCommand(slashMatches[slashSelected].insert)
-        return
-      }
-      if (event.key === "Escape") {
-        event.preventDefault()
-        setSlashDismissed(true)
-        return
-      }
-    }
-
     if (event.key !== "Enter" || event.shiftKey) return
 
     event.preventDefault()
@@ -2385,7 +1664,6 @@ function AskContent() {
                         message={message}
                         onOpenSource={handleOpenSource}
                         onViewComparison={handleViewComparison}
-                        onViewGraph={handleViewGraph}
                       />
                     ))}
                     <div ref={transcriptEndRef} aria-hidden />
@@ -2418,21 +1696,13 @@ function AskContent() {
                   <textarea
                     ref={textareaRef}
                     value={input}
-                    onChange={(event) => {
-                      setInput(event.target.value)
-                      setSlashDismissed(false)
-                      setSlashIndex(0)
-                      setPaperDismissed(false)
-                      setPaperIndex(0)
-                      setCompareDismissed(false)
-                      setCompareIndex(0)
-                    }}
+                    onChange={(event) => setInput(event.target.value)}
                     onKeyDown={handleKeyDown}
                     className={styles.composerTextarea}
                     placeholder={
                       hasMessages
-                        ? "Ask a follow-up, or type / for skills…"
-                        : "Ask anything about your research papers — or type / for skills…"
+                        ? "Ask a follow-up about your papers…"
+                        : "Ask anything about your research papers…"
                     }
                     rows={1}
                   />

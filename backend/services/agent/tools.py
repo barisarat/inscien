@@ -1,10 +1,9 @@
 """Tool registry for the InScien research agent.
 
-The agent harness is a hand-rolled tool-calling loop (no framework). Skills are tools:
-  - search_internal_content — RAG-cite Q&A (retrieval-sufficiency loop inside it),
-  - citation_graph — the intra-corpus citation map (reads the prebuilt graph),
-  - search_references — find references across the corpus by name/DOI.
-The harness routes a `/skill` to a forced tool, else lets the model infer.
+The agent harness is a hand-rolled tool-calling loop (no framework). The chat agent has
+a single tool — search_internal_content (RAG-cite Q&A, with the retrieval-sufficiency
+loop inside it) — and the model infers when to call it. Structured skills (compare,
+write, narrate, the citation graph) live in their own workspace tabs, not the chat.
 """
 
 from dataclasses import dataclass
@@ -13,16 +12,6 @@ from services.lab.answer_service import select_answer_context, unique_citations
 from services.lab.prompt_service import build_context_blocks
 from services.lab.search_service import search_lab
 from services.rag.grounding import grade_sufficiency
-from services.refs.build import corpus_graph, search_references as _search_references
-
-
-_NOT_BUILT = {
-    "error": "not_built",
-    "message": (
-        "The reference graph hasn't been built yet. Run the reference build first "
-        "(scripts/build_references.py), then try again."
-    ),
-}
 
 
 @dataclass
@@ -79,22 +68,6 @@ def search_internal_content(query, limit=4, item_keys=None):
     }
 
 
-def citation_graph(_args=None):
-    """The intra-corpus citation map (reads the prebuilt reference graph)."""
-    graph = corpus_graph()
-    if graph is None:
-        return _NOT_BUILT
-    return {"graph": graph}
-
-
-def search_references_tool(query):
-    """References across the corpus matching a name/DOI."""
-    matches = _search_references(query)
-    if matches is None:
-        return _NOT_BUILT
-    return {"matches": matches}
-
-
 TOOL_SCHEMAS = [
     {
         "type": "function",
@@ -118,40 +91,6 @@ TOOL_SCHEMAS = [
             },
         },
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "citation_graph",
-            "description": (
-                "Show the CITATION MAP of the user's library — which of their papers cite "
-                "each other. Use for requests like 'map my papers', 'how do my papers "
-                "connect', 'show the citation graph'. Renders a graph in the side panel."
-            ),
-            "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_references",
-            "description": (
-                "Search the REFERENCE LISTS of the user's papers for a cited work by title "
-                "or DOI — i.e. 'which of my papers cite X'. Returns the matching references "
-                "and which papers cite them."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "A paper title or DOI to look for in the bibliographies.",
-                    },
-                },
-                "required": ["query"],
-                "additionalProperties": False,
-            },
-        },
-    },
 ]
 
 
@@ -159,15 +98,11 @@ TOOL_DISPATCH = {
     "search_internal_content": lambda args, ctx: search_internal_content(
         args.get("query", ""), item_keys=getattr(ctx, "item_keys", None)
     ),
-    "citation_graph": lambda args, ctx: citation_graph(args),
-    "search_references": lambda args, ctx: search_references_tool(args.get("query", "")),
 }
 
 
 STAGE_LABELS = {
     "search_internal_content": lambda args: "searching your library",
-    "citation_graph": lambda args: "mapping your citations",
-    "search_references": lambda args: "searching references",
 }
 
 

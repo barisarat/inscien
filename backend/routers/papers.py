@@ -11,14 +11,13 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from services.lab.manifest_loader import load_manifest_chunks
-from services.refs.build import load_references
 
 router = APIRouter(prefix="/api/papers", tags=["papers"])
 
 
 def corpus_papers():
-    """[{docId, title, fileName}] — chunk-manifest docs with the real titles from
-    references.json merged in (used by the picker and narration resolution)."""
+    """[{docId, title, fileName}] — one entry per chunk-manifest doc, using the Zotero
+    titles carried on the chunks (used by the picker and narration resolution)."""
     manifest = load_manifest_chunks()
     docs = {}
     for chunk in manifest["chunks"]:
@@ -28,11 +27,6 @@ def corpus_papers():
         meta = chunk.get("metadata") or {}
         docs[sid] = {"docId": sid, "title": chunk.get("title", ""), "fileName": meta.get("fileName", "")}
 
-    refs = load_references()
-    if refs:
-        for sid, d in (refs.get("documents") or {}).items():
-            if sid in docs and d.get("title"):
-                docs[sid]["title"] = d["title"]
     return list(docs.values())
 
 

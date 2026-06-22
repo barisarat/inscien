@@ -22,7 +22,6 @@ from services.lab.search_service import search_lab
 from services.llm.client import chat_create, text_of
 from services.rag.extraction import NOT_REPORTED, extract_cell, parse_json, retrieve_cell
 from services.rag.grounding import verify_grounding
-from services.refs.build import load_references
 
 logger = logging.getLogger(__name__)
 
@@ -151,30 +150,23 @@ def _finalize(draft, doc_ids, titles, cells):
         draft,
     )
 
-    refs = load_references()
-    docs = refs.get("documents", {}) if isinstance(refs, dict) else {}
-
     citations, lines = [], []
     for new_i, old in enumerate(used, start=1):
         doc_id = doc_ids[old - 1]
         rep = next((c["citation"] for c in cells[doc_id].values() if c.get("citation")), None)
-        title = (docs.get(doc_id) or {}).get("title") or titles.get(doc_id) or "Untitled"
-        doi = ((docs.get(doc_id) or {}).get("doi") or "").strip()
+        title = titles.get(doc_id) or "Untitled"
         citations.append({
             "title": title,
             "url": (rep or {}).get("url", ""),
             "sourceId": doc_id,
-            "sourceType": "pdf",
+            "sourceType": "zotero",
             "category": "",
             "sectionTitle": "",
             "contentMode": "full_text",
             "page": (rep or {}).get("page"),
             "passage": (rep or {}).get("passage", ""),
         })
-        line = f"[{new_i}] {title}."
-        if doi:
-            line += f" https://doi.org/{doi}"
-        lines.append(line)
+        lines.append(f"[{new_i}] {title}.")
 
     references_md = ("## References\n\n" + "\n\n".join(lines)) if lines else ""
     answer = f"{draft}\n\n{references_md}".strip() if references_md else draft

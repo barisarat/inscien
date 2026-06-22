@@ -45,7 +45,6 @@ def agent_answer_stream(
             credentials=credentials,
             anonymous_id=anonymous_id,
             request_metadata=request_metadata,
-            skill=body.skill,
             item_keys=set(body.item_keys) if body.item_keys else None,
         ):
             yield f"data: {json.dumps(chunk)}\n\n"
