@@ -3,7 +3,7 @@
 import { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ChevronRight, ExternalLink, SendHorizontal, X } from "lucide-react"
+import { ChevronRight, ExternalLink, SendHorizontal } from "lucide-react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import ZoteroNavigator, {
@@ -16,9 +16,7 @@ import WriteMode from "../workspace/WriteMode"
 import NarrateMode from "../workspace/NarrateMode"
 import GraphMode from "../workspace/GraphMode"
 import { useWorkspace } from "../workspace/WorkspaceProvider"
-import { type WorkspaceMode } from "../workspace/ActionBar"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { useAuth } from "@/lib/auth"
 import {
   type ChatSessionSummary,
   type CompareCitation,
@@ -131,33 +129,6 @@ type TokenPattern = {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-const LAB_ANONYMOUS_ID_KEY = "inscien_lab_anonymous_id"
-const MAX_HISTORY_MESSAGES = 16
-
-type ChatHistoryItem = { role: "user" | "assistant"; content: string }
-
-// Serialize prior completed turns for the backend (anonymous chats only — logged-in
-// chats build history server-side from the saved session). Assistant turns fold in
-// the compact tool recap so follow-ups resolve; widget payloads are never sent.
-function buildChatHistory(messages: LabMessage[]): ChatHistoryItem[] {
-  const items: ChatHistoryItem[] = []
-
-  for (const message of messages) {
-    if (message.isTyping || message.streaming) continue
-
-    const text = (message.visibleContent ?? message.content ?? "").trim()
-    if (!text) continue
-
-    if (message.role === "assistant") {
-      const recap = message.contextSummary ? `\n\n(context: ${message.contextSummary})` : ""
-      items.push({ role: "assistant", content: text + recap })
-    } else {
-      items.push({ role: "user", content: text })
-    }
-  }
-
-  return items.slice(-MAX_HISTORY_MESSAGES)
-}
 
 // Reconstruct a saved session's messages into renderable LabMessages.
 function sessionMessagesToLab(
@@ -314,76 +285,6 @@ const startCapabilities = [
   { label: "Compare papers", prompt: "What do these papers have in common, and where do they differ?" },
   { label: "Pull the results", prompt: "What are the key quantitative results, and on which page are they reported?" },
 ]
-
-function buildAskPath(query: string) {
-  return `/ask?q=${encodeURIComponent(query)}`
-}
-
-function createAnonymousId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID()
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
-function getLabAnonymousId() {
-  if (typeof window === "undefined") return ""
-
-  const existing = window.localStorage.getItem(LAB_ANONYMOUS_ID_KEY)
-
-  if (existing) return existing
-
-  const nextId = createAnonymousId()
-  window.localStorage.setItem(LAB_ANONYMOUS_ID_KEY, nextId)
-
-  return nextId
-}
-
-function buildLabRequestHeaders() {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-
-  const anonymousId = getLabAnonymousId()
-
-  if (anonymousId) {
-    headers["X-Lab-Anonymous-Id"] = anonymousId
-  }
-
-  return headers
-}
-
-function sourceLabel(sourceType: string) {
-  switch (sourceType) {
-    case "doc":
-      return "Doc"
-    case "notebook":
-      return "Notebook"
-    case "paper":
-      return "Paper"
-    case "paper_topic":
-      return "Paper topic"
-    case "course":
-      return "Course"
-    case "course_lecture":
-      return "Course lecture"
-    case "podcast":
-      return "Podcast"
-    case "podcast_episode":
-      return "Podcast episode"
-    case "book":
-      return "Book"
-    case "book_topic":
-      return "Book topic"
-    case "glossary":
-      return "Glossary"
-    case "ai_tool":
-      return "AI/ML tool"
-    default:
-      return sourceType
-  }
-}
 
 function makeMessageId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -1063,7 +964,6 @@ function MessageBubble({
 function AskContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { isAuthenticated, user } = useAuth()
   const initialQuery = searchParams.get("q")?.trim() || ""
   const sessionParam = searchParams.get("session")
   const [input, setInput] = useState(initialQuery)
@@ -1214,17 +1114,13 @@ function AskContent() {
   }, [activeSessionTitle])
 
   const refreshSessions = useCallback(async () => {
-    if (!isAuthenticated) {
-      setSessions([])
-      return
-    }
     try {
       const { sessions } = await listChatSessions()
       setSessions(sessions)
     } catch {
       // ignore
     }
-  }, [isAuthenticated])
+  }, [])
 
   // Adopt a (possibly newly-created) session: reflect it in the URL + sidebar. Shared by
   // the Q&A final event and the background-skill save-on-completion.
@@ -1255,7 +1151,6 @@ function AskContent() {
       }
       return
     }
-    if (!isAuthenticated) return
     if (loadedSessionRef.current === sessionParam) return
 
     loadedSessionRef.current = sessionParam
@@ -1286,7 +1181,7 @@ function AskContent() {
         setError("Could not load that chat.")
       }
     })()
-  }, [sessionParam, isAuthenticated])
+  }, [sessionParam])
 
   useEffect(() => {
     const node = streamRef.current
@@ -1343,10 +1238,6 @@ function AskContent() {
     // Hard guard against duplicate submissions while a request is in flight.
     if (inFlightRef.current) return
     inFlightRef.current = true
-
-    // Logged-in chats build history server-side from the saved session; only
-    // anonymous chats send the client transcript.
-    const history = isAuthenticated ? [] : buildChatHistory(messagesRef.current)
 
     const userMessage: LabMessage = {
       id: makeMessageId("user"),
@@ -1445,12 +1336,10 @@ function AskContent() {
     try {
       const response = await fetch(`${API_BASE}/api/agent/stream`, {
         method: "POST",
-        headers: buildLabRequestHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: finalQuery,
-          history,
           session_id: activeSessionIdRef.current ?? undefined,
-          limit: 10,
           item_keys:
             selectedKeysRef.current.size > 0 ? Array.from(selectedKeysRef.current) : undefined,
         }),
@@ -1515,7 +1404,7 @@ function AskContent() {
       setIsLoading(false)
       inFlightRef.current = false
     }
-  }, [input, isAuthenticated, adoptSession])
+  }, [input, adoptSession])
 
   useEffect(() => {
     if (!initialQuery) {

@@ -16,7 +16,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.db import engine, Base
-from routers.lab import router as lab_router
 from routers.agent import router as agent_router
 from routers.chat import router as chat_router
 from routers.settings import router as settings_router
@@ -79,7 +78,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(lab_router)
 app.include_router(agent_router)
 app.include_router(chat_router)
 app.include_router(settings_router)

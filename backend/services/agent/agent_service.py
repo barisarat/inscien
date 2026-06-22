@@ -129,12 +129,7 @@ def _dedupe_context(results):
 
 def stream_agent_answer(
     query,
-    history=None,
     session_id=None,
-    limit=10,
-    credentials=None,
-    anonymous_id="",
-    request_metadata=None,
     item_keys=None,
 ):
     db = SessionLocal()

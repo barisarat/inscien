@@ -265,13 +265,9 @@ celerybeat-schedule*
 celerybeat.pid
 
 # InScien-specific
-/backend/data/
 *.sqlite
 *.sqlite3
 inscien.db
-/papers-index/
-papers/
-!papers/.gitkeep
 
 # Durable user data (DB, indexes, narration audio) — host-owned, never tracked.
 # Use `data/*` (not `data/`) so the negation below can re-include the keep file:

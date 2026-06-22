@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Plus_Jakarta_Sans, Source_Code_Pro } from "next/font/google"
-import { AuthProvider } from "@/lib/auth"
 import { SidebarProvider } from "@/lib/SidebarProvider"
 import "./globals.css"
 
@@ -31,11 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${sourceCodePro.variable}`}>
       <body>
-        <AuthProvider>
-          <SidebarProvider>
-            {children}
-          </SidebarProvider>
-        </AuthProvider>
+        <SidebarProvider>
+          {children}
+        </SidebarProvider>
       </body>
     </html>
   )
