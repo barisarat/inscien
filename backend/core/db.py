@@ -6,9 +6,12 @@ database (no server to run). `DATABASE_URL` overrides the location/backend —
 the compose file sets it to `sqlite:////workspace/data/inscien.db`.
 """
 
+import logging
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
+
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -56,3 +59,33 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_app_settings_columns() -> None:
+    """Additively reconcile `app_settings` columns on a pre-existing DB.
+
+    There is no migration framework — `Base.metadata.create_all` builds missing *tables* but
+    never adds missing *columns* to a table that already exists. So a returning user's
+    `app_settings` won't gain `llm_provider` on its own. Add it with an idempotent, guarded
+    `ALTER TABLE ... ADD COLUMN` (SQLite backfills existing rows from the literal DEFAULT). A
+    brand-new DB already has the column via the model, so this is a no-op there; a legacy DB
+    that already carries the column is also a clean no-op.
+    """
+    inspector = inspect(engine)
+    if "app_settings" not in inspector.get_table_names():
+        return  # fresh DB — create_all builds it with the column already present
+
+    existing = {c["name"] for c in inspector.get_columns("app_settings")}
+    additive = {
+        "llm_provider": "ALTER TABLE app_settings ADD COLUMN llm_provider VARCHAR(20) NOT NULL DEFAULT 'local'",
+    }
+    for column, ddl in additive.items():
+        if column in existing:
+            continue
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
+            logger.info("app_settings: added missing column %s", column)
+        except Exception:
+            # A concurrent boot or a legacy duplicate column must never crash startup.
+            logger.warning("app_settings: could not add column %s (may already exist)", column, exc_info=True)

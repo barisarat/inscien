@@ -30,6 +30,7 @@ import styles from "./AskClient.module.css"
 
 type LabStreamEvent =
   | { type: "stage"; stage: LoadingStage; tool?: string; label?: string }
+  | { type: "meta"; model: string; provider: string }
   | { type: "citations"; citations: Citation[] }
   | { type: "delta"; text: string }
   | {
@@ -41,6 +42,8 @@ type LabStreamEvent =
       sessionId?: number | null
       insufficientContext: boolean
       verification?: { grounded: boolean; unsupported: string[]; checkSkipped?: boolean }
+      model?: string
+      provider?: string
     }
   | { type: "error"; message: string; code?: string; retryable?: boolean }
 
@@ -59,6 +62,8 @@ type LabMessage = {
   streaming?: boolean
   contextSummary?: string
   verificationSkipped?: boolean
+  activeModel?: string
+  activeProvider?: string
 }
 
 
@@ -183,6 +188,13 @@ function MessageBubble({
 
             {isComplete ? (
               <CompactSources citations={citations} onOpenSource={onOpenSource} />
+            ) : null}
+
+            {isComplete && message.activeModel ? (
+              <div className={styles.modelBadge}>
+                Model: {message.activeModel}
+                {message.activeProvider ? ` · ${message.activeProvider}` : ""}
+              </div>
             ) : null}
           </>
         )}
@@ -479,6 +491,12 @@ function AskContent() {
         return
       }
 
+      if (payload.type === "meta") {
+        // Which engine is generating this answer — shown as a badge on the bubble.
+        updateAssistant({ activeModel: payload.model, activeProvider: payload.provider })
+        return
+      }
+
       if (payload.type === "citations") {
         // Arrives before the first delta; lets inline chips and Sources render
         // live during streaming rather than popping in at the end.
@@ -515,6 +533,8 @@ function AskContent() {
           contextSummary: payload.contextSummary,
           insufficientContext: payload.insufficientContext,
           verificationSkipped: payload.verification?.checkSkipped ?? false,
+          ...(payload.model ? { activeModel: payload.model } : {}),
+          ...(payload.provider ? { activeProvider: payload.provider } : {}),
         })
         adoptSession(payload.sessionId ?? null)
         return

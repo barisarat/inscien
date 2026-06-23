@@ -156,6 +156,20 @@
   text-decoration: none;
 }
 
+/* Which engine generated this answer — a quiet badge under the sources. */
+.modelBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--text-3);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 /* Inline, interactive variant of the chip (the [n] marker in the answer). */
 .citationChip {
   vertical-align: baseline;

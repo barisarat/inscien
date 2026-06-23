@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.db import engine, Base
+from core.db import engine, Base, ensure_app_settings_columns
 from routers.agent import router as agent_router
 from routers.chat import router as chat_router
 from routers.settings import router as settings_router
@@ -34,6 +34,9 @@ ENV_NAME = os.getenv("ENV_NAME", "development")
 async def lifespan(app: FastAPI):
     import models.zotero_sync  # noqa: F401 — register the sync-ledger table
     Base.metadata.create_all(bind=engine)
+    # No migration framework: additively add columns that create_all can't add to an
+    # already-existing table (e.g. llm_provider on a returning user's app_settings).
+    ensure_app_settings_columns()
     # In-process jobs don't survive a restart — fail any that were mid-run.
     from services.compare.jobs import recover_stale as recover_compare
     from services.writeup.jobs import recover_stale as recover_writeup

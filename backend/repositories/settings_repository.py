@@ -15,8 +15,9 @@ def get_settings(db):
     return row
 
 
-# Only these fields may be written from the API (local-only: no provider / no cloud key).
-_UPDATABLE = {"display_name", "llm_model", "ollama_base_url"}
+# Only these fields may be written from the API. The OpenAI key is NOT here — it's env-only
+# (OPENAI_API_KEY), never persisted.
+_UPDATABLE = {"display_name", "llm_provider", "llm_model", "ollama_base_url"}
 
 
 def update_settings(db, fields):

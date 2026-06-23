@@ -25,7 +25,7 @@ from services.lab.answer_service import (
 )
 from services.lab.manifest_loader import ManifestCorruptError
 from services.lab.prompt_service import build_context_blocks
-from services.llm.client import chat_create, delta_of, describe_llm_error, text_of
+from services.llm.client import chat_create, delta_of, describe_llm_error, resolve_llm_config, text_of
 from services.agent.prompt import build_agent_system_prompt, build_grounding_block
 from services.agent.tools import (
     TOOL_DISPATCH,
@@ -152,6 +152,14 @@ def stream_agent_answer(
 
     try:
         yield {"type": "stage", "stage": "thinking"}
+
+        # Tell the UI which engine is generating, so each answer can show a model badge.
+        # Best-effort: badge resolution must never break the stream.
+        try:
+            _cfg = resolve_llm_config()
+            yield {"type": "meta", "model": _cfg["model"], "provider": _cfg["provider"]}
+        except Exception:
+            _cfg = {"model": "", "provider": "local"}
 
         ctx = ToolContext(db=db)
         messages = [{"role": "system", "content": build_agent_system_prompt()}]
@@ -370,6 +378,8 @@ def stream_agent_answer(
             "sessionId": chat_session_id,
             "verification": verification,
             "insufficientContext": insufficient,
+            "model": _cfg["model"],
+            "provider": _cfg["provider"],
         }
     except ManifestCorruptError as exc:
         logger.exception("agent stream hit a corrupt manifest query=%r", query)

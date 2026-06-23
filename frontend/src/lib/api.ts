@@ -105,17 +105,21 @@ export async function saveChatTurn(body: ChatTurnIn): Promise<{ sessionId: numbe
   return authedAction("/api/chat/turn", "POST", body)
 }
 
-// ---- Settings (model/provider + display name) ----
+// ---- Settings (provider/model + display name) ----
 
-// InScien is local-only — no provider/cloud-key fields.
+// Local by default; "openai" is opt-in. The OpenAI key is env-only (OPENAI_API_KEY) — never
+// sent through the API; the backend only reports whether it's present.
 export interface AppSettings {
   displayName: string
+  llmProvider: string          // "local" | "openai"
   llmModel: string
   ollamaBaseUrl: string
+  openAiApiKeyPresent: boolean
 }
 
 export interface AppSettingsUpdate {
   displayName?: string
+  llmProvider?: string
   llmModel?: string
   ollamaBaseUrl?: string
 }
@@ -129,13 +133,17 @@ export async function updateSettings(body: AppSettingsUpdate): Promise<AppSettin
 }
 
 export interface ModelOption {
-  value: string     // "local|<model>", e.g. "local|qwen2.5:7b" — InScien is local-only
+  value: string     // "local|<model>", e.g. "local|qwen2.5:7b"
   label: string
-  provider: string  // always "local"
+  provider: string  // "local" (cloud models are free-text, not enumerated)
   model: string
 }
 
-export async function getModelOptions(): Promise<{ options: ModelOption[]; ollamaReachable: boolean }> {
+export async function getModelOptions(): Promise<{
+  options: ModelOption[]
+  ollamaReachable: boolean
+  cloudModelHint?: string
+}> {
   return authedGet("/api/settings/models")
 }
 
