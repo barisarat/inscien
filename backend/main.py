@@ -129,3 +129,21 @@ def health_ready():
         ollama_ok = False
 
     return {"db": db_ok, "qdrant": qdrant_ok, "ollama": ollama_ok, "ready": db_ok and qdrant_ok}
+
+
+# Serve the built frontend (Next static export) when present. The production image bakes the
+# export into FRONTEND_DIST and serves it here, so the UI and API share one origin — no CORS,
+# no separate Next server. Mounted LAST so the /api routers and /health above take precedence;
+# html=True resolves /ask → /ask/index.html. In development FRONTEND_DIST is unset (the Next
+# dev server serves the UI on its own port), so this is a no-op.
+FRONTEND_DIST = os.getenv("FRONTEND_DIST")
+if FRONTEND_DIST and os.path.isdir(FRONTEND_DIST):
+    import mimetypes
+    from fastapi.staticfiles import StaticFiles
+
+    # The pdf.js worker is an ES module (.mjs); browsers refuse to load a module worker
+    # unless it's served with a JavaScript MIME type, and Python's mimetypes doesn't always
+    # register .mjs. Set it before mounting so StaticFiles guesses the right type.
+    mimetypes.add_type("text/javascript", ".mjs")
+
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

@@ -293,3 +293,6 @@ zotero-sample/
 zotero.sqlite
 zotero.sqlite*
 zotero-storage/
+
+# Generated pdf.js worker (copied from pdfjs-dist on predev/prebuild)
+frontend/public/pdf.worker.min.mjs

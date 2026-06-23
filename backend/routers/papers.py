@@ -63,8 +63,12 @@ def get_paper(doc_id: str):
         raise HTTPException(status_code=404, detail="Paper not found")
 
     path = Path(zotero_path)
+    # Let FileResponse build the Content-Disposition: it RFC 5987-encodes non-ASCII
+    # filenames (e.g. a Unicode hyphen U+2010 common in paper titles). Building the header
+    # by hand fails — HTTP headers are latin-1, so such characters raise UnicodeEncodeError.
     return FileResponse(
         str(path),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="{path.name}"'},
+        filename=path.name,
+        content_disposition_type="inline",
     )

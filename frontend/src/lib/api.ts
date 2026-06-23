@@ -1,10 +1,9 @@
-// Single source of truth for the backend origin. NEXT_PUBLIC_* is inlined at build time;
-// in docker compose it's always set (http://localhost:8200). If it's somehow unset we
-// default to the compose host port and warn, rather than failing with a wrong default.
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ??
-  (console.warn("NEXT_PUBLIC_API_URL unset; defaulting to http://localhost:8200"),
-    "http://localhost:8200")
+// Single source of truth for the backend origin. NEXT_PUBLIC_* is inlined at build time.
+// Empty string = same-origin: the production image serves the API and the static UI from
+// one process, so requests use relative `/api/...` paths and the bundle is port-agnostic.
+// In dev the frontend (:3200) and backend (:8200) are separate origins, so the dev compose
+// sets NEXT_PUBLIC_API_URL to the backend URL.
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
 
 async function getErrorMessage(res: Response): Promise<string> {
   const data: unknown = await res.json().catch(() => ({}))
@@ -23,7 +22,7 @@ async function getErrorMessage(res: Response): Promise<string> {
 
 // A failed fetch (backend down / network / CORS) throws a raw TypeError ("Failed to fetch")
 // — turn it into an actionable message that names the likely cause.
-const BACKEND_UNREACHABLE = `Couldn't reach the InScien backend at ${API_BASE}. Is it running?`
+const BACKEND_UNREACHABLE = `Couldn't reach the InScien backend${API_BASE ? ` at ${API_BASE}` : ""}. Is it running?`
 
 async function doFetch(path: string, init?: RequestInit): Promise<Response> {
   try {

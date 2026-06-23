@@ -10,9 +10,10 @@ name: inscien
 # run yourself is a native Ollama on the host (see README). Override OLLAMA_BASE_URL /
 # KOKORO_VOICE via a local .env file if needed (see .env.example).
 #
-# Data model: irreplaceable state (DB, indexes, narration) lives in the host `./data/`
-# folder; the Qdrant `qdrant_data` volume is a rebuildable cache (re-index from Zotero).
-# `docker compose down` keeps everything; `down -v` clears only the rebuildable cache.
+# Data model: all state lives in the host `./data/` folder, including the embedded vector
+# store at ./data/qdrant — Qdrant runs in-process (qdrant-client local mode), so there is
+# no separate vector-store container. The vector store is a rebuildable cache (re-index
+# from Zotero); to talk to a standalone Qdrant server instead, set QDRANT_URL.
 
 services:
   backend:
@@ -34,14 +35,13 @@ services:
     # Lets the backend reach an Ollama running on the host (works on Linux too).
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      - qdrant
     environment:
       - APP_NAME=inscien
       - ENV_NAME=development
       - CORS_ORIGINS=http://localhost:3200
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
-      - QDRANT_URL=http://qdrant:6333
+      # Embedded vector store (qdrant-client local mode) under the ./data mount. Set
+      # QDRANT_URL here to use a standalone Qdrant server instead.
       - QDRANT_COLLECTION=inscien_lab_chunks
       # Persist the embedding model on the (host-owned, writable) data mount so it survives
       # restarts and is writable by the non-root runtime user. See backend/entrypoint.sh.
@@ -75,8 +75,7 @@ services:
     ports:
       - "3200:3000"
     # Wait for the backend to be serving (healthy) so the UI's first calls don't race a
-    # not-yet-ready API. qdrant stays plain start-order depends_on (its image lacks a
-    # shell/curl for a reliable healthcheck; the backend connects to it lazily).
+    # not-yet-ready API.
     depends_on:
       backend:
         condition: service_healthy
@@ -87,15 +86,6 @@ services:
       - API_BASE_URL=http://backend:8000
       - INTERNAL_API_BASE_URL=http://backend:8000
 
-  qdrant:
-    image: qdrant/qdrant
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:6335:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
-
 volumes:
-  qdrant_data:
   frontend_node_modules:
   frontend_next:

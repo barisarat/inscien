@@ -15,13 +15,28 @@ from qdrant_client.models import (
 from services.lab.settings import get_lab_settings
 
 
-def get_qdrant_client():
-    settings = get_lab_settings()
+_client = None
 
-    return QdrantClient(
-        url=settings["qdrant_url"],
-        timeout=30,
-    )
+
+def get_qdrant_client():
+    """Return a process-wide singleton client.
+
+    Embedded local mode (the default) holds a file lock on its storage folder, so a fresh
+    client per call would fail with "already accessed by another instance". Reusing one
+    client avoids that. Jobs run as threads in this same process (single-worker executor),
+    so a shared client is correct; server mode shares it harmlessly too. Set QDRANT_URL to
+    talk to a Qdrant server instead of the embedded store.
+    """
+    global _client
+    if _client is not None:
+        return _client
+
+    settings = get_lab_settings()
+    if settings["qdrant_url"]:
+        _client = QdrantClient(url=settings["qdrant_url"], timeout=30)
+    else:
+        _client = QdrantClient(path=settings["qdrant_path"])
+    return _client
 
 
 def check_qdrant_connection():
@@ -29,9 +44,10 @@ def check_qdrant_connection():
     client = get_qdrant_client()
     collections = client.get_collections()
 
+    location = settings["qdrant_url"] or f"local:{settings['qdrant_path']}"
     return {
         "ok": True,
-        "qdrant_url": settings["qdrant_url"],
+        "qdrant_url": location,
         "collection": settings["qdrant_collection"],
         "collections": [
             collection.name
