@@ -24,6 +24,7 @@ from routers.graph import router as graph_router
 from routers.narrate import router as narrate_router
 from routers.compare import router as compare_router
 from routers.write import router as write_router
+from routers.verify import router as verify_router
 from routers.zotero import router as zotero_router
 import os
 
@@ -43,11 +44,13 @@ async def lifespan(app: FastAPI):
     from services.narration.jobs import recover_stale as recover_narration
     from services.zotero.jobs import recover_stale as recover_zotero
     from services.refs.fetch_jobs import recover_stale as recover_graph_fetch
+    from services.verify.jobs import recover_stale as recover_verify
     recover_compare()
     recover_writeup()
     recover_narration()
     recover_zotero()
     recover_graph_fetch()
+    recover_verify()
     yield
 
 
@@ -89,6 +92,7 @@ app.include_router(graph_router)
 app.include_router(narrate_router)
 app.include_router(compare_router)
 app.include_router(write_router)
+app.include_router(verify_router)
 app.include_router(zotero_router)
 
 

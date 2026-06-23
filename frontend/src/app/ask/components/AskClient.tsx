@@ -8,6 +8,7 @@ import ZoteroNavigator, {
   NAV_WIDTH_EXPANDED,
 } from "@/components/navigation/ZoteroNavigator"
 import TopBar from "../workspace/TopBar"
+import VerifyMode from "../workspace/VerifyMode"
 import CompareMode from "../workspace/CompareMode"
 import WriteMode from "../workspace/WriteMode"
 import NarrateMode from "../workspace/NarrateMode"
@@ -22,6 +23,7 @@ import {
   renameChatSession,
   type ChatSessionSummary,
   type CompareResult,
+  type VerifyResult,
 } from "@/lib/api"
 import PdfViewerPanel from "./PdfViewerPanel"
 import { AnswerRenderer, CompactSources, type Citation } from "../workspace/answer/AnswerRenderer"
@@ -89,6 +91,7 @@ function sessionMessagesToLab(
 function detectRun(messages: { widgets?: unknown[] }[]):
   | { kind: "comparison"; result: CompareResult; papers: { docId: string; title: string }[]; dimensions: string[] }
   | { kind: "writeup"; answer: string; citations: unknown[] }
+  | { kind: "verify"; result: VerifyResult }
   | null {
   for (const m of messages) {
     for (const w of (m.widgets || []) as Array<Record<string, unknown>>) {
@@ -103,6 +106,9 @@ function detectRun(messages: { widgets?: unknown[] }[]):
       }
       if (w?.kind === "writeup" && w.answer != null) {
         return { kind: "writeup", answer: String(w.answer), citations: (w.citations as unknown[]) || [] }
+      }
+      if (w?.kind === "verify" && w.result) {
+        return { kind: "verify", result: w.result as VerifyResult }
       }
     }
   }
@@ -356,6 +362,9 @@ function AskContent() {
         } else if (run?.kind === "writeup") {
           setMode("write")
           setActiveArtifact({ kind: "writeup", sessionId: id, answer: run.answer, citations: run.citations })
+        } else if (run?.kind === "verify") {
+          setMode("verify")
+          setActiveArtifact({ kind: "verify", sessionId: id, result: run.result })
         } else {
           setMode("ask")
           setMessages(sessionMessagesToLab(detail.messages))
@@ -880,7 +889,9 @@ function AskContent() {
           </main>
           ) : (
             <div className={`${pageStyles.modeContent} ${hasOpenPdf ? pageStyles.modeContentSplit : ""}`}>
-              {mode === "compare" ? (
+              {mode === "verify" ? (
+                <VerifyMode />
+              ) : mode === "compare" ? (
                 <CompareMode />
               ) : mode === "write" ? (
                 <WriteMode />

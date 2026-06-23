@@ -118,3 +118,87 @@ def verify_grounding(answer, context_blocks):
     except Exception:
         logger.exception("verify_grounding failed; treating answer as grounded")
         return {"grounded": True, "unsupported": [], "revised_answer": None, "ok": False}
+
+
+_VERDICTS = {"supports", "contradicts", "mixed", "not_addressed"}
+
+
+def judge_claim(claim, context_blocks, title):
+    """Judge whether ONE paper supports / contradicts / is mixed on / doesn't address a claim,
+    using only its retrieved passages. Powers the Verify skill.
+
+    Returns {"verdict": "supports"|"contradicts"|"mixed"|"not_addressed",
+             "supporting": [int], "contradicting": [int], "ok": bool} — source numbers are
+    1-based into the passage list. Fails OPEN to `not_addressed` (never a false support/
+    contradiction): a flaky judge must not invent a stance the user would trust.
+    """
+    if not context_blocks:
+        return {"verdict": "not_addressed", "supporting": [], "contradicting": [], "ok": True}
+
+    prompt = (
+        "You are a careful fact-checker for a researcher's own library. Decide ONLY from the "
+        f'numbered passages below (all from the paper "{title}") whether the paper:\n'
+        "  - supports the claim,\n"
+        "  - contradicts it,\n"
+        "  - is mixed (supports in part, qualifies/contradicts in part), or\n"
+        "  - does not address it (the passages don't speak to the claim).\n"
+        "Use ONLY these passages — never outside knowledge. If the passages don't actually "
+        'discuss the claim, answer "not_addressed". Give the source number(s) that justify each '
+        "stance (supporting and/or contradicting); leave a list empty when not applicable.\n\n"
+        'Respond with ONLY JSON: {"verdict": "supports|contradicts|mixed|not_addressed", '
+        '"supporting": [<source numbers>], "contradicting": [<source numbers>]}\n\n'
+        f"Claim: {claim}\n\nPassages:\n{context_blocks}"
+    )
+
+    try:
+        response = chat_create(
+            messages=[{"role": "user", "content": prompt}],
+            # Headroom: the JSON is tiny, but cloud reasoning models spend hidden reasoning
+            # tokens against this cap — too low truncates to empty and collapses to not_addressed.
+            max_tokens=800,
+            temperature=0,  # deterministic JSON verdict (ignored on cloud reasoning models)
+        )
+        data = _parse_json(text_of(response))
+    except Exception:
+        logger.exception("judge_claim failed; treating paper as not addressing the claim")
+        return {"verdict": "not_addressed", "supporting": [], "contradicting": [], "ok": False}
+
+    verdict = str(data.get("verdict") or "").strip().lower()
+    if verdict not in _VERDICTS:
+        verdict = "not_addressed"
+
+    def _ints(key):
+        raw = data.get(key) or []
+        if not isinstance(raw, list):
+            return []
+        out = []
+        for v in raw:
+            if isinstance(v, int) and v not in out:
+                out.append(v)
+        return out
+
+    supporting = _ints("supporting")
+    contradicting = _ints("contradicting")
+
+    # Keep the verdict and the cited stances consistent — a weak judge often labels a stance but
+    # forgets to (or spuriously does) list sources. Derive honestly from what it actually cited.
+    if verdict == "not_addressed":
+        supporting, contradicting = [], []
+    elif verdict == "supports":
+        contradicting = []
+        if not supporting:
+            verdict = "not_addressed"
+    elif verdict == "contradicts":
+        supporting = []
+        if not contradicting:
+            verdict = "not_addressed"
+    elif verdict == "mixed" and not (supporting and contradicting):
+        # "mixed" needs both sides; otherwise fall back to the side it did cite, or not_addressed.
+        if supporting:
+            verdict = "supports"
+        elif contradicting:
+            verdict = "contradicts"
+        else:
+            verdict = "not_addressed"
+
+    return {"verdict": verdict, "supporting": supporting, "contradicting": contradicting, "ok": True}

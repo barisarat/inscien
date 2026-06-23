@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 
-import { saveChatTurn, type CompareResult } from "@/lib/api"
+import { saveChatTurn, type CompareResult, type VerifyResult } from "@/lib/api"
 import { type PdfTab } from "../components/PdfViewerPanel"
 import { type WorkspaceMode } from "./ActionBar"
 
@@ -17,6 +17,7 @@ export type ActiveArtifact =
     }
   | { kind: "writeup"; sessionId: number | null; answer: string; citations: unknown[] }
   | { kind: "narration"; docId: string; jobId: string; title: string }
+  | { kind: "verify"; sessionId: number | null; result: VerifyResult }
   | null
 
 interface WorkspaceValue {
@@ -30,7 +31,7 @@ interface WorkspaceValue {
   closePdfTab: (id: string) => void
   closePdfPanel: () => void
   // Persist a finished run to History (a typed ChatSession). Returns its session id.
-  saveRun: (kind: "comparison" | "writeup", title: string, widget: Record<string, unknown>) => Promise<number | null>
+  saveRun: (kind: "comparison" | "writeup" | "verify", title: string, widget: Record<string, unknown>) => Promise<number | null>
   activeArtifact: ActiveArtifact
   setActiveArtifact: (a: ActiveArtifact) => void
 }
@@ -100,7 +101,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const saveRun = useCallback(
-    async (kind: "comparison" | "writeup", title: string, widget: Record<string, unknown>) => {
+    async (kind: "comparison" | "writeup" | "verify", title: string, widget: Record<string, unknown>) => {
       try {
         const { sessionId } = await saveChatTurn({
           title,

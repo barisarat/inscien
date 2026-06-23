@@ -380,6 +380,54 @@ export async function getCompare(jobId: string): Promise<CompareStatus> {
   return authedGet(`/api/compare/${encodeURIComponent(jobId)}`)
 }
 
+// ---- Verify (claim-checking against the selected papers, background job) ----
+
+export type VerifyVerdict = "supports" | "contradicts" | "mixed" | "not_addressed"
+
+// One page-pinned evidence passage, tagged with the stance it supports.
+export interface VerifyEvidence {
+  stance: "supporting" | "contradicting"
+  title: string
+  url?: string
+  sourceId?: string
+  sourceType?: string
+  contentMode?: string
+  page?: number | null
+  passage?: string
+  bbox?: number[] | null
+}
+
+export interface VerifyPaper {
+  docId: string
+  title: string
+  verdict: VerifyVerdict
+  evidence: VerifyEvidence[]
+}
+
+export interface VerifyResult {
+  claim: string
+  summary: string            // calibrated plain-language line (never a score/verdict)
+  papers: VerifyPaper[]
+}
+
+export interface VerifyStatus {
+  id: string
+  status: "queued" | "running" | "done" | "error"
+  stage?: string
+  progress?: number
+  detail?: string
+  error?: string
+  result?: VerifyResult | null
+}
+
+export async function startVerify(claim: string, docIds: string[]): Promise<{ jobId: string }> {
+  return authedAction("/api/verify", "POST", { claim, docIds })
+}
+
+export async function getVerify(jobId: string): Promise<VerifyStatus> {
+  return authedGet(`/api/verify/${encodeURIComponent(jobId)}`)
+}
+
 // ---- Write (agentic literature-review pipeline, background job) ----
 
 export interface WriteResult {

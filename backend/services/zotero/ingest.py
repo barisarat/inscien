@@ -234,7 +234,8 @@ def reset_index():
             from services.writeup.jobs import clear_jobs as _clear_writeup
             from services.narration.jobs import clear_jobs as _clear_narration
             from services.refs.fetch_jobs import clear_jobs as _clear_graph_fetch
-            for clear in (_clear_zotero, _clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch):
+            from services.verify.jobs import clear_jobs as _clear_verify
+            for clear in (_clear_zotero, _clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch, _clear_verify):
                 try:
                     clear()
                 except Exception:

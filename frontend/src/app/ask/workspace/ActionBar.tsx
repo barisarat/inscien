@@ -1,12 +1,13 @@
 "use client"
 
-import { MessageSquare, Columns3, FileText, AudioLines, Network } from "lucide-react"
+import { MessageSquare, Columns3, FileText, AudioLines, Network, BadgeCheck } from "lucide-react"
 import styles from "./ActionBar.module.css"
 
-export type WorkspaceMode = "ask" | "compare" | "write" | "narrate" | "graph"
+export type WorkspaceMode = "ask" | "verify" | "compare" | "write" | "narrate" | "graph"
 
 const MODES: { mode: WorkspaceMode; label: string; Icon: typeof MessageSquare }[] = [
   { mode: "ask", label: "Ask", Icon: MessageSquare },
+  { mode: "verify", label: "Verify", Icon: BadgeCheck },
   { mode: "compare", label: "Compare", Icon: Columns3 },
   { mode: "write", label: "Write", Icon: FileText },
   { mode: "narrate", label: "Narrate", Icon: AudioLines },

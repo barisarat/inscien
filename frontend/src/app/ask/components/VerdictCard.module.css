@@ -1,0 +1,118 @@
+/* One verification report. Sober, not a dashboard: no bars, no scores — grouped evidence
+   with the quoted passage as the proof. Reuses the global design tokens. */
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px 20px;
+}
+
+.claim {
+  margin: 0 0 8px;
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.summary {
+  margin: 0 0 18px;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.group {
+  margin-top: 16px;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.glyph {
+  font-size: 0.85em;
+  color: var(--text-3);
+}
+
+.notAddressed {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.paper {
+  padding: 10px 0;
+  border-top: 1px solid var(--surface-subtle, var(--border));
+}
+
+.paper:first-of-type {
+  border-top: none;
+}
+
+.paperTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.stance {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-3);
+  min-width: 56px;
+}
+
+.passage {
+  flex: 1 1 auto;
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--surface-muted);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.pageLink {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 2px 7px;
+  border: none;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pageLink:hover {
+  background: var(--border);
+}
