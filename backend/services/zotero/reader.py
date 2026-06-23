@@ -248,6 +248,28 @@ def collection_direct_items():
     return out
 
 
+def item_primary_collection(item_keys):
+    """{itemKey: collectionName} — one collection per item (lowest collectionID) for grouping
+    nodes on the Map. Items in no collection are omitted."""
+    wanted = set(item_keys)
+    direct = collection_direct_items()  # {collectionID: set(itemKey)}
+
+    names = {}
+
+    def _walk(nodes):
+        for n in nodes:
+            names[n["collectionID"]] = n["name"]
+            _walk(n.get("children") or [])
+
+    _walk(list_collections())
+
+    key_cids = defaultdict(list)
+    for cid, keys in direct.items():
+        for k in keys & wanted:
+            key_cids[k].append(cid)
+    return {k: names.get(min(cids), "") for k, cids in key_cids.items() if cids}
+
+
 # --- per-item metadata -----------------------------------------------------
 
 def _item_id(con, item_key):

@@ -100,6 +100,39 @@ def fetch_work(doi):
     }
 
 
+def fetch_citing_works(openalex_id, limit=100):
+    """Works that CITE the given paper (the forward / Cited-by direction).
+
+    Uses OpenAlex `filter=cites:<id>`, most-influential first (`sort=cited_by_count:desc`),
+    cursor-paginated and capped at `limit` so a landmark paper's thousands of citers don't
+    blow up the graph. Returns a list of full OpenAlex id urls (like `referencedWorks`).
+    """
+    short = _short_id(openalex_id)
+    if not short:
+        return []
+    out = []
+    cursor = "*"
+    while len(out) < limit:
+        data = _get(
+            f"{_BASE}/works",
+            params={
+                "filter": f"cites:{short}",
+                "select": "id",
+                "sort": "cited_by_count:desc",
+                "per-page": 50,
+                "cursor": cursor,
+            },
+        )
+        if not data:
+            break
+        results = data.get("results") or []
+        out.extend(w["id"] for w in results if w.get("id"))
+        cursor = (data.get("meta") or {}).get("next_cursor")
+        if not cursor or not results:
+            break
+    return out[:limit]
+
+
 def resolve_works(ids):
     """Resolve OpenAlex work ids to metadata.
 

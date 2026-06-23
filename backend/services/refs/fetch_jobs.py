@@ -6,7 +6,7 @@ polite to OpenAlex (one batch at a time).
 import os
 
 from services.job_runner import JobRunner
-from services.refs.refstore import fetch_items
+from services.refs.refstore import fetch_citing_items, fetch_items
 
 _PUBLIC_FIELDS = ("id", "status", "stage", "progress", "detail", "error", "result")
 _runner = JobRunner(
@@ -18,6 +18,10 @@ _runner = JobRunner(
 
 def start_job(item_keys):
     return _runner.start(lambda _jid, progress: {"result": fetch_items(item_keys, progress)})
+
+
+def start_citing_job(item_keys):
+    return _runner.start(lambda _jid, progress: {"result": fetch_citing_items(item_keys, progress)})
 
 
 def get_job(job_id):

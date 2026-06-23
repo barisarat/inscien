@@ -16,11 +16,16 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-from services.refs.openalex import fetch_work, resolve_works
+from services.refs.openalex import fetch_citing_works, fetch_work, resolve_works
 from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
 from services.zotero.reader import item_metadata
 
 CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH", "/workspace/data/openalex.json"))
+
+# Cap on forward citers fetched per paper (Cited-by lens) — most-influential first.
+CITING_LIMIT = int(os.getenv("OPENALEX_CITING_LIMIT", "100"))
+# A reference cited by at least this many of your selected papers is a "gap" worth surfacing.
+GAP_MIN = int(os.getenv("OPENALEX_GAP_MIN", "2"))
 
 # Bump when the cached record shape changes so older records are transparently re-fetched
 # (a mapped record from an earlier schema is treated as unmapped → re-fetched on demand).
@@ -145,6 +150,114 @@ def fetch_items(item_keys, progress=None):
 
     emit("done", 100, "done")
     return {"mapped": [k for k in item_keys if _is_mapped(cache.get(k))]}
+
+
+def _map_record(meta, doi):
+    """A fresh cache record for one item from its (possibly missing) DOI."""
+    if not doi:
+        return {"doi": None, "openalexId": None, "year": meta.get("year"), "citedBy": None,
+                "references": [], "status": "no_doi", "fetchedAt": time.time()}
+    work = fetch_work(doi)
+    if not work:
+        return {"doi": doi, "openalexId": None, "year": meta.get("year"), "citedBy": None,
+                "references": [], "status": "not_found", "fetchedAt": time.time()}
+    return {"doi": doi, "openalexId": work["openalexId"], "year": work["year"],
+            "date": work["date"], "citedBy": work["citedByCount"],
+            "references": work["referencedWorks"], "status": "mapped",
+            "fetchedAt": time.time(), "v": SCHEMA_VERSION}
+
+
+def fetch_citing_items(item_keys, progress=None):
+    """Fetch + cache the works that CITE each selected paper (the Cited-by lens).
+
+    Maps any not-yet-mapped item first (one `fetch_work`), then fetches its citers
+    (`fetch_citing_works`) and resolves them to metadata in one batched pass. Stored under
+    `citingWorks` on the cache record. Mirrors `fetch_items`'s persistence + resolution.
+    """
+    emit = progress or (lambda *_a, **_k: None)
+    generation = current_generation()
+    cache = _load()
+    todo = [k for k in item_keys if not (cache.get(k) or {}).get("citingWorks")]
+    total = max(len(todo), 1)
+
+    for done, key in enumerate(todo):
+        meta = item_metadata(key) or {}
+        title = meta.get("title") or key
+        emit("fetching", 2 + int(80 * done / total), f"cited-by ({done}/{len(todo)}) · {title[:60]}")
+        rec = cache.get(key)
+        if not _is_mapped(rec):
+            rec = cache[key] = _map_record(meta, meta.get("doi"))
+        oaid = rec.get("openalexId")
+        if oaid:
+            rec["citingWorks"] = fetch_citing_works(oaid, CITING_LIMIT)  # raw ids, resolved below
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            _save(cache)
+
+    # Resolve citing ids → metadata (covers this run + any interrupted prior run).
+    pending, to_resolve = set(), []
+    for key in item_keys:
+        cw = (cache.get(key) or {}).get("citingWorks")
+        if cw and isinstance(cw[0], str):
+            to_resolve.append(key)
+            pending.update(cw)
+    if pending:
+        emit("resolving", 88, f"resolving {len(pending)} citing work(s)")
+        resolved = resolve_works(list(pending))
+        for key in to_resolve:
+            rec = cache[key]
+            rec["citingWorks"] = [
+                {"id": cid, **{f: (resolved.get(cid) or {}).get(f)
+                               for f in ("title", "year", "date", "doi", "citedBy")}}
+                for cid in rec["citingWorks"]
+            ]
+        with DERIVED_STATE_LOCK:
+            ensure_current_generation(generation)
+            _save(cache)
+
+    emit("done", 100, "done")
+    return {"mapped": [k for k in item_keys if _is_mapped(cache.get(k))]}
+
+
+def citing_graph(item_keys):
+    """Forward map: owned papers + the works that cite them (edges point citer → owned)."""
+    cache = _load()
+    nodes, edges = [], []
+    unmapped, no_doi = [], []
+    within = defaultdict(int)
+    ext_meta = {}
+
+    for key in item_keys:
+        rec = cache.get(key)
+        if not _is_mapped(rec):
+            unmapped.append(key)
+            if rec and rec.get("status") == "no_doi":
+                no_doi.append(key)
+            continue
+        meta = item_metadata(key) or {}
+        nodes.append({
+            "id": key, "label": meta.get("title") or key, "type": "owned",
+            "year": meta.get("year"), "date": rec.get("date"),
+            "globalCitedBy": rec.get("citedBy"), "doi": rec.get("doi"),
+        })
+        for c in rec.get("citingWorks", []):
+            if not isinstance(c, dict):
+                continue  # unresolved raw id — skip (resolved on next fetch)
+            cid = c.get("id")
+            if not cid:
+                continue
+            within[cid] += 1
+            ext_meta.setdefault(cid, c)
+            edges.append({"from": cid, "to": key})
+
+    for cid, c in ext_meta.items():
+        nodes.append({
+            "id": cid, "label": c.get("title") or cid, "type": "external",
+            "year": c.get("year"), "date": c.get("date"),
+            "citedBy": within[cid], "globalCitedBy": c.get("citedBy"), "doi": c.get("doi"),
+        })
+
+    return {"nodes": nodes, "edges": edges, "unmapped": unmapped, "noDoi": no_doi}
 
 
 def discovery_graph(item_keys):

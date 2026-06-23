@@ -11,7 +11,7 @@ const MODES: { mode: WorkspaceMode; label: string; Icon: typeof MessageSquare }[
   { mode: "compare", label: "Compare", Icon: Columns3 },
   { mode: "write", label: "Write", Icon: FileText },
   { mode: "narrate", label: "Narrate", Icon: AudioLines },
-  { mode: "graph", label: "Graph", Icon: Network },
+  { mode: "graph", label: "Map", Icon: Network },
 ]
 
 type Props = {

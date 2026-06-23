@@ -52,7 +52,7 @@ const WorkspaceContext = createContext<WorkspaceValue>({
 })
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeRaw] = useState<WorkspaceMode>("ask")
+  const [mode, setModeRaw] = useState<WorkspaceMode>("graph")
   const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
   const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
   const [activeArtifact, setActiveArtifact] = useState<ActiveArtifact>(null)

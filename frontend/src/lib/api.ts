@@ -215,6 +215,11 @@ export async function fetchZoteroItems(collectionId: number): Promise<{ items: Z
   return authedGet(`/api/zotero/collections/${collectionId}/items`)
 }
 
+// Every indexed itemKey — the Map's "whole library" scope.
+export async function fetchIndexedKeys(): Promise<{ itemKeys: string[] }> {
+  return authedGet("/api/zotero/indexed-keys")
+}
+
 export async function fetchZoteroIndexableKeys(collectionId: number): Promise<{ itemKeys: string[] }> {
   return authedGet(`/api/zotero/collections/${collectionId}/indexable-keys`)
 }
@@ -278,6 +283,7 @@ export interface GraphNode {
   citedBy?: number | null // external: within-selection degree (shared anchors render bigger)
   globalCitedBy?: number | null // global OpenAlex cited-by count
   doi?: string | null
+  collection?: string | null // owned: Zotero collection, for grouping/color
 }
 
 export interface DiscoveryGraph {
@@ -285,6 +291,27 @@ export interface DiscoveryGraph {
   edges: { from: string; to: string }[]
   unmapped: string[]
   noDoi: string[]
+}
+
+// ---- Map · Similarity lens (content map over your own papers, embedding-based) ----
+
+export interface SimilarityNode {
+  id: string
+  label: string
+  type: "owned"
+  cluster?: number | null
+  clusterLabel?: string | null
+  collection?: string | null
+}
+
+export interface SimilarityMap {
+  nodes: SimilarityNode[]
+  edges: { source: string; target: string; weight: number }[]
+  missing: string[] // in-scope items with no paper vector yet (not indexed)
+}
+
+export async function fetchSimilarityMap(itemKeys: string[]): Promise<SimilarityMap> {
+  return authedAction("/api/map/similarity", "POST", { itemKeys })
 }
 
 export interface GraphFetchStatus {
@@ -320,6 +347,16 @@ export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
 // Assemble the discovery map over the mapped subset of the selection.
 export async function fetchDiscoveryGraph(itemKeys: string[]): Promise<DiscoveryGraph> {
   return authedAction("/api/graph", "POST", { itemKeys })
+}
+
+// Cited-by (forward): works that cite your papers. Fetch is a background job (polled via
+// getGraphFetch — same runner); the graph is assembled from the cache.
+export async function startCitingFetch(itemKeys: string[]): Promise<{ jobId: string }> {
+  return authedAction("/api/graph/citing-fetch", "POST", { itemKeys })
+}
+
+export async function fetchCitingGraph(itemKeys: string[]): Promise<DiscoveryGraph> {
+  return authedAction("/api/graph/citing", "POST", { itemKeys })
 }
 
 // itemKeys that already have a cached OpenAlex map (navigator 'mapped' dot).

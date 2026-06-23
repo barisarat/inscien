@@ -87,6 +87,13 @@ def collection_items(collection_id: int, db: Session = Depends(get_db)):
     return {"items": items}
 
 
+@router.get("/indexed-keys")
+def indexed_keys_all(db: Session = Depends(get_db)):
+    """Every itemKey currently indexed — the Map's 'whole library' scope."""
+    ledger.ensure_table()
+    return {"itemKeys": sorted(ledger.indexed_keys(db))}
+
+
 @router.get("/collections/{collection_id}/indexable-keys")
 def indexable_keys(collection_id: int):
     """Recursive item keys in a collection that are actually indexable — PDF-bearing and

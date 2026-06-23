@@ -11,8 +11,8 @@ library content. See `services/refs/openalex.py`.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.refs.fetch_jobs import get_job, start_job
-from services.refs.refstore import discovery_graph, fetch_status, mapped_keys
+from services.refs.fetch_jobs import get_job, start_citing_job, start_job
+from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
 
@@ -49,5 +49,18 @@ def graph_mapped_keys():
 
 @router.post("")
 def graph_discovery(body: ItemKeysIn):
-    """Assemble the discovery map over the mapped subset of the selection."""
+    """Assemble the References map (what your papers cite) over the mapped subset."""
     return discovery_graph(body.itemKeys)
+
+
+@router.post("/citing-fetch")
+def graph_citing_fetch(body: ItemKeysIn):
+    """Kick off the OpenAlex Cited-by fetch (what cites your papers) as a background job.
+    Polls via the shared GET /fetch/{job_id}."""
+    return {"jobId": start_citing_job(body.itemKeys)}
+
+
+@router.post("/citing")
+def graph_citing(body: ItemKeysIn):
+    """Assemble the Cited-by map (works that cite your papers) over the mapped subset."""
+    return citing_graph(body.itemKeys)

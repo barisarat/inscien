@@ -16,6 +16,18 @@ export type OpenNode = { id: string; title: string; type: "owned" | "external"; 
 const OWNED_COLOR = "#2563eb" // accent — your papers
 const EXTERNAL_COLOR = "rgba(120,120,120,0.5)" // muted — referenced works
 
+// Distinct hues for grouping owned nodes by their Zotero collection (Similarity lens).
+const PALETTE = [
+  "#2563eb", "#16a34a", "#db2777", "#d97706", "#7c3aed",
+  "#0891b2", "#dc2626", "#65a30d", "#9333ea", "#0d9488",
+]
+function collectionColor(name?: string | null): string {
+  if (!name) return OWNED_COLOR
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return PALETTE[h % PALETTE.length]
+}
+
 // Timeline coordinate space (centred on the origin); zoomToFit frames it on render.
 const W = 900
 const H = 560
@@ -202,6 +214,7 @@ export default function GraphView({
           title,
           type,
           doi: n.doi ?? null,
+          collection: n.collection ?? null,
           degree,
           val: nodeVal(type, degree, global),
         }
@@ -254,7 +267,7 @@ export default function GraphView({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           nodeVal={(n: any) => n.val}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          nodeColor={(n: any) => (n.type === "owned" ? OWNED_COLOR : EXTERNAL_COLOR)}
+          nodeColor={(n: any) => (n.type === "owned" ? collectionColor(n.collection) : EXTERNAL_COLOR)}
           linkColor={() => (layout === "timeline" ? "rgba(120,120,120,0.15)" : "rgba(120,120,120,0.35)")}
           linkDirectionalArrowLength={layout === "timeline" ? 0 : 3}
           linkDirectionalArrowRelPos={1}

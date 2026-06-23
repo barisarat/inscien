@@ -25,6 +25,7 @@ from routers.narrate import router as narrate_router
 from routers.compare import router as compare_router
 from routers.write import router as write_router
 from routers.verify import router as verify_router
+from routers.map import router as map_router
 from routers.zotero import router as zotero_router
 import os
 
@@ -93,6 +94,7 @@ app.include_router(narrate_router)
 app.include_router(compare_router)
 app.include_router(write_router)
 app.include_router(verify_router)
+app.include_router(map_router)
 app.include_router(zotero_router)
 
 

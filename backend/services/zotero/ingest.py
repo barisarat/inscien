@@ -12,8 +12,11 @@ Idempotent via a content hash recorded in the sync ledger: an unchanged file is 
 
 import hashlib
 import logging
+import os
 from collections import defaultdict
 from pathlib import Path
+
+import numpy as np
 
 from core.db import SessionLocal
 from repositories.zotero_repository import (
@@ -31,9 +34,12 @@ from services.lab.qdrant_store import (
     build_point,
     delete_lab_points_by_source,
     ensure_lab_collection,
+    ensure_paper_collection,
     ensure_source_payload_index,
     recreate_lab_collection,
+    recreate_paper_collection,
     upsert_lab_points,
+    upsert_paper_vector,
 )
 from services.lab.settings import get_lab_settings
 from services.state_guard import (
@@ -49,10 +55,26 @@ from services.zotero.reader import item_metadata, live_item_keys, resolve_pdf_pa
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 32
+# Cap per-document parsing/embedding by page count so books / very-long items don't bloat the
+# index (and a whole collection can be fully indexed cheaply). The first pages carry a paper's
+# "aboutness" — which is all the Map (similarity) and Narration need. Cap by ACTUAL length, not
+# the (unreliable) Zotero item-type. Changing this requires a reset + re-index to take effect.
+MAX_INDEX_PAGES = int(os.getenv("MAX_INDEX_PAGES", "15"))
 
 
 def _file_hash(path):
     return hashlib.sha1(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def _paper_payload(item_key, meta):
+    """Minimal node metadata stored on the paper vector (the Map builder also resolves titles)."""
+    meta = meta or {}
+    return {
+        "title": meta.get("title"),
+        "year": meta.get("year"),
+        "itemType": meta.get("itemType"),
+        "doi": meta.get("doi"),
+    }
 
 
 def build_chunks_for_item(item_key, pdf_path, meta):
@@ -69,6 +91,8 @@ def build_chunks_for_item(item_key, pdf_path, meta):
 
     chunks = []
     for page in sorted(by_page):
+        if page > MAX_INDEX_PAGES:  # length cap — see MAX_INDEX_PAGES
+            break
         for index, passage in enumerate(_page_passages(by_page[page])):
             chunks.append({
                 "sourceType": "zotero",
@@ -117,6 +141,7 @@ def index_items(item_keys, progress=None):
         ensure_current_generation(generation)
         ensure_lab_collection()
         ensure_source_payload_index()
+        ensure_paper_collection()
     db = SessionLocal()
     indexed = skipped = skipped_no_pdf = failed = 0
     total = max(len(item_keys), 1)
@@ -155,8 +180,10 @@ def index_items(item_keys, progress=None):
                 chunks, _ = build_chunks_for_item(key, pdf, meta)
 
                 point_batches = []
+                all_vectors = []
                 for batch in _batched(chunks, BATCH_SIZE):
                     vectors = embed_texts([c["text"] for c in batch])
+                    all_vectors.extend(vectors)
                     point_batches.append([build_point(c, v) for c, v in zip(batch, vectors)])
 
                 with DERIVED_STATE_LOCK:
@@ -164,6 +191,11 @@ def index_items(item_keys, progress=None):
                     delete_lab_points_by_source(key)  # clear stale points if re-indexing
                     for points in point_batches:
                         upsert_lab_points(points)
+                    # Paper-level vector = mean of the item's chunk vectors (reflects the capped
+                    # content) → powers the Map's Similarity lens.
+                    if all_vectors:
+                        paper_vec = np.mean(np.asarray(all_vectors, dtype="float32"), axis=0).tolist()
+                        upsert_paper_vector(key, paper_vec, _paper_payload(key, meta))
 
                     by_source[key] = chunks
                     upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
@@ -243,6 +275,7 @@ def reset_index():
 
             ensure_table()
             recreate_lab_collection()
+            recreate_paper_collection()
             ensure_source_payload_index()
             _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
             # Clear the ledger right after wiping Qdrant + the manifest so the three index-state

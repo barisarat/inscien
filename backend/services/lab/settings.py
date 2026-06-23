@@ -13,6 +13,8 @@ def get_lab_settings():
         "qdrant_url": os.getenv("QDRANT_URL") or None,
         "qdrant_path": os.getenv("QDRANT_PATH", "/workspace/data/qdrant"),
         "qdrant_collection": os.getenv("QDRANT_COLLECTION", "inscien_lab_chunks"),
+        # One vector per paper (mean of its chunk vectors) — powers the Map's Similarity lens.
+        "qdrant_paper_collection": os.getenv("QDRANT_PAPER_COLLECTION", "inscien_lab_paper_vectors"),
         # The chunk manifest produced by Zotero ingestion.
         "chunk_index_path": os.getenv("INSCIEN_INDEX_PATH", "/workspace/data/pdf-index.json"),
         "embedding_model": LAB_EMBEDDING_MODEL,
