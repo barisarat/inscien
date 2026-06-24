@@ -8,7 +8,7 @@ name: Deploy site (GitHub Pages)
 
 on:
   push:
-    branches: [main, map]
+    branches: [main]
     paths:
       - "site/**"
       - ".github/workflows/site.yml"
