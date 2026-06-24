@@ -203,10 +203,12 @@ export default function ZoteroNavigator() {
           >
             <ChevronRight className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
           </Button>
-          <SidebarMenuButton className="h-7 min-w-0 flex-1 pr-4" onClick={() => selectCollection(col)} title="Select this collection">
+          <SidebarMenuButton className="grid h-7 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_3.5rem] pr-4" onClick={() => selectCollection(col)} title="Select this collection">
             <span className="truncate">{col.name}</span>
             {typeof col.itemCount === "number" && col.itemCount > 0 ? (
-              <Badge variant="secondary" className="ml-auto max-w-[4.5rem]">{col.indexedCount ?? 0}/{col.itemCount}</Badge>
+              <span className="text-right text-xs tabular-nums text-muted-foreground">
+                {col.indexedCount ?? 0}/{col.itemCount}
+              </span>
             ) : null}
           </SidebarMenuButton>
         </div>

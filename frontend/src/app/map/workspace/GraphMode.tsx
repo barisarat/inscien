@@ -248,33 +248,16 @@ export default function GraphMode() {
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          Select papers in the library to map them. The Atlas clusters your papers by content <em>and</em>
+          Select papers in the library to map them. The map clusters your papers by content <em>and</em>
           citations; overlay what they cite.
         </p>
-      </div>
-    )
-  }
-  if (phase === "loading") {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <h2 className="text-sm font-medium">Map</h2>
-        <p className="flex max-w-md items-center justify-center gap-1.5 text-sm text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" /> Building the Atlas...
-        </p>
-      </div>
-    )
-  }
-  if (phase === "error") {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <h2 className="text-sm font-medium">Map</h2>
-        <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
       </div>
     )
   }
 
   const clusters = fused?.clusters.filter((c) => c.label && c.size >= 2) ?? []
   const ownedCount = fused?.nodes.length ?? 0
+  const visibleCount = fused?.nodes.length ?? itemKeys.length
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -285,7 +268,7 @@ export default function GraphMode() {
         >
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <span className="font-medium">Map</span>
-            <span className="shrink-0 text-muted-foreground">{ownedCount} papers</span>
+            <span className="shrink-0 text-muted-foreground">{visibleCount} papers</span>
             {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
             {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
             {layerBusy ? (
@@ -346,7 +329,17 @@ export default function GraphMode() {
         ) : null}
       </div>
 
-      {ownedCount === 0 ? (
+      {phase === "loading" ? (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+          <p className="flex max-w-md items-center justify-center gap-1.5 text-sm text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" /> Building the map...
+          </p>
+        </div>
+      ) : phase === "error" ? (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+          <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
+        </div>
+      ) : ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="max-w-md text-sm text-muted-foreground">The selected papers aren't indexed yet - index them in the library first.</p>
         </div>
