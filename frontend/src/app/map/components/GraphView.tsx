@@ -125,6 +125,10 @@ function nodeVal(n: AtlasNode): number {
 
 // --- time-order layout: keep the network, nudge x-position by effective date ----------------
 const TIME_ORDER_W = 880
+const TIME_ORDER_LANE_H = 34
+const TIME_ORDER_LANES = 12
+
+type TimeOrderPosition = { x: number; y: number }
 
 function yearValue(n: AtlasNode): number | null {
   if (n.type === "owned" && n.year != null && n.year !== "") {
@@ -176,30 +180,59 @@ function timelineYears(nodes: AtlasNode[], edges: AtlasEdge[]): Map<string, numb
   return years
 }
 
-function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>): Map<string, number> {
+function timeOrderLane(index: number): number {
+  const lane = index % TIME_ORDER_LANES
+  const step = Math.floor(lane / 2) + 1
+  return (lane % 2 === 0 ? -step : step) * TIME_ORDER_LANE_H
+}
+
+function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>): Map<string, TimeOrderPosition> {
   const years = nodes.map((n) => yearsById.get(n.id) ?? null)
   const dated = years.filter((v): v is number => v != null)
   const tMin = dated.length ? Math.min(...dated) : 0
   const tMax = dated.length ? Math.max(...dated) : 1
   const span = tMax - tMin || 1
 
-  const xById = new Map<string, number>()
+  const ordered = [...nodes].sort((a, b) => {
+    const ay = yearsById.get(a.id) ?? 0
+    const by = yearsById.get(b.id) ?? 0
+    return ay === by ? a.id.localeCompare(b.id) : ay - by
+  })
+  const yById = new Map<string, number>()
+  let externalIndex = 0
+  let ownedIndex = 0
+  for (const n of ordered) {
+    if (n.type === "owned") {
+      yById.set(n.id, ownedIndex === 0 ? 0 : timeOrderLane(ownedIndex - 1))
+      ownedIndex += 1
+    } else {
+      yById.set(n.id, timeOrderLane(externalIndex))
+      externalIndex += 1
+    }
+  }
+
+  const positionById = new Map<string, TimeOrderPosition>()
   nodes.forEach((n, i) => {
     const t = years[i]
-    if (t != null) xById.set(n.id, -TIME_ORDER_W / 2 + ((t - tMin) / span) * TIME_ORDER_W)
+    if (t != null) {
+      positionById.set(n.id, {
+        x: -TIME_ORDER_W / 2 + ((t - tMin) / span) * TIME_ORDER_W,
+        y: yById.get(n.id) ?? 0,
+      })
+    }
   })
-  return xById
+  return positionById
 }
 
-function timeOrderForce(xById: Map<string, number>) {
+function timeOrderForce(positionById: Map<string, TimeOrderPosition>) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let nodes: any[] = []
-  const strength = 0.22
+  const yStrength = 0.16
   const force = (alpha: number) => {
     for (const node of nodes) {
-      const target = xById.get(node.id)
-      if (target == null || node.x == null) continue
-      node.vx += (target - node.x) * strength * alpha
+      const target = positionById.get(node.id)
+      if (target == null || node.y == null) continue
+      node.vy += (target.y - node.y) * yStrength * alpha
     }
   }
   force.initialize = (next: unknown[]) => {
@@ -373,10 +406,12 @@ export default function GraphView({
       }
       const seed = clusterCentroid(n.cluster)
       if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
-      const timeX = timeOrder?.get(n.id)
-      if (timeX != null) {
-        node.x = timeX
-        node.fx = timeX
+      const timePosition = timeOrder?.get(n.id)
+      if (timePosition != null) {
+        node.x = timePosition.x
+        node.y = timePosition.y
+        node.fx = timePosition.x
+        node.fy = undefined
       }
       return node
     })
@@ -416,9 +451,9 @@ export default function GraphView({
   const applyLayoutForces = useCallback(() => {
     const graph = fgRef.current
     if (!graph) return
-    graph.d3Force?.("x", null)
+    graph.d3Force?.("timeOrderSpread", null)
     if (layout === "timeline" && timeOrder) {
-      graph.d3Force?.("x", timeOrderForce(timeOrder))
+      graph.d3Force?.("timeOrderSpread", timeOrderForce(timeOrder))
     }
     graph.d3ReheatSimulation?.()
   }, [layout, timeOrder])
