@@ -1,0 +1,45 @@
+name: Deploy site (GitHub Pages)
+
+# Builds the Astro + Starlight marketing/docs site in `site/` and publishes it to GitHub Pages.
+# Completely independent of the desktop-installer release pipeline (`release.yml`, triggered by
+# version tags): this only runs on changes under `site/`, and only ever deploys a static site.
+#
+# One-time setup in the repo: Settings -> Pages -> Build and deployment -> Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [main, map]
+    paths:
+      - "site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deploy; don't cancel an in-progress run (let it finish publishing).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # withastro/action installs deps, builds, and uploads the Pages artifact in one step.
+      - uses: withastro/action@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
