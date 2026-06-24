@@ -191,7 +191,11 @@ export default function GraphMode() {
     }))
     const seen = new Set(nodes.map((n) => n.id))
 
-    const addLayer = (layer: DiscoveryGraph | null, keepExternal?: (n: GraphNode) => boolean) => {
+    const addLayer = (
+      layer: DiscoveryGraph | null,
+      overlay: "references" | "cited",
+      keepExternal?: (n: GraphNode) => boolean,
+    ) => {
       if (!layer) return
       const keep = new Set<string>()
       for (const n of layer.nodes) {
@@ -201,13 +205,15 @@ export default function GraphMode() {
         if (!seen.has(n.id)) { seen.add(n.id); nodes.push(externalNode(n)) }
       }
       for (const e of layer.edges) {
-        if (keep.has(e.from) || keep.has(e.to)) edges.push({ source: e.from, target: e.to, direct: true, external: true })
+        if (keep.has(e.from) || keep.has(e.to)) {
+          edges.push({ source: e.from, target: e.to, direct: true, external: true, overlay })
+        }
       }
     }
 
-    if (connections === "cite" || connections === "both") addLayer(refsLayer)
-    if (connections === "gaps") addLayer(refsLayer, (n) => (n.citedBy ?? 0) >= GAP_MIN)
-    if (connections === "cited" || connections === "both") addLayer(citedLayer)
+    if (connections === "cite" || connections === "both") addLayer(refsLayer, "references")
+    if (connections === "gaps") addLayer(refsLayer, "references", (n) => (n.citedBy ?? 0) >= GAP_MIN)
+    if (connections === "cited" || connections === "both") addLayer(citedLayer, "cited")
     return { nodes, edges }
   }, [fused, connections, refsLayer, citedLayer])
 

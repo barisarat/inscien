@@ -37,6 +37,7 @@ export interface AtlasEdge {
   direct?: boolean // a real citation (vs a semantic/coupling link)
   direction?: "AtoB" | "BtoA" | "both" | null
   external?: boolean // belongs to the citation satellite layer (owned<->external), not the fused core
+  overlay?: "references" | "cited"
 }
 
 export type Emphasis = {
@@ -126,6 +127,11 @@ function nodeVal(n: AtlasNode): number {
 const TIME_ORDER_W = 880
 
 function yearValue(n: AtlasNode): number | null {
+  if (n.type === "owned" && n.year != null && n.year !== "") {
+    const y = Number(n.year)
+    if (Number.isFinite(y) && y > 0) return y
+  }
+
   const d = n.date
   if (typeof d === "string" && /^\d{4}/.test(d)) {
     const [y, m = "1", day = "1"] = d.split("-")
@@ -155,11 +161,14 @@ function timelineYears(nodes: AtlasNode[], edges: AtlasEdge[]): Map<string, numb
     const sourceYear = base.get(source.id)
     const targetYear = base.get(target.id)
 
-    if (source.type === "owned" && target.type === "external" && sourceYear != null && targetYear != null) {
-      if (targetYear > sourceYear) invalidExternal.add(target.id)
+    const isReferenceEdge = edge.overlay === "references" || (!edge.overlay && source.type === "owned")
+    const isCitedEdge = edge.overlay === "cited" || (!edge.overlay && source.type === "external")
+
+    if (isReferenceEdge && source.type === "owned" && target.type === "external" && sourceYear != null && targetYear != null) {
+      if (Math.floor(targetYear) > Math.floor(sourceYear)) invalidExternal.add(target.id)
     }
-    if (source.type === "external" && target.type === "owned" && sourceYear != null && targetYear != null) {
-      if (sourceYear < targetYear) invalidExternal.add(source.id)
+    if (isCitedEdge && source.type === "external" && target.type === "owned" && sourceYear != null && targetYear != null) {
+      if (Math.floor(sourceYear) < Math.floor(targetYear)) invalidExternal.add(source.id)
     }
   })
 
@@ -364,7 +373,11 @@ export default function GraphView({
       }
       const seed = clusterCentroid(n.cluster)
       if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
-      if (timeOrder?.has(n.id)) node.fx = undefined
+      const timeX = timeOrder?.get(n.id)
+      if (timeX != null) {
+        node.x = timeX
+        node.fx = timeX
+      }
       return node
     })
     const links = data.edges
