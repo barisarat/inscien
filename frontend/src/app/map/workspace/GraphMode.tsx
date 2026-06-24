@@ -94,6 +94,8 @@ export default function GraphMode() {
   const [colorBy, setColorBy] = useState<ColorBy>("cluster")
   const [layout, setLayout] = useState<GraphLayout>("network")
   const [showTitles, setShowTitles] = useState(false)
+  const [showConnections, setShowConnections] = useState(true)
+  const [scaleByCitations, setScaleByCitations] = useState(true)
 
   // Data.
   const [fused, setFused] = useState<FusedMap | null>(null)
@@ -311,6 +313,24 @@ export default function GraphMode() {
             >
               Titles
             </Toggle>
+            <Toggle
+              size="sm"
+              variant="segment"
+              className="!px-4"
+              pressed={showConnections}
+              onPressedChange={setShowConnections}
+            >
+              Connections
+            </Toggle>
+            <Toggle
+              size="sm"
+              variant="segment"
+              className="!px-4"
+              pressed={scaleByCitations}
+              onPressedChange={setScaleByCitations}
+            >
+              Citation size
+            </Toggle>
           </div>
         </div>
 
@@ -346,6 +366,8 @@ export default function GraphMode() {
             colorBy={colorBy}
             showHulls
             showLabels={showTitles}
+            showConnections={showConnections}
+            scaleByCitations={scaleByCitations}
             emphasis={emphasis}
             selectedId={selectedId}
             layoutKey={keysKey}

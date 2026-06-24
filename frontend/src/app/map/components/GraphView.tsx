@@ -117,8 +117,8 @@ function withAlpha(color: string, alpha: number): string {
 }
 
 function nodeVal(n: AtlasNode): number {
-  if (n.type === "owned") return 0.85 + Math.min(1.5, Math.log10((n.globalCitedBy ?? 0) + 1) * 0.28)
-  return 0.45 + Math.min(1.2, Math.max(0, (n.citedBy ?? 0) - 1) * 0.35)
+  if (n.type === "owned") return 0.75 + Math.min(4.5, Math.log10((n.globalCitedBy ?? 0) + 1) * 0.9)
+  return 0.45 + Math.min(2.4, Math.max(0, (n.citedBy ?? 0) - 1) * 0.65)
 }
 
 // --- timeline layout (kept for the citation satellite layer: year x citations) --------------
@@ -274,6 +274,8 @@ export default function GraphView({
   colorBy = "cluster",
   showHulls = true,
   showLabels = false,
+  showConnections = true,
+  scaleByCitations = true,
   emphasis = null,
   selectedId = null,
   layoutKey = "",
@@ -284,6 +286,8 @@ export default function GraphView({
   colorBy?: ColorBy
   showHulls?: boolean
   showLabels?: boolean
+  showConnections?: boolean
+  scaleByCitations?: boolean
   emphasis?: Emphasis
   selectedId?: string | null
   layoutKey?: string // changes only when the underlying owned scope changes -> fresh layout
@@ -345,7 +349,7 @@ export default function GraphView({
   const graphData = useMemo(() => {
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const node: any = { id: n.id, __src: n, type: n.type, val: nodeVal(n) }
+      const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
       const remembered = posRef.current.get(n.id)
       if (remembered) {
         node.x = node.fx = remembered.x
@@ -363,7 +367,7 @@ export default function GraphView({
       .map((e) => ({ source: e.source, target: e.target, __e: e }))
     return { nodes, links }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.edges, timeline, visibleIds, visibleNodes])
+  }, [data.edges, scaleByCitations, timeline, visibleIds, visibleNodes])
 
   // Capture settled positions so subsequent renders pin them.
   const capturePositions = () => {
@@ -420,6 +424,7 @@ export default function GraphView({
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkColor={(l: any) => {
+            if (!showConnections) return "rgba(0,0,0,0)"
             const active = emphasis?.isActiveEdge ? emphasis.isActiveEdge(l.__e) : true
             const cited = l.__e?.direct
             if (!active) return withAlpha(palette().external, 0.06)
@@ -427,9 +432,9 @@ export default function GraphView({
             return withAlpha(palette().external, layout === "timeline" ? 0.18 : 0.35)
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          linkWidth={(l: any) => (l.__e?.direct ? 1.6 : 1)}
+          linkWidth={(l: any) => (showConnections ? (l.__e?.direct ? 1.6 : 1) : 0)}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          linkDirectionalArrowLength={(l: any) => (l.__e?.direct ? 3 : 0)}
+          linkDirectionalArrowLength={(l: any) => (showConnections && l.__e?.direct ? 3 : 0)}
           linkDirectionalArrowRelPos={1}
           onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
             if (layout === "timeline" && timeline) drawAxes(ctx, globalScale, timeline.ticks)
