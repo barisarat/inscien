@@ -303,3 +303,7 @@ frontend/public/pdf.worker.min.mjs
 
 # Next.js static export (build artifact — regenerated on every build)
 frontend/out/
+
+# Build scratch / stray files
+.build-tmp/
+/docker
