@@ -31,7 +31,7 @@ const GAP_MIN = 2 // an external cited by >= this many of your papers is a "gap"
 
 const DISCLOSURE =
   "Citation overlays use OpenAlex (open scholarly data) - each selected paper's DOI fetches its " +
-  "public references/citers. This is the only feature that reaches the internet."
+  "public references/citers."
 
 function Chips<T extends string>({ value, options, onChange }: {
   value: T
@@ -92,7 +92,6 @@ export default function GraphMode() {
   // View controls.
   const [connections, setConnections] = useState<Connections>("none")
   const [colorBy, setColorBy] = useState<ColorBy>("cluster")
-  const [showClusters, setShowClusters] = useState(true)
   const [layout, setLayout] = useState<GraphLayout>("network")
 
   // Data.
@@ -290,8 +289,6 @@ export default function GraphMode() {
                 { v: "none", label: "Map" },
                 { v: "cite", label: "References" },
                 { v: "cited", label: "Cited by" },
-                { v: "both", label: "Both" },
-                { v: "gaps", label: "Gaps" },
               ]}
               onChange={setConnections}
             />
@@ -304,9 +301,6 @@ export default function GraphMode() {
               options={[{ v: "cluster", label: "Clusters" }, { v: "collection", label: "Collections" }]}
               onChange={setColorBy}
             />
-            <Toggle size="sm" variant="segment" className="!px-4" pressed={showClusters} onPressedChange={setShowClusters}>
-              Hulls
-            </Toggle>
           </div>
           <Separator orientation="vertical" className="h-6 shrink-0" />
           <div className="flex shrink-0 items-center gap-2">
@@ -349,7 +343,7 @@ export default function GraphMode() {
             data={composed}
             layout={layout}
             colorBy={colorBy}
-            showHulls={showClusters}
+            showHulls
             emphasis={emphasis}
             selectedId={selectedId}
             layoutKey={keysKey}

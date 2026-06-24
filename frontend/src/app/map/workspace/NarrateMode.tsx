@@ -174,11 +174,8 @@ export default function NarrateMode() {
   const audioBlock = (id: string, autoPlay = false) => {
     const url = `${API_BASE}/api/narrate/${encodeURIComponent(id)}/audio`
     return (
-      <div className="flex w-full flex-col items-center gap-3">
+      <div className="flex w-full flex-col items-center">
         <audio className="w-full" controls autoPlay={autoPlay} src={url} />
-        <a href={url} download className={buttonVariants({ variant: "outline", size: "sm", className: "gap-2 !px-8" })}>
-          <Download /> Download mp3
-        </a>
       </div>
     )
   }

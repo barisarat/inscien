@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type PointerEvent } from "react"
 import { ChevronRight, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
@@ -35,7 +35,11 @@ import { StatusDot } from "@/components/ui/status-dot"
 
 const SIDEBAR_GUTTER = { paddingLeft: "1.5rem", paddingRight: "1.5rem" }
 
-export default function ZoteroNavigator() {
+type Props = {
+  onResizeStart?: (event: PointerEvent<HTMLButtonElement>) => void
+}
+
+export default function ZoteroNavigator({ onResizeStart }: Props) {
   const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
 
@@ -287,7 +291,15 @@ export default function ZoteroNavigator() {
   }
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" className="group/library-sidebar">
+      {onResizeStart ? (
+        <button
+          type="button"
+          aria-label="Resize library sidebar"
+          className="absolute inset-y-0 right-0 z-20 hidden w-2 cursor-col-resize touch-none items-stretch justify-center after:block after:h-full after:w-px after:bg-transparent hover:after:bg-border md:flex"
+          onPointerDown={onResizeStart}
+        />
+      ) : null}
       <SidebarHeader className="h-13 justify-center border-b py-0" style={SIDEBAR_GUTTER}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">Library</span>
