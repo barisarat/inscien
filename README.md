@@ -1,148 +1,90 @@
 # InScien
 
-A local-first, private research assistant over your own **Zotero library**. Ask
-questions in a multi-turn chat and get answers with **page-precise, verifiable citations**.
-Everything — retrieval *and* generation — runs on your machine against a local
-[Ollama](https://ollama.com); no API keys or cloud LLM provider are required.
+A local, private desktop app that turns your own [Zotero](https://www.zotero.org) library
+into a navigable map and audio narrations. It runs entirely on your machine, reads your
+library read-only, and points every reference back to the exact page in the source PDF.
 
-- **Private by construction.** Chat, retrieval, indexing, writing, comparison, and narration
-  run locally over your Zotero PDFs. The only optional online feature is the Discovery Map,
-  which can send selected papers' public DOIs to OpenAlex to fetch public reference metadata.
-- **Page-precise citations.** Answers cite the document and page, with the source passage on
-  click, so every claim is traceable.
-- **No GPU required.** Chat, retrieval, and audio narration all run on CPU. Quality scales
-  with the local model you choose — a bigger model is your quality dial.
+Downloads and documentation: https://aratbaris.github.io/inscien/
 
-## Prerequisites
+## What it does
 
-1. **Docker** — [Docker Desktop](https://www.docker.com/products/docker-desktop/) on macOS or
-   Windows, or Docker Engine + Compose on Linux.
-2. **Ollama, installed natively on your host** (not in Docker). Install from
-   [ollama.com](https://ollama.com), then pull a model:
-   ```bash
-   ollama pull qwen2.5:7b      # a good default; pull a larger model for higher quality
-   ```
-   Ollama must be running before you start the stack. Running it natively (rather than in a
-   container) is deliberate: it's how Ollama gets GPU acceleration — Metal on macOS, CUDA on
-   Linux/Windows. InScien itself never needs a GPU.
+- **Map.** A navigable atlas of your Zotero collection: papers placed by similarity and linked
+  by shared citations, so you can see the shape of a literature at a glance. The Map needs no
+  model and runs offline.
+- **Narrate.** Turn a paper into a spoken-audio narration. A model you connect writes the
+  script; a local CPU voice ([Kokoro](https://github.com/thewh1teagle/kokoro-onnx), Apache-2.0)
+  reads it aloud and saves an mp3 you can replay. No GPU required.
+- **Local-first and private.** InScien reads your Zotero library read-only through a private
+  snapshot and never modifies it. Nothing leaves your machine except, optionally, the text you
+  send to your own cloud model, or public DOI lookups when you build a citation map.
+- **Page-precise.** References point back to the exact page in the source PDF, so anything is
+  verifiable in a click.
 
-No NVIDIA GPU, no CUDA toolkit, and no API keys are required on any platform.
+## Download
 
-## Quickstart
+Grab the installer for your operating system from the
+[latest release](https://github.com/aratbaris/inscien/releases/latest):
+
+- Windows: the `..._x64-setup.exe`
+- macOS: the `..._aarch64.dmg`
+- Linux: the `.AppImage` or `.deb`
+
+Builds are unsigned for now, so you click past a SmartScreen (Windows) or Gatekeeper (macOS)
+warning on first launch. Full per-OS steps are in the
+[installation guide](https://aratbaris.github.io/inscien/getting-started/installation/).
+
+## Prerequisite: a model for narration
+
+The Map works with no model. Narration needs a model you connect, set in the app's Settings
+page (no environment variables, no config files):
+
+- **Local Ollama** (private and free). Install [Ollama](https://ollama.com) and pull a model,
+  for example `ollama pull llama3.1:8b`. InScien connects at `http://localhost:11434`.
+- **OpenAI** (higher quality, paid). Paste your API key. It is stored only on your machine.
+
+## First run
+
+1. Open Settings and set your Zotero data folder (the folder containing `zotero.sqlite` and
+   `storage/`).
+2. Connect a model (only needed for narration).
+3. Index a collection from the sidebar.
+4. Open the Map, or pick a paper and Narrate it. The first narration downloads the voice model
+   once (about 1 GB), with a progress bar.
+
+See the [quick start](https://aratbaris.github.io/inscien/getting-started/quick-start/) for
+the full walkthrough.
+
+## Run from source (development)
+
+InScien is a FastAPI backend plus a Next.js frontend plus an embedded Qdrant vector store. For
+development, run the stack with Docker:
 
 ```bash
-# 1. Point InScien at your Zotero data directory (the folder with zotero.sqlite + storage/).
-#    Copy the example env file and set ZOTERO_HOST_DIR — find the path in
-#    Zotero → Settings → Advanced → "Data Directory Location".
-cp .env.example .env
-#    then edit .env:  ZOTERO_HOST_DIR=/path/to/your/Zotero
-
-# 2. Start the stack (production: one container, prebuilt UI served by the backend)
-docker compose -f compose.prod.yaml up --build   # everything on http://localhost:8200
+cp .env.example .env          # set ZOTERO_HOST_DIR to your Zotero data folder
+docker compose up             # backend on :8200, frontend on :3200
 ```
 
-Then open **http://localhost:8200**, browse your Zotero collections in the sidebar, and
-**index** the items you want to search — InScien parses their PDFs and builds the search
-index. Re-index whenever you add papers in Zotero. Now start asking questions.
+A local Ollama must be running on the host for narration. To build the desktop installers
+yourself, see [PACKAGING.md](PACKAGING.md).
 
-> **Production vs. development.** `compose.prod.yaml` builds the Next.js UI to static files
-> and serves them from the FastAPI backend as a **single container on one port** — no Node at
-> runtime, no dev server, no CORS. For contributing, `docker compose up` (the default
-> `compose.yaml`) runs the hot-reload backend **and** the Next dev server in two containers
-> (backend :8200, frontend :3200) — use that when editing the frontend.
->
-> Full details — how the production image is built and served, the operational rules, data
-> model, and configuration — are in **[`RUNNING.md`](RUNNING.md)**.
+## Repository layout
 
-InScien mounts your Zotero folder **read-only** and reads through a private snapshot, so
-your live library is never modified.
+- `backend/` - FastAPI backend (retrieval, Zotero ingestion, Map, narration). Frozen and
+  bundled into the desktop app as a sidecar.
+- `frontend/` - Next.js UI (static export), reused as-is inside the desktop window.
+- `src-tauri/` - the Tauri desktop shell and the cross-OS release CI.
+- `site/` - the Astro + Starlight marketing and docs site (deployed to GitHub Pages).
 
-If Ollama isn't at the default `host.docker.internal:11434`, set `OLLAMA_BASE_URL` for the
-backend service (it expects the OpenAI-compatible endpoint, e.g.
-`http://host.docker.internal:11434/v1`).
+Architecture notes are in [CLAUDE.md](CLAUDE.md).
 
-## Choosing your model
+## Privacy
 
-InScien answers with whatever local model you select — that choice is your quality dial.
-Pull any model into Ollama (`ollama pull <model>`), then pick it from the in-app **Settings**
-page, which lists every model your local Ollama is serving. Small models are fast and light;
-larger models give better answers and narration. There is no cloud option by design.
-
-## Discovery Map and OpenAlex
-
-The **Discovery Map** is the one feature that can use the internet. When you choose to build
-a map, InScien sends each selected paper's public DOI to [OpenAlex](https://openalex.org/)
-to fetch public reference metadata, then caches the result locally. It does **not** send your
-PDFs, notes, Zotero database, chat history, extracted passages, or prompts.
-
-If you never build a Discovery Map, InScien's normal chat, indexing, comparison, writing, and
-narration workflows remain fully local.
-
-## Narration
-
-Ask InScien to read a paper aloud — type `/narrate <paper title>` in the chat. It parses the
-paper, drafts an explanatory script with your local model, and synthesizes an audio narration
-with [Kokoro](https://github.com/thewh1teagle/kokoro-onnx) (Apache-2.0) **on CPU**. The voice
-model is baked into the image, so narration works fully offline. Generation runs in the
-background; you keep working and the player appears when it's ready.
-
-## Platform support
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Linux    | ✅ | Docker Engine + native Ollama. |
-| macOS    | ✅ | Docker Desktop + native Ollama (Ollama uses Metal on the host). |
-| Windows  | ✅ | Docker Desktop + native Ollama. |
-
-The same `docker compose up` works identically everywhere — no GPU and no platform-specific
-setup beyond installing Docker and Ollama.
-
-## How it works
-
-- **Backend** (FastAPI, `backend/`) — a hand-rolled tool-calling agent loop
-  (`POST /api/agent/stream`, SSE) that retrieves from your library and streams a grounded
-  answer with inline `[n]` citations. Chat history is SQLite; narration runs here too.
-- **Retrieval** (`backend/services/lab/`) — hybrid dense (Qdrant) + BM25 retrieval over PDF
-  passages tagged with page + bounding box, so citations land on the right page.
-- **Discovery Map** (`backend/services/refs/`) — optional OpenAlex-backed reference mapping
-  over selected papers, using DOI-only lookups and a local cache.
-- **Ingestion** (`backend/services/zotero/`) — reads your Zotero library, then parses the
-  selected items' PDFs (`pdf_parser.py`, PyMuPDF, two-column reading-order aware) →
-  sub-page passages → embeddings → Qdrant. Additive: indexing more items never disturbs
-  what's already indexed.
-- **Frontend** (Next.js, `frontend/`) — the chat UI at `:3200`.
-
-See `CLAUDE.md` for the full architecture notes and `INSCIEN-BRIEF.md` for the design
-rationale.
-
-## Your data & backups
-
-Your source PDFs live in **your Zotero library** (mounted read-only — InScien never
-touches it). The only InScien-owned state is:
-
-- **`data/`** — all durable app state: the SQLite DB (chat history + settings), the search
-  index, and narration audio.
-
-The vector store runs **in-process** (qdrant-client local mode) and persists to
-`data/qdrant/` — there is no separate Qdrant container. Those vectors are a **rebuildable
-cache** — regenerated by re-indexing from Zotero — so they're not something you need to
-back up.
-
-The distinction: **your Zotero library is irreplaceable; the chat history + settings in
-`data/` are worth backing up; the index and vectors under `data/` are derived.**
-
-- **Back up** = your Zotero library (as you already do) plus the SQLite DB in `data/`
-  (chat history + settings).
-- `docker compose down` preserves everything in `data/`.
-- To rebuild the vectors from scratch, delete `data/qdrant/` (or use the in-app reset) and
-  re-index from Zotero.
-
-### Configuration
-Key env vars (set on the backend service in `compose.yaml`, overridable via `.env` —
-see `.env.example`): `OLLAMA_BASE_URL`, `ZOTERO_HOST_DIR`, `DATABASE_URL`, `KOKORO_VOICE`.
-Set `QDRANT_URL` only if you want to use a standalone Qdrant server instead of the embedded
-local store.
+Your PDFs stay in your Zotero library, mounted read-only. InScien's own state (a SQLite DB,
+the search index, and narration audio) lives under a single app-data folder. The only times
+anything leaves your machine are if you choose an OpenAI model (the text you send it) or build
+a citation map (public DOI lookups to [OpenAlex](https://openalex.org)). Everything else,
+including the Map and the local voice, is offline.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
