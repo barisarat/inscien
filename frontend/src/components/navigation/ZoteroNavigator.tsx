@@ -1,15 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import {
-  ChevronRight,
-  Library,
-  Loader2,
-  PanelLeftClose,
-  Play,
-  RefreshCw,
-  X,
-} from "lucide-react"
+import { ChevronRight, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
   fetchZoteroCollections,
@@ -28,24 +20,21 @@ import {
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "@/app/ask/workspace/WorkspaceProvider"
-import styles from "./ZoteroNavigator.module.css"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 
-export const NAV_WIDTH_EXPANDED = 268
-export const NAV_WIDTH_COLLAPSED = 44
+const sidebarGutterStyle = { paddingLeft: 16, paddingRight: 16 }
 
-type Props = {
-  collapsed: boolean
-  onToggleCollapse: () => void
-  leftOffset: number
-  topOffset?: number
-}
-
-export default function ZoteroNavigator({
-  collapsed,
-  onToggleCollapse,
-  leftOffset,
-  topOffset = 0,
-}: Props) {
+export default function ZoteroNavigator() {
   const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
 
@@ -99,7 +88,6 @@ export default function ZoteroNavigator({
     void load()
   }, [load])
 
-  // Remove index entries for papers deleted from Zotero (explicit, user-driven).
   const handleReconcile = useCallback(async () => {
     setReconciling(true)
     setReconcileMsg(null)
@@ -120,7 +108,6 @@ export default function ZoteroNavigator({
     }
   }, [load])
 
-  // Index the not-yet-indexed of `keys` in the background, then mark them indexed.
   const autoIndex = useCallback(
     async (keys: string[]) => {
       const fresh = keys.filter((k) => !indexedKeys.has(k))
@@ -175,7 +162,6 @@ export default function ZoteroNavigator({
     [loadItems],
   )
 
-  // Select (or clear) every indexable item in a collection, recursively.
   const selectCollection = useCallback(
     async (col: ZoteroCollection) => {
       try {
@@ -200,120 +186,90 @@ export default function ZoteroNavigator({
     [selectedKeys, toggle, autoIndex],
   )
 
-  if (collapsed) {
-    return (
-      <aside
-        className={styles.rail}
-        style={{ left: leftOffset, top: topOffset, width: NAV_WIDTH_COLLAPSED }}
-      >
-        <button
-          type="button"
-          className={styles.railBtn}
-          onClick={onToggleCollapse}
-          title="Open library"
-          aria-label="Open library"
-        >
-          <Library size={18} />
-        </button>
-        {selectedKeys.size > 0 ? <span className={styles.railCount}>{selectedKeys.size}</span> : null}
-      </aside>
-    )
-  }
-
   const renderCollection = (col: ZoteroCollection, depth: number) => {
     const isOpen = expanded.has(col.collectionID)
     const rows = items[col.collectionID]
+    const pad = (n: number) => ({ paddingLeft: n + depth * 12 })
     return (
       <div key={col.collectionID}>
-        <div className={styles.colRow} style={{ paddingLeft: 8 + depth * 12 }}>
-          <button
-            type="button"
-            className={styles.twisty}
+        <div className="flex items-center gap-0.5" style={pad(0)}>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="size-5 text-muted-foreground"
             onClick={() => toggleExpand(col)}
             aria-label={isOpen ? "Collapse" : "Expand"}
           >
-            <ChevronRight size={14} className={isOpen ? styles.twistyOpen : ""} />
-          </button>
-          <button type="button" className={styles.colName} onClick={() => selectCollection(col)} title="Select this collection">
-            <span className={styles.colLabel}>{col.name}</span>
+            <ChevronRight className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
+          </Button>
+          <SidebarMenuButton className="h-7 min-w-0 flex-1 pr-3" onClick={() => selectCollection(col)} title="Select this collection">
+            <span className="truncate">{col.name}</span>
             {typeof col.itemCount === "number" && col.itemCount > 0 ? (
-              <span className={styles.countBadge}>
-                {col.indexedCount ?? 0}/{col.itemCount}
-              </span>
+              <Badge variant="secondary" className="ml-auto max-w-[4.5rem]">{col.indexedCount ?? 0}/{col.itemCount}</Badge>
             ) : null}
-          </button>
+          </SidebarMenuButton>
         </div>
 
         {isOpen ? (
           <div>
             {col.children.map((child) => renderCollection(child, depth + 1))}
             {rows === undefined ? (
-              <div className={styles.itemMuted} style={{ paddingLeft: 26 + depth * 12 }}>
-                <Loader2 size={12} className={styles.spin} /> loading…
+              <div className="flex items-center gap-1.5 py-1 text-xs text-muted-foreground" style={pad(26)}>
+                <Loader2 size={12} className="animate-spin" /> loading
               </div>
             ) : rows.length === 0 && col.children.length === 0 ? (
-              <div className={styles.itemMuted} style={{ paddingLeft: 26 + depth * 12 }}>
-                no PDF items
-              </div>
+              <div className="py-1 text-xs text-muted-foreground" style={pad(26)}>no PDF items</div>
             ) : (
               rows.map((item) => {
                 const isSel = selectedKeys.has(item.itemKey)
                 const isIdx = indexedKeys.has(item.itemKey)
                 const isBusy = indexing.has(item.itemKey)
                 return (
-                  <label
+                  <div
                     key={item.itemKey}
-                    className={`${styles.itemRow} ${item.isBookDefaultOff ? styles.itemBook : ""}`}
-                    style={{ paddingLeft: 26 + depth * 12 }}
+                    className={`flex min-w-0 items-center gap-2 rounded-md py-1 pr-3 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
+                    style={pad(26)}
                     title={item.isBookDefaultOff ? "Book — opt in to index" : item.title ?? item.itemKey}
                   >
-                    <input
-                      type="checkbox"
-                      className={styles.check}
-                      checked={isSel}
-                      onChange={() => toggleItem(item)}
-                    />
-                    <span className={styles.itemTitle}>
+                    <Checkbox checked={isSel} onCheckedChange={() => toggleItem(item)} />
+                    <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => toggleItem(item)}>
                       {item.title ?? item.itemKey}
-                      {item.year ? <span className={styles.itemYear}> · {item.year}</span> : null}
-                    </span>
-                    {narrations.has(item.itemKey) ? (
-                      <button
-                        type="button"
-                        className={styles.playBtn}
-                        title="Play narration"
-                        aria-label="Play narration"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const n = narrations.get(item.itemKey)!
-                          setMode("narrate")
-                          setActiveArtifact({
-                            kind: "narration",
-                            docId: item.itemKey,
-                            jobId: n.jobId,
-                            title: n.title || item.title || "",
-                          })
-                        }}
-                      >
-                        <Play size={12} />
-                      </button>
-                    ) : null}
-                    {mapped.has(item.itemKey) ? (
-                      <span
-                        className={styles.mappedDot}
-                        title="Mapped — references fetched from OpenAlex"
-                        aria-label="Mapped"
-                      />
-                    ) : null}
-                    {isBusy ? (
-                      <Loader2 size={12} className={styles.spin} />
-                    ) : isIdx ? (
-                      <span className={styles.idxBadge}>indexed</span>
-                    ) : item.isBookDefaultOff ? (
-                      <span className={styles.bookBadge}>book</span>
-                    ) : null}
-                  </label>
+                      {item.year ? <span className="ml-1 text-muted-foreground">{item.year}</span> : null}
+                    </button>
+                    <div className="flex w-20 shrink-0 items-center justify-end gap-1">
+                      {narrations.has(item.itemKey) ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label="Play narration"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const n = narrations.get(item.itemKey)!
+                            setMode("narrate")
+                            setActiveArtifact({
+                              kind: "narration",
+                              docId: item.itemKey,
+                              jobId: n.jobId,
+                              title: n.title || item.title || "",
+                            })
+                          }}
+                        >
+                          <Play />
+                        </Button>
+                      ) : null}
+                      {mapped.has(item.itemKey) ? (
+                        <span className="size-1.5 shrink-0 rounded-full bg-primary" title="Mapped — references fetched from OpenAlex" />
+                      ) : null}
+                      {isBusy ? (
+                        <Loader2 size={12} className="shrink-0 animate-spin" />
+                      ) : isIdx ? (
+                        <Badge variant="secondary" className="px-1.5">indexed</Badge>
+                      ) : item.isBookDefaultOff ? (
+                        <Badge variant="outline" className="px-1.5">book</Badge>
+                      ) : null}
+                    </div>
+                  </div>
                 )
               })
             )}
@@ -324,118 +280,92 @@ export default function ZoteroNavigator({
   }
 
   return (
-    <aside className={styles.pane} style={{ left: leftOffset, top: topOffset, width: NAV_WIDTH_EXPANDED }}>
-      <header className={styles.head}>
-        <span className={styles.headTitle}>Library</span>
-        <div className={styles.headActions}>
-          <button type="button" className={styles.iconBtn} onClick={() => void load()} title="Refresh" aria-label="Refresh">
-            <RefreshCw size={14} />
-          </button>
-          <button type="button" className={styles.iconBtn} onClick={onToggleCollapse} title="Collapse" aria-label="Collapse">
-            <PanelLeftClose size={15} />
-          </button>
+    <Sidebar collapsible="offcanvas">
+      <SidebarHeader className="h-13 justify-center border-b py-0" style={sidebarGutterStyle}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">Library</span>
+          <Button variant="ghost" size="icon-sm" onClick={() => void load()} aria-label="Refresh">
+            <RefreshCw />
+          </Button>
         </div>
-      </header>
+      </SidebarHeader>
 
-      {selectedKeys.size > 0 ? (
-        <div className={styles.selected}>
-          <div className={styles.selectedHead}>
-            <button
-              type="button"
-              className={styles.selectedToggle}
-              onClick={() => setSelectedOpen((v) => !v)}
-              aria-expanded={selectedOpen}
-            >
-              <ChevronRight size={13} className={selectedOpen ? styles.selectedChevronOpen : styles.selectedChevron} />
-              Selected · {selectedKeys.size}
-              {indexing.size > 0 ? (
-                <span className={styles.scopeIndexing}> · indexing {indexing.size}…</span>
-              ) : null}
-            </button>
-            <button type="button" className={styles.clearBtn} onClick={clear}>
-              Clear
-            </button>
-          </div>
-          {selectedOpen ? (
-            <div className={styles.selectedList}>
-              {Array.from(selectedKeys).map((key) => (
-                <div key={key} className={styles.selectedRow}>
-                  <span className={styles.selectedTitle} title={titleByKey.get(key) || key}>
-                    {titleByKey.get(key) || key}
-                  </span>
-                  {indexing.has(key) ? <Loader2 size={11} className={styles.spin} /> : null}
-                  <button
-                    type="button"
-                    className={styles.selectedRemove}
-                    aria-label="Remove from selection"
-                    onClick={() => setMany([key], false)}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
+      <SidebarContent className="gap-0">
+        {selectedKeys.size > 0 ? (
+          <SidebarGroup className="border-b py-2" style={sidebarGutterStyle}>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs font-medium"
+                onClick={() => setSelectedOpen((v) => !v)}
+                aria-expanded={selectedOpen}
+              >
+                <ChevronRight size={13} className={`transition-transform ${selectedOpen ? "rotate-90" : ""}`} />
+                <span>{selectedKeys.size} selected</span>
+                {indexing.size > 0 ? <span className="text-muted-foreground">indexing {indexing.size}</span> : null}
+              </button>
+              <Button variant="ghost" size="xs" onClick={clear}>Clear</Button>
             </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className={styles.scopeBarMuted}>Select papers to scope your questions</div>
-      )}
-
-      {!loading && !error && libraryMissing ? (
-        <div className={styles.setupBanner}>
-          No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
-          <code>ZOTERO_HOST_DIR</code> to your Zotero data directory (the folder with{" "}
-          <code>zotero.sqlite</code> + <code>storage/</code>) and restart the stack — see the
-          README.
-        </div>
-      ) : null}
-
-      {!loading && !error && !liveConnected && !libraryMissing ? (
-        <div className={styles.staleBanner}>
-          Live Zotero library not connected — showing the last snapshot. New papers or
-          changes won’t appear until the mount is restored.
-        </div>
-      ) : null}
-
-      {persistError ? (
-        <div className={styles.staleBanner}>
-          Your selection won’t be saved across reloads — browser storage is blocked (e.g.
-          private mode).
-        </div>
-      ) : null}
-
-      <div className={styles.tree}>
-        {loading ? (
-          <div className={styles.itemMuted}><Loader2 size={12} className={styles.spin} /> loading library…</div>
-        ) : error ? (
-          <div className={styles.errorBox}>{error}</div>
-        ) : libraryMissing ? (
-          <div className={styles.itemMuted}>No library mounted yet.</div>
-        ) : collections.length === 0 ? (
-          <div className={styles.itemMuted}>No collections found.</div>
+            {selectedOpen ? (
+              <div className="mt-1 flex flex-col gap-0.5">
+                {Array.from(selectedKeys).map((key) => (
+                  <div key={key} className="flex min-w-0 items-center gap-1.5 text-xs">
+                    <span className="min-w-0 flex-1 truncate" title={titleByKey.get(key) || key}>
+                      {titleByKey.get(key) || key}
+                    </span>
+                    {indexing.has(key) ? <Loader2 size={11} className="animate-spin" /> : null}
+                    <Button variant="ghost" size="icon-xs" aria-label="Remove from selection" onClick={() => setMany([key], false)}>
+                      <X />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </SidebarGroup>
         ) : (
-          collections.map((col) => renderCollection(col, 0))
+          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>Select papers to scope your map</div>
         )}
-      </div>
+
+        {!loading && !error && libraryMissing ? (
+          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+            No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
+            <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack — see the README.
+          </div>
+        ) : null}
+        {!loading && !error && !liveConnected && !libraryMissing ? (
+          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+            Live Zotero library not connected — showing the last snapshot.
+          </div>
+        ) : null}
+        {persistError ? (
+          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+            Your selection won’t be saved across reloads — browser storage is blocked.
+          </div>
+        ) : null}
+
+        <SidebarGroup className="py-2" style={sidebarGutterStyle}>
+          {loading ? (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 size={12} className="animate-spin" /> loading library</div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">{error}</div>
+          ) : libraryMissing ? (
+            <div className="text-xs text-muted-foreground">No library mounted yet.</div>
+          ) : collections.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No collections found.</div>
+          ) : (
+            collections.map((col) => renderCollection(col, 0))
+          )}
+        </SidebarGroup>
+      </SidebarContent>
 
       {!loading && !error && !libraryMissing ? (
-        <div className={styles.footer}>
-          <button
-            type="button"
-            className={styles.footerAction}
-            onClick={() => void handleReconcile()}
-            disabled={reconciling}
-            title="Remove index entries for papers deleted from Zotero"
-          >
-            {reconciling ? (
-              <><Loader2 size={12} className={styles.spin} /> Cleaning up…</>
-            ) : (
-              "Clean up removed items"
-            )}
-          </button>
-          {reconcileMsg ? <div className={styles.footerNote}>{reconcileMsg}</div> : null}
-        </div>
+        <SidebarFooter className="items-center border-t p-3">
+          <Button variant="ghost" size="sm" className="justify-center" onClick={() => void handleReconcile()} disabled={reconciling}>
+            {reconciling ? (<><Loader2 size={12} className="animate-spin" /> Cleaning up</>) : "Clean up removed items"}
+          </Button>
+          {reconcileMsg ? <div className="px-2 text-xs text-muted-foreground">{reconcileMsg}</div> : null}
+        </SidebarFooter>
       ) : null}
-    </aside>
+    </Sidebar>
   )
 }

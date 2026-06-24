@@ -91,6 +91,7 @@ export default function PdfDocument({
   // reset the per-citation highlight state (match flag + stale miss note).
   useEffect(() => {
     matchedRef.current = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowMiss(false)
     if (numPages > 0) {
       const id = window.setTimeout(scrollToTarget, 60)

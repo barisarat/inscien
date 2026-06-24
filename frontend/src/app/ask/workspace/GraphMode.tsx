@@ -6,35 +6,46 @@ import { Loader2 } from "lucide-react"
 import {
   fetchCitingGraph,
   fetchDiscoveryGraph,
+  fetchFusedMap,
   fetchIndexedKeys,
-  fetchSimilarityMap,
   fetchZoteroCollections,
   fetchZoteroIndexableKeys,
   getGraphFetch,
-  graphFetchStatus,
   startCitingFetch,
   startGraphFetch,
   type DiscoveryGraph,
-  type SimilarityMap,
+  type FusedMap,
+  type GraphNode,
   type ZoteroCollection,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
-import { useSkillJob, JobProgress, JobError } from "./skillJob"
-import GraphView, { type GraphLayout } from "../components/GraphView"
-import compareStyles from "../components/Compare.module.css"
-import styles from "./Workspace.module.css"
+import { useSkillJob } from "./skillJob"
+import GraphView, { type AtlasEdge, type AtlasNode, type ColorBy, type Emphasis, type GraphLayout } from "../components/GraphView"
+import NodeInspector, { type Neighbor } from "../components/NodeInspector"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Toggle } from "@/components/ui/toggle"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-type Lens = "similarity" | "citations"
-type Facet = "references" | "citedby" | "gaps"
-type Phase = "need-more" | "checking" | "confirm" | "fetching" | "ready" | "error"
+// Citation "emphasis" over the same stable map: highlight what your papers cite / what cites
+// them / both / the shared gaps. "none" is the pure fused Atlas.
+type Connections = "none" | "cite" | "cited" | "both" | "gaps"
+type Scope = { kind: "selection" } | { kind: "library" } | { kind: "collection"; id: number; name: string }
 
-const GAP_MIN = 2 // a reference cited by ≥2 of your selected papers is a "gap" worth surfacing
+const GAP_MIN = 2 // an external cited by ≥ this many of your papers is a "gap" worth surfacing
 
 const DISCLOSURE =
-  "The citation map uses OpenAlex (open scholarly data). It sends each selected paper's DOI " +
-  "to fetch its public references/citers — nothing else leaves your machine. This is the only " +
-  "feature that needs internet."
+  "Citation overlays use OpenAlex (open scholarly data) — each selected paper's DOI fetches its " +
+  "public references/citers. This is the only feature that reaches the internet."
+
+const workspaceRowStyle = { paddingLeft: 24, paddingRight: 24 }
 
 function Chips<T extends string>({ value, options, onChange }: {
   value: T
@@ -42,32 +53,78 @@ function Chips<T extends string>({ value, options, onChange }: {
   onChange: (v: T) => void
 }) {
   return (
-    <div className={compareStyles.scopeChips}>
+    <div className="flex shrink-0 items-center gap-1.5">
       {options.map((o) => (
-        <button
+        <Toggle
           key={o.v}
-          type="button"
-          className={`${compareStyles.scopeChip} ${value === o.v ? compareStyles.scopeChipOn : ""}`}
-          onClick={() => onChange(o.v)}
+          size="sm"
+          variant="outline"
+          className="bg-background"
+          pressed={value === o.v}
+          onPressedChange={(pressed) => {
+            if (pressed) onChange(o.v)
+          }}
         >
           {o.label}
-        </button>
+        </Toggle>
       ))}
     </div>
   )
 }
 
-type Scope = { kind: "selection" } | { kind: "library" } | { kind: "collection"; id: number; name: string }
+const ownedNode = (n: FusedMap["nodes"][number]): AtlasNode => ({
+  id: n.id,
+  label: n.label,
+  type: "owned",
+  cluster: n.cluster,
+  clusterLabel: n.clusterLabel,
+  collection: n.collection,
+  authors: n.authors,
+  year: n.year,
+  date: n.date,
+  doi: n.doi,
+  globalCitedBy: n.globalCitedBy,
+  mapped: n.mapped,
+})
+
+const externalNode = (n: GraphNode): AtlasNode => ({
+  id: n.id,
+  label: n.label,
+  type: "external",
+  year: n.year,
+  date: n.date,
+  citedBy: n.citedBy,
+  globalCitedBy: n.globalCitedBy,
+  doi: n.doi,
+})
 
 export default function GraphMode() {
   const { selectedKeys } = useZoteroSelection()
-  const { openPdf } = useWorkspace()
+  const { setMany, clear } = useZoteroSelection()
+  const { openPdf, setMode } = useWorkspace()
 
   const [scope, setScope] = useState<Scope>({ kind: "selection" })
   const [scopeKeys, setScopeKeys] = useState<string[]>([])
   const [collections, setCollections] = useState<{ id: number; name: string; depth: number }[]>([])
 
-  // Flat list of collections (with depth) for the scope dropdown.
+  // View controls.
+  const [connections, setConnections] = useState<Connections>("none")
+  const [colorBy, setColorBy] = useState<ColorBy>("cluster")
+  const [showClusters, setShowClusters] = useState(true)
+  const [layout, setLayout] = useState<GraphLayout>("network")
+
+  // Data.
+  const [fused, setFused] = useState<FusedMap | null>(null)
+  const [phase, setPhase] = useState<"loading" | "ready" | "empty" | "error">("loading")
+  const [error, setError] = useState<string | null>(null)
+  const [refsLayer, setRefsLayer] = useState<DiscoveryGraph | null>(null)
+  const [citedLayer, setCitedLayer] = useState<DiscoveryGraph | null>(null)
+  const [layerBusy, setLayerBusy] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const { newRun, isStale, track } = useSkillJob()
+
+  // Flat collection list for the scope dropdown.
   useEffect(() => {
     void (async () => {
       try {
@@ -82,7 +139,7 @@ export default function GraphMode() {
         walk(collections, 0)
         setCollections(flat)
       } catch {
-        /* navigator shows the real error; scope dropdown just stays empty */
+        /* navigator surfaces the real error */
       }
     })()
   }, [])
@@ -96,9 +153,7 @@ export default function GraphMode() {
         return
       }
       try {
-        const res = scope.kind === "library"
-          ? await fetchIndexedKeys()
-          : await fetchZoteroIndexableKeys(scope.id)
+        const res = scope.kind === "library" ? await fetchIndexedKeys() : await fetchZoteroIndexableKeys(scope.id)
         if (!cancelled) setScopeKeys([...res.itemKeys].sort())
       } catch {
         if (!cancelled) setScopeKeys([])
@@ -110,64 +165,25 @@ export default function GraphMode() {
   const itemKeys = scopeKeys
   const keysKey = itemKeys.join(",")
 
-  const [lens, setLens] = useState<Lens>("similarity")
-  const [facet, setFacet] = useState<Facet>("references")
-  const [phase, setPhase] = useState<Phase>("checking")
-  const [simData, setSimData] = useState<SimilarityMap | null>(null)
-  const [unmapped, setUnmapped] = useState<string[]>([])
-  const [noDoiCount, setNoDoiCount] = useState(0)
-  const [data, setData] = useState<DiscoveryGraph | null>(null)
-  const [layout, setLayout] = useState<GraphLayout>("network")
-  const { progress, error, setError, newRun, isStale, track } = useSkillJob()
-
-  // Build + show whichever citation graph the facet calls for (assumes items are mapped).
-  const showCitations = useCallback(async (keys: string[], f: Facet, t: number) => {
-    if (f === "citedby") {
-      setPhase("fetching")
-      const { jobId } = await startCitingFetch(keys) // idempotent: instant if already cached
-      await track(t, jobId, getGraphFetch, {
-        onDone: async () => {
-          const g = await fetchCitingGraph(keys)
-          if (isStale(t)) return
-          setData(g)
-          setPhase("ready")
-        },
-        onError: () => setPhase("error"),
-        fallbackError: "Fetch failed.",
-      })
-      return
-    }
-    const g = await fetchDiscoveryGraph(keys) // references + gaps share this
-    if (isStale(t)) return
-    setData(g)
-    setPhase("ready")
-  }, [track, isStale])
-
-  // Re-run on selection / lens / facet change.
+  // Build the fused Atlas whenever the scope changes. Pure read — no OpenAlex gate.
   useEffect(() => {
     const t = newRun()
-    setData(null)
-    setSimData(null)
+    setFused(null)
+    setRefsLayer(null)
+    setCitedLayer(null)
+    setSelectedId(null)
+    setError(null)
     if (itemKeys.length === 0) {
-      setPhase("need-more")
+      setPhase("empty")
       return
     }
-    setPhase("checking")
+    setPhase("loading")
     void (async () => {
       try {
-        if (lens === "similarity") {
-          const map = await fetchSimilarityMap(itemKeys)
-          if (isStale(t)) return
-          setSimData(map)
-          setPhase("ready")
-          return
-        }
-        const status = await graphFetchStatus(itemKeys)
+        const map = await fetchFusedMap(itemKeys)
         if (isStale(t)) return
-        setUnmapped(status.unmapped)
-        setNoDoiCount(status.noDoi.length)
-        if (status.unmapped.length > 0) setPhase("confirm")
-        else await showCitations(itemKeys, facet, t)
+        setFused(map)
+        setPhase("ready")
       } catch (e) {
         if (isStale(t)) return
         setError(String(e))
@@ -175,246 +191,278 @@ export default function GraphMode() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysKey, lens, facet])
+  }, [keysKey])
 
-  // Confirm action: map (and for cited-by, fetch citers) then render.
-  const build = useCallback(async () => {
+  // Lazily fetch (and resolve) the citation satellite layer the chosen Connections mode needs.
+  const needRefs = connections === "cite" || connections === "both" || connections === "gaps"
+  const needCited = connections === "cited" || connections === "both"
+  useEffect(() => {
+    if (phase !== "ready" || itemKeys.length === 0) return
     const t = newRun()
-    setPhase("fetching")
-    try {
-      const { jobId } = facet === "citedby" ? await startCitingFetch(itemKeys) : await startGraphFetch(unmapped)
-      await track(t, jobId, getGraphFetch, {
-        onDone: async () => {
-          const g = facet === "citedby" ? await fetchCitingGraph(itemKeys) : await fetchDiscoveryGraph(itemKeys)
-          if (isStale(t)) return
-          setData(g)
-          setPhase("ready")
-        },
-        onError: () => setPhase("error"),
-        fallbackError: "Fetch failed.",
-      })
-    } catch (e) {
-      if (isStale(t)) return
-      setError(String(e))
-      setPhase("error")
+    void (async () => {
+      try {
+        if (needRefs && !refsLayer) {
+          setLayerBusy(true)
+          const { jobId } = await startGraphFetch(itemKeys)
+          await track(t, jobId, getGraphFetch, {
+            onDone: async () => {
+              const g = await fetchDiscoveryGraph(itemKeys)
+              if (!isStale(t)) setRefsLayer(g)
+            },
+            fallbackError: "Citation fetch failed.",
+          })
+        }
+        if (needCited && !citedLayer) {
+          setLayerBusy(true)
+          const { jobId } = await startCitingFetch(itemKeys)
+          await track(t, jobId, getGraphFetch, {
+            onDone: async () => {
+              const g = await fetchCitingGraph(itemKeys)
+              if (!isStale(t)) setCitedLayer(g)
+            },
+            fallbackError: "Citation fetch failed.",
+          })
+        }
+      } catch {
+        /* the base map stays usable; overlay just won't show */
+      } finally {
+        if (!isStale(t)) setLayerBusy(false)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connections, phase, keysKey, refsLayer, citedLayer])
+
+  // Compose the rendered graph: the owned fused core, plus external satellites for the active mode.
+  const composed = useMemo<{ nodes: AtlasNode[]; edges: AtlasEdge[] }>(() => {
+    if (!fused) return { nodes: [], edges: [] }
+    const nodes: AtlasNode[] = fused.nodes.map(ownedNode)
+    const edges: AtlasEdge[] = fused.edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      weight: e.weight,
+      direct: e.citation.direct,
+      direction: e.citation.direction,
+    }))
+    const seen = new Set(nodes.map((n) => n.id))
+
+    const addLayer = (layer: DiscoveryGraph | null, keepExternal?: (n: GraphNode) => boolean) => {
+      if (!layer) return
+      const keep = new Set<string>()
+      for (const n of layer.nodes) {
+        if (n.type !== "external") continue
+        if (keepExternal && !keepExternal(n)) continue
+        keep.add(n.id)
+        if (!seen.has(n.id)) { seen.add(n.id); nodes.push(externalNode(n)) }
+      }
+      for (const e of layer.edges) {
+        if (keep.has(e.from) || keep.has(e.to)) edges.push({ source: e.from, target: e.to, direct: true, external: true })
+      }
     }
-  }, [facet, unmapped, itemKeys, newRun, isStale, track, setError])
 
-  // --- Similarity adaptation ------------------------------------------------
-  const simGraph = useMemo(
-    () =>
-      simData
-        ? {
-            nodes: simData.nodes.map((n) => ({ id: n.id, label: n.label, type: "owned" as const, collection: n.collection })),
-            edges: simData.edges.map((e) => ({ from: e.source, to: e.target })),
-          }
-        : null,
-    [simData],
-  )
-  const themes = useMemo(
-    () => Array.from(new Set((simData?.nodes ?? []).map((n) => n.clusterLabel).filter(Boolean))) as string[],
-    [simData],
-  )
+    if (connections === "cite" || connections === "both") addLayer(refsLayer)
+    if (connections === "gaps") addLayer(refsLayer, (n) => (n.citedBy ?? 0) >= GAP_MIN)
+    if (connections === "cited" || connections === "both") addLayer(citedLayer)
+    return { nodes, edges }
+  }, [fused, connections, refsLayer, citedLayer])
 
-  // Gaps = owned + the influential references (cited by ≥ GAP_MIN of your papers).
-  const citationData = useMemo(() => {
-    if (!data) return null
-    if (facet !== "gaps") return data
-    const nodes = data.nodes.filter((n) => n.type === "owned" || (n.citedBy ?? 0) >= GAP_MIN)
-    const keep = new Set(nodes.map((n) => n.id))
-    return { ...data, nodes, edges: data.edges.filter((e) => keep.has(e.from) && keep.has(e.to)) }
-  }, [data, facet])
+  // Emphasis: the citation modes highlight their satellite edges/nodes; the fused ground dims.
+  const emphasis = useMemo<Emphasis>(() => {
+    if (connections === "none") return null
+    const ids = new Set<string>()
+    for (const e of composed.edges) {
+      if (e.external) { ids.add(e.source); ids.add(e.target) }
+    }
+    if (ids.size === 0) return null
+    return { nodeIds: ids, isActiveEdge: (e) => !!e.external }
+  }, [connections, composed.edges])
+
+  // Strongest neighbours of the selected node (for the inspect panel) — derived from edges.
+  const neighbors = useMemo<Neighbor[]>(() => {
+    if (!selectedId) return []
+    const labelOf = new Map(composed.nodes.map((n) => [n.id, n.label]))
+    const out: Neighbor[] = []
+    for (const e of composed.edges) {
+      const other = e.source === selectedId ? e.target : e.target === selectedId ? e.source : null
+      if (other && labelOf.has(other)) out.push({ id: other, label: labelOf.get(other)!, weight: e.weight ?? (e.direct ? 1 : 0.3), direct: !!e.direct })
+    }
+    out.sort((a, b) => b.weight - a.weight)
+    return out.slice(0, 6)
+  }, [selectedId, composed])
+
+  const selectedNode = useMemo(() => composed.nodes.find((n) => n.id === selectedId) ?? null, [composed.nodes, selectedId])
+
+  const narrate = useCallback((n: AtlasNode) => {
+    // Narrate operates on the single selected paper — make this the selection, then jump to Narrate.
+    clear()
+    setMany([n.id], true)
+    setMode("narrate")
+  }, [clear, setMany, setMode])
 
   const scopeControl = (
-    <div className={compareStyles.scopeChips}>
-      <button
-        type="button"
-        className={`${compareStyles.scopeChip} ${scope.kind === "selection" ? compareStyles.scopeChipOn : ""}`}
-        onClick={() => setScope({ kind: "selection" })}
+    <div className="flex min-w-0 flex-wrap items-center gap-1">
+      <Toggle
+        size="sm"
+        variant="outline"
+        className="bg-background"
+        pressed={scope.kind === "selection"}
+        onPressedChange={(pressed) => {
+          if (pressed) setScope({ kind: "selection" })
+        }}
       >
         Selection
-      </button>
-      <button
-        type="button"
-        className={`${compareStyles.scopeChip} ${scope.kind === "library" ? compareStyles.scopeChipOn : ""}`}
-        onClick={() => setScope({ kind: "library" })}
+      </Toggle>
+      <Toggle
+        size="sm"
+        variant="outline"
+        className="bg-background"
+        pressed={scope.kind === "library"}
+        onPressedChange={(pressed) => {
+          if (pressed) setScope({ kind: "library" })
+        }}
       >
         Library
-      </button>
-      <select
-        className={compareStyles.scopeChip}
+      </Toggle>
+      <Select
         value={scope.kind === "collection" ? String(scope.id) : ""}
-        onChange={(e) => {
-          const id = Number(e.target.value)
+        onValueChange={(v) => {
+          const id = Number(v)
           const c = collections.find((x) => x.id === id)
           if (c) setScope({ kind: "collection", id, name: c.name })
         }}
       >
-        <option value="">Collection…</option>
-        {collections.map((c) => (
-          <option key={c.id} value={c.id}>{`${" ".repeat(c.depth * 2)}${c.name}`}</option>
-        ))}
-      </select>
+        <SelectTrigger size="sm" className="w-[170px] max-w-full">
+          <SelectValue placeholder="Collection" />
+        </SelectTrigger>
+        <SelectContent>
+          {collections.map((c) => (
+            <SelectItem key={c.id} value={String(c.id)}>{`${"  ".repeat(c.depth)}${c.name}`}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 
-  const lensChips = <Chips<Lens> value={lens} options={[{ v: "similarity", label: "Similarity" }, { v: "citations", label: "Citations" }]} onChange={setLens} />
-  const facetChips = (
-    <Chips<Facet>
-      value={facet}
-      options={[{ v: "references", label: "References" }, { v: "citedby", label: "Cited-by" }, { v: "gaps", label: "Gaps" }]}
-      onChange={setFacet}
-    />
-  )
-
-  // --- Empty selection ------------------------------------------------------
-  if (phase === "need-more") {
+  // --- empty / loading / error ---------------------------------------------
+  if (phase === "empty") {
     return (
-      <div className={styles.placeholder}>
-        <h2 className={styles.placeholderTitle}>Map</h2>
-        <p className={styles.placeholderHint}>
-          Select papers in the library to map them — or choose a whole collection / your whole
-          library below. Map by content similarity (themes) or by citations (OpenAlex).
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+        <h2 className="text-lg font-medium">Map</h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Select papers in the library to map them — or choose a whole collection / your whole library
+          below. The Atlas clusters your papers by content <em>and</em> citations; overlay what they cite.
         </p>
         {scopeControl}
       </div>
     )
   }
-
-  // --- Checking / loading ---------------------------------------------------
-  if (phase === "checking") {
+  if (phase === "loading") {
     return (
-      <div className={styles.placeholder}>
-        <p className={styles.placeholderHint}>
-          <Loader2 size={14} className={styles.spin} /> {lens === "similarity" ? "Building the map…" : "Checking coverage…"}
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+        <p className="max-w-md text-sm text-muted-foreground">
+          <Loader2 size={14} className="animate-spin" /> Building the Atlas
         </p>
       </div>
     )
   }
-
-  // --- Similarity (ready) ---------------------------------------------------
-  if (lens === "similarity" && phase === "ready" && simGraph) {
+  if (phase === "error") {
     return (
-      <div className={styles.modeFill}>
-        <div className={styles.modeHeader}>
-          <span className={styles.modeHeaderTitle}>
-            Similarity · {simGraph.nodes.length} papers
-            {themes.length > 0 ? ` · ${themes.length} themes` : ""}
-            {simData && simData.missing.length > 0 ? ` · ${simData.missing.length} not indexed` : ""}
-          </span>
-          <div className={compareStyles.scopeChips}>
-            {scopeControl}
-            {lensChips}
-          </div>
-        </div>
-        {simGraph.nodes.length === 0 ? (
-          <div className={styles.placeholder}>
-            <p className={styles.placeholderHint}>
-              The selected papers aren’t indexed yet — index them in the library first.
-            </p>
-          </div>
-        ) : (
-          <>
-            {themes.length > 0 ? (
-              <div className={compareStyles.confirmPapers}>
-                {themes.map((t) => (
-                  <span key={t} className={compareStyles.confirmPaper}>{t}</span>
-                ))}
-              </div>
-            ) : null}
-            <div className={styles.graphBody}>
-              <GraphView data={simGraph} layout="network" onOpenNode={(n) => openPdf({ sourceId: n.id, title: n.title, page: 1 })} />
-            </div>
-          </>
-        )}
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+        <h2 className="text-lg font-medium">Map</h2>
+        <p className="max-w-md text-sm text-muted-foreground">Couldn’t build the map. {error}</p>
+        {scopeControl}
       </div>
     )
   }
 
-  // --- Citations (ready) ----------------------------------------------------
-  if (lens === "citations" && phase === "ready" && citationData) {
-    const owned = citationData.nodes.filter((n) => n.type === "owned").length
-    const external = citationData.nodes.length - owned
-    const noun = facet === "citedby" ? "citing" : facet === "gaps" ? "gaps" : "referenced"
-    return (
-      <div className={styles.modeFill}>
-        <div className={styles.modeHeader}>
-          <span className={styles.modeHeaderTitle}>
-            Citations · {owned} owned · {external} {noun}
-            {citationData.noDoi.length > 0 ? ` · no DOI ${citationData.noDoi.length}` : ""}
-          </span>
-          <div className={compareStyles.scopeChips}>
-            {scopeControl}
-            {facetChips}
-            {(["network", "timeline"] as GraphLayout[]).map((l) => (
-              <button
-                key={l}
-                type="button"
-                className={`${compareStyles.scopeChip} ${layout === l ? compareStyles.scopeChipOn : ""}`}
-                onClick={() => setLayout(l)}
-              >
-                {l === "network" ? "Network" : "Timeline"}
-              </button>
-            ))}
-            {lensChips}
+  const clusters = fused?.clusters.filter((c) => c.label && c.size >= 2) ?? []
+  const ownedCount = fused?.nodes.length ?? 0
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b bg-background">
+        <div className="flex min-h-13 flex-wrap items-center justify-between gap-4 py-2" style={workspaceRowStyle}>
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="font-medium">Atlas</span>
+            <span className="shrink-0 text-muted-foreground">{ownedCount} papers</span>
+            {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
+            {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
+            {layerBusy ? (
+              <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
+                <Loader2 size={12} className="animate-spin" /> citations
+              </span>
+            ) : null}
           </div>
+          <div className="flex min-w-0 justify-end">{scopeControl}</div>
         </div>
-        {external === 0 ? (
-          <div className={styles.placeholder}>
-            <p className={styles.placeholderHint}>
-              {facet === "gaps"
-                ? `No references are shared by ≥${GAP_MIN} of your selected papers.`
-                : "No OpenAlex links found for the selected papers (they may lack DOIs)."}
-            </p>
-          </div>
-        ) : (
-          <div className={styles.graphBody}>
-            <GraphView
-              key={`${facet}-${layout}`}
-              data={citationData}
-              layout={layout}
-              onOpenNode={(n) => {
-                if (n.type === "external") {
-                  if (n.doi) window.open(`https://doi.org/${n.doi}`, "_blank", "noopener,noreferrer")
-                } else {
-                  openPdf({ sourceId: n.id, title: n.title, page: 1 })
-                }
-              }}
+        <div className="flex min-h-13 items-center gap-7 overflow-x-auto border-t py-2.5" style={workspaceRowStyle}>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">Overlay</span>
+            <Chips<Connections>
+              value={connections}
+              options={[
+                { v: "none", label: "Map" },
+                { v: "cite", label: "References" },
+                { v: "cited", label: "Cited by" },
+                { v: "both", label: "Both" },
+                { v: "gaps", label: "Gaps" },
+              ]}
+              onChange={setConnections}
             />
           </div>
-        )}
-      </div>
-    )
-  }
-
-  // --- Citations: confirm / fetch / error (centered card) -------------------
-  return (
-    <div className={styles.modeCentered}>
-      <div className={compareStyles.confirm}>
-        <div className={compareStyles.confirmHead}>
-          <span className={compareStyles.confirmTitle}>
-            Fetch from OpenAlex for {unmapped.length} paper{unmapped.length === 1 ? "" : "s"}
-          </span>
-          {lensChips}
+          <Separator orientation="vertical" className="h-6 shrink-0" />
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">Color</span>
+            <Chips<ColorBy>
+              value={colorBy}
+              options={[{ v: "cluster", label: "Clusters" }, { v: "collection", label: "Collections" }]}
+              onChange={setColorBy}
+            />
+            <Toggle size="sm" variant="outline" className="bg-background" pressed={showClusters} onPressedChange={setShowClusters}>
+              Hulls
+            </Toggle>
+          </div>
+          <Separator orientation="vertical" className="h-6 shrink-0" />
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">Layout</span>
+            <Chips<GraphLayout>
+              value={layout}
+              options={[{ v: "network", label: "Network" }, { v: "timeline", label: "Timeline" }]}
+              onChange={setLayout}
+            />
+          </div>
         </div>
-        <div className={compareStyles.confirmLabel}>{DISCLOSURE}</div>
-        {noDoiCount > 0 ? (
-          <div className={compareStyles.confirmLabel}>
-            {noDoiCount} selected paper{noDoiCount === 1 ? " has" : "s have"} no DOI and won&apos;t be mapped.
-          </div>
-        ) : null}
-        {phase === "fetching" ? (
-          <JobProgress progress={progress} fallback="Fetching from OpenAlex…" />
-        ) : phase === "error" ? (
-          <JobError error={error} onRetry={build} />
-        ) : (
-          <div className={compareStyles.confirmActions}>
-            <button type="button" className={compareStyles.runBtn} onClick={build}>
-              Build map
-            </button>
-          </div>
-        )}
+
+        {connections !== "none" ? <div className="border-t py-1.5 text-xs text-muted-foreground" style={workspaceRowStyle}>{DISCLOSURE}</div> : null}
       </div>
+
+      {ownedCount === 0 ? (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+          <p className="max-w-md text-sm text-muted-foreground">The selected papers aren’t indexed yet — index them in the library first.</p>
+        </div>
+      ) : (
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <GraphView
+            data={composed}
+            layout={layout}
+            colorBy={colorBy}
+            showHulls={showClusters}
+            emphasis={emphasis}
+            selectedId={selectedId}
+            layoutKey={keysKey}
+            onSelectNode={(n) => setSelectedId(n.id)}
+          />
+          {selectedNode ? (
+            <NodeInspector
+              node={selectedNode}
+              neighbors={neighbors}
+              onClose={() => setSelectedId(null)}
+              onOpenPdf={(n) => openPdf({ sourceId: n.id, title: n.label, page: 1 })}
+              onNarrate={narrate}
+              onSelectNeighbor={(id) => setSelectedId(id)}
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

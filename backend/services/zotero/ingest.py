@@ -50,6 +50,7 @@ from services.state_guard import (
     end_reset,
     ensure_current_generation,
 )
+from services.refs import refstore
 from services.zotero.reader import item_metadata, live_item_keys, resolve_pdf_path
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,27 @@ def _paper_payload(item_key, meta):
         "itemType": meta.get("itemType"),
         "doi": meta.get("doi"),
     }
+
+
+def _enrich_citations(item_key, meta, generation):
+    """Best-effort OpenAlex enrichment folded into indexing so the Map has citation signals
+    (direct citation + bibliographic coupling) without a separate fetch gate.
+
+    Network I/O (`fetch_work`) runs OUTSIDE the derived-state lock; only the small cache write
+    is guarded. Reference *resolution* (titles/years for the external satellite layer) stays
+    lazy on the `/api/graph` endpoints — the fused map only needs the raw referenced ids. Any
+    failure is swallowed by the caller: the item is already fully indexed and the map simply
+    degrades to a semantic-only node for it (the citation endpoints still retry on demand).
+    """
+    cache = refstore._load()
+    if refstore._is_mapped(cache.get(item_key)):
+        return  # already have a current OpenAlex record
+    rec = refstore._map_record(meta, (meta or {}).get("doi"))  # does the fetch_work round-trip
+    with DERIVED_STATE_LOCK:
+        ensure_current_generation(generation)
+        cache = refstore._load()  # reload under lock so we don't clobber a concurrent writer
+        cache[item_key] = rec
+        refstore._save(cache)
 
 
 def build_chunks_for_item(item_key, pdf_path, meta):
@@ -204,6 +226,17 @@ def index_items(item_keys, progress=None):
                     _flush_manifest()
                 indexed += 1
                 emit("indexing", pct, f"{(meta.get('title') or key)[:48]} — {len(chunks)} chunks")
+
+                # Best-effort: fetch this paper's OpenAlex record so the Map's citation signals
+                # are ready without a separate fetch step. Fail-open — the item is already
+                # indexed; a network/lookup failure must never mark it failed.
+                try:
+                    emit("indexing", pct, f"{(meta.get('title') or key)[:40]} — fetching citations")
+                    _enrich_citations(key, meta, generation)
+                except DerivedStateReset:
+                    raise
+                except Exception:
+                    logger.exception("index_items: citation enrichment failed for %s (non-fatal)", key)
             except DerivedStateReset:
                 db.rollback()
                 emit("cancelled", pct, "indexing cancelled by reset")
@@ -262,12 +295,9 @@ def reset_index():
             # Clear job records first so queued work cannot start after reset begins. Active
             # work has an older generation and will fail before its next guarded commit.
             from services.zotero.jobs import clear_jobs as _clear_zotero
-            from services.compare.jobs import clear_jobs as _clear_compare
-            from services.writeup.jobs import clear_jobs as _clear_writeup
             from services.narration.jobs import clear_jobs as _clear_narration
             from services.refs.fetch_jobs import clear_jobs as _clear_graph_fetch
-            from services.verify.jobs import clear_jobs as _clear_verify
-            for clear in (_clear_zotero, _clear_compare, _clear_writeup, _clear_narration, _clear_graph_fetch, _clear_verify):
+            for clear in (_clear_zotero, _clear_narration, _clear_graph_fetch):
                 try:
                     clear()
                 except Exception:

@@ -16,15 +16,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.db import engine, Base, ensure_app_settings_columns
-from routers.agent import router as agent_router
 from routers.chat import router as chat_router
 from routers.settings import router as settings_router
 from routers.papers import router as papers_router
 from routers.graph import router as graph_router
 from routers.narrate import router as narrate_router
-from routers.compare import router as compare_router
-from routers.write import router as write_router
-from routers.verify import router as verify_router
 from routers.map import router as map_router
 from routers.zotero import router as zotero_router
 import os
@@ -40,18 +36,12 @@ async def lifespan(app: FastAPI):
     # already-existing table (e.g. llm_provider on a returning user's app_settings).
     ensure_app_settings_columns()
     # In-process jobs don't survive a restart — fail any that were mid-run.
-    from services.compare.jobs import recover_stale as recover_compare
-    from services.writeup.jobs import recover_stale as recover_writeup
     from services.narration.jobs import recover_stale as recover_narration
     from services.zotero.jobs import recover_stale as recover_zotero
     from services.refs.fetch_jobs import recover_stale as recover_graph_fetch
-    from services.verify.jobs import recover_stale as recover_verify
-    recover_compare()
-    recover_writeup()
     recover_narration()
     recover_zotero()
     recover_graph_fetch()
-    recover_verify()
     yield
 
 
@@ -85,15 +75,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(agent_router)
 app.include_router(chat_router)
 app.include_router(settings_router)
 app.include_router(papers_router)
 app.include_router(graph_router)
 app.include_router(narrate_router)
-app.include_router(compare_router)
-app.include_router(write_router)
-app.include_router(verify_router)
 app.include_router(map_router)
 app.include_router(zotero_router)
 

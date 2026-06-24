@@ -3,9 +3,8 @@
 import { ExternalLink, PanelRightClose, X } from "lucide-react"
 
 import { API_BASE } from "@/lib/api"
+import { Button, buttonVariants } from "@/components/ui/button"
 import PdfDocument from "./PdfDocument"
-import styles from "./PdfViewerPanel.module.css"
-
 
 export type PdfTab = {
   id: string // = sourceId; one tab per document
@@ -31,72 +30,68 @@ export default function PdfViewerPanel({
   onClosePanel: () => void
 }) {
   const activePdf = tabs.find((t) => t.id === activeTabId) ?? tabs[0]
-  const fileUrl = activePdf
-    ? `${API_BASE}/api/papers/${encodeURIComponent(activePdf.sourceId)}`
-    : ""
+  const fileUrl = activePdf ? `${API_BASE}/api/papers/${encodeURIComponent(activePdf.sourceId)}` : ""
 
   return (
-    <aside className={styles.panel}>
-      <div className={styles.tabBar}>
-        <div className={styles.tabs}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`${styles.tab} ${tab.id === activePdf?.id ? styles.tabActive : ""}`}
-              onClick={() => onSelectTab(tab.id)}
-              title={tab.title}
-            >
-              <span className={styles.tabTitle}>{tab.title}</span>
-              <span
-                className={styles.tabClose}
-                role="button"
-                tabIndex={-1}
-                aria-label={`Close ${tab.title}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCloseTab(tab.id)
-                }}
+    <aside className="flex h-full min-h-0 flex-col border-l bg-card">
+      <div className="flex h-11 shrink-0 items-center gap-1 border-b px-2">
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+          {tabs.map((tab) => {
+            const active = tab.id === activePdf?.id
+            return (
+              <div
+                key={tab.id}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-sm ${
+                  active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
+                }`}
               >
-                <X size={13} strokeWidth={2} aria-hidden />
-              </span>
-            </button>
-          ))}
+                <button type="button" className="max-w-[12rem] truncate" onClick={() => onSelectTab(tab.id)} title={tab.title}>
+                  {tab.title}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Close ${tab.title}`}
+                  className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onCloseTab(tab.id)
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )
+          })}
         </div>
-        <div className={styles.panelActions}>
+        <div className="flex shrink-0 items-center gap-0.5">
           {fileUrl ? (
             <a
-              className={styles.panelAction}
               href={`${fileUrl}#page=${activePdf?.targetPage ?? 1}`}
               target="_blank"
               rel="noopener noreferrer"
-              title="Open in a browser tab"
               aria-label="Open in a browser tab"
+              className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
             >
-              <ExternalLink size={15} strokeWidth={1.5} aria-hidden />
+              <ExternalLink />
             </a>
           ) : null}
-          <button
-            type="button"
-            className={styles.panelAction}
-            onClick={onClosePanel}
-            title="Close panel"
-            aria-label="Close panel"
-          >
-            <PanelRightClose size={16} strokeWidth={1.5} aria-hidden />
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={onClosePanel} aria-label="Close panel">
+            <PanelRightClose />
+          </Button>
         </div>
       </div>
 
-      {activePdf ? (
-        <PdfDocument
-          key={activePdf.id}
-          fileUrl={fileUrl}
-          targetPage={activePdf.targetPage}
-          passage={activePdf.passage}
-          bbox={activePdf.bbox}
-        />
-      ) : null}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {activePdf ? (
+          <PdfDocument
+            key={activePdf.id}
+            fileUrl={fileUrl}
+            targetPage={activePdf.targetPage}
+            passage={activePdf.passage}
+            bbox={activePdf.bbox}
+          />
+        ) : null}
+      </div>
     </aside>
   )
 }

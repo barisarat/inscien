@@ -1,17 +1,15 @@
 "use client"
 
-import { MessageSquare, Columns3, FileText, AudioLines, Network, BadgeCheck } from "lucide-react"
-import styles from "./ActionBar.module.css"
+import { AudioLines, Network } from "lucide-react"
 
-export type WorkspaceMode = "ask" | "verify" | "compare" | "write" | "narrate" | "graph"
+import { Toggle } from "@/components/ui/toggle"
 
-const MODES: { mode: WorkspaceMode; label: string; Icon: typeof MessageSquare }[] = [
-  { mode: "ask", label: "Ask", Icon: MessageSquare },
-  { mode: "verify", label: "Verify", Icon: BadgeCheck },
-  { mode: "compare", label: "Compare", Icon: Columns3 },
-  { mode: "write", label: "Write", Icon: FileText },
-  { mode: "narrate", label: "Narrate", Icon: AudioLines },
+// InScien is two transformation modes: Map (the default) and Narrate.
+export type WorkspaceMode = "narrate" | "graph"
+
+const MODES: { mode: WorkspaceMode; label: string; Icon: typeof Network }[] = [
   { mode: "graph", label: "Map", Icon: Network },
+  { mode: "narrate", label: "Narrate", Icon: AudioLines },
 ]
 
 type Props = {
@@ -21,18 +19,21 @@ type Props = {
 
 export default function ActionBar({ mode, onChange }: Props) {
   return (
-    <nav className={styles.bar} aria-label="Workspace mode">
+    <nav className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1 shadow-xs" aria-label="Workspace mode">
       {MODES.map(({ mode: m, label, Icon }) => (
-        <button
+        <Toggle
           key={m}
-          type="button"
-          className={`${styles.tab} ${mode === m ? styles.tabActive : ""}`}
+          size="sm"
+          pressed={mode === m}
+          className="border border-transparent data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:shadow-xs"
           aria-current={mode === m ? "page" : undefined}
-          onClick={() => onChange(m)}
+          onPressedChange={(pressed) => {
+            if (pressed) onChange(m)
+          }}
         >
           <Icon size={15} />
-          <span className={styles.tabLabel}>{label}</span>
-        </button>
+          {label}
+        </Toggle>
       ))}
     </nav>
   )

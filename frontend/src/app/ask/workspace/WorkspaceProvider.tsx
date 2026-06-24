@@ -2,22 +2,12 @@
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 
-import { saveChatTurn, type CompareResult, type VerifyResult } from "@/lib/api"
 import { type PdfTab } from "../components/PdfViewerPanel"
 import { type WorkspaceMode } from "./ActionBar"
 
-// A finished run loaded from History, handed to its mode to render directly.
+// A finished narration handed to NarrateMode to play directly.
 export type ActiveArtifact =
-  | {
-      kind: "comparison"
-      sessionId: number | null
-      result: CompareResult
-      papers: { docId: string; title: string }[]
-      dimensions: string[]
-    }
-  | { kind: "writeup"; sessionId: number | null; answer: string; citations: unknown[] }
   | { kind: "narration"; docId: string; jobId: string; title: string }
-  | { kind: "verify"; sessionId: number | null; result: VerifyResult }
   | null
 
 interface WorkspaceValue {
@@ -30,14 +20,12 @@ interface WorkspaceValue {
   selectPdfTab: (id: string) => void
   closePdfTab: (id: string) => void
   closePdfPanel: () => void
-  // Persist a finished run to History (a typed ChatSession). Returns its session id.
-  saveRun: (kind: "comparison" | "writeup" | "verify", title: string, widget: Record<string, unknown>) => Promise<number | null>
   activeArtifact: ActiveArtifact
   setActiveArtifact: (a: ActiveArtifact) => void
 }
 
 const WorkspaceContext = createContext<WorkspaceValue>({
-  mode: "ask",
+  mode: "graph",
   setMode: () => {},
   openPdf: () => {},
   pdfTabs: [],
@@ -46,7 +34,6 @@ const WorkspaceContext = createContext<WorkspaceValue>({
   selectPdfTab: () => {},
   closePdfTab: () => {},
   closePdfPanel: () => {},
-  saveRun: async () => null,
   activeArtifact: null,
   setActiveArtifact: () => {},
 })
@@ -100,23 +87,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setActivePdfTabId(null)
   }, [])
 
-  const saveRun = useCallback(
-    async (kind: "comparison" | "writeup" | "verify", title: string, widget: Record<string, unknown>) => {
-      try {
-        const { sessionId } = await saveChatTurn({
-          title,
-          userContent: title,
-          assistantContent: "",
-          widgets: [{ kind, ...widget }],
-        })
-        return sessionId
-      } catch {
-        return null
-      }
-    },
-    [],
-  )
-
   return (
     <WorkspaceContext.Provider
       value={{
@@ -129,7 +99,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         selectPdfTab,
         closePdfTab,
         closePdfPanel,
-        saveRun,
         activeArtifact,
         setActiveArtifact,
       }}

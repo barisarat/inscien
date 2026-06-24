@@ -60,6 +60,19 @@ def _is_mapped(rec):
     return bool(rec) and rec.get("status") == "mapped" and rec.get("v") == SCHEMA_VERSION
 
 
+def _as_ref(entry):
+    """Normalize a references/citingWorks entry to a metadata dict.
+
+    Index-time enrichment writes raw OpenAlex id strings (resolution is lazy); a fully fetched
+    record has resolved dicts. Accept either so the graph builders never crash on unresolved
+    ids — an unresolved external just renders with its id until a fetch resolves its title."""
+    if isinstance(entry, dict):
+        return entry
+    if isinstance(entry, str):
+        return {"id": entry}
+    return {}
+
+
 def mapped_keys():
     """itemKeys with a resolved OpenAlex record (drives the navigator 'mapped' dot)."""
     return [k for k, rec in _load().items() if _is_mapped(rec)]
@@ -240,9 +253,8 @@ def citing_graph(item_keys):
             "year": meta.get("year"), "date": rec.get("date"),
             "globalCitedBy": rec.get("citedBy"), "doi": rec.get("doi"),
         })
-        for c in rec.get("citingWorks", []):
-            if not isinstance(c, dict):
-                continue  # unresolved raw id — skip (resolved on next fetch)
+        for raw in rec.get("citingWorks", []):
+            c = _as_ref(raw)
             cid = c.get("id")
             if not cid:
                 continue
@@ -291,7 +303,8 @@ def discovery_graph(item_keys):
             "globalCitedBy": rec.get("citedBy"),
             "doi": rec.get("doi"),
         })
-        for ref in rec.get("references", []):
+        for raw in rec.get("references", []):
+            ref = _as_ref(raw)
             rid = ref.get("id")
             if not rid:
                 continue

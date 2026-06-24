@@ -5,7 +5,8 @@ A working note to resume from in a new session. For the original product brief s
 and for how to run it [`RUNNING.md`](RUNNING.md). This file captures **where the product is
 now, why, what changed recently, what's legacy, and what's next.**
 
-_Last updated: 2026-06 (Map milestone shipped, v1 — operational, untuned)._
+_Last updated: 2026-06 (Atlas rebuild — fused graph + Louvain, citations-in-indexing, inspect
+panel; code-complete, backend awaiting in-container verification)._
 
 ---
 
@@ -49,23 +50,31 @@ to your library is the edge).
 
 ## 3. What's implemented (current map of the app)
 
-### Map (the milestone — code-complete, **untuned**)
-- **Indexing foundation** — `services/zotero/ingest.py`: `MAX_INDEX_PAGES` (default 15) caps
-  per-doc parsing so books/long items don't bloat the index; each item gets a **paper-level
-  vector** = mean of its chunk vectors, in a new Qdrant collection `inscien_lab_paper_vectors`.
-  `services/lab/qdrant_store.py`: `ensure/recreate/upsert/get/query_similar/backfill` paper
-  vectors (backfill = mean of existing chunk vectors, **no reparse**).
-- **Similarity lens** — `services/map/similarity.py` + `routers/map.py`
-  (`POST /api/map/similarity`): kNN graph over paper vectors, connected-component clusters, one
-  bounded LLM label per cluster. Nodes colored by Zotero collection.
-- **Citations lens** — `services/refs/`: `openalex.py` `fetch_citing_works` (forward `cites:`),
-  `refstore.py` `fetch_citing_items` + `citing_graph` + `_map_record` (`GAP_MIN`, `CITING_LIMIT`),
-  `fetch_jobs.py` `start_citing_job`, `routers/graph.py` `/citing-fetch` + `/citing`. Gaps = a
-  frontend filter over References (externals cited by ≥`GAP_MIN` of your papers).
-- **Scope + grouping** — `routers/zotero.py` `/indexed-keys` (whole library), `reader.py`
-  `item_primary_collection` (item→collection for color). Frontend: `GraphMode.tsx` (lens + facet
-  + scope chips), `GraphView.tsx` (`collectionColor`). Map is the **default tab**
-  (`WorkspaceProvider` initial mode `graph`, relabeled "Map" in `ActionBar`).
+### Map = the Atlas (one fused graph; clustering rebuilt)
+- **The fused graph** — `services/map/fused.py` + `routers/map.py` (`POST /api/map`): ONE weighted
+  graph over the owned papers blending three signals — **semantic** (paper-vector cosine, one numpy
+  matmul), **direct citation** (A's references contain B, by OpenAlex id/DOI), and **bibliographic
+  coupling** (shared refs / shared citers, normalized, hub-skipped). Fusion is additive
+  (`w = W_SEM·sem + W_DIRECT·direct + W_COUPLE·couple`; semantic leads, citation rescues). Clusters
+  come from **numpy Louvain** (`_communities`, multilevel modularity, deterministic) over that same
+  graph — replacing the old connected-components blob/shatter. One bounded LLM label per cluster.
+  Edges carry **decomposed** components (`semantic`/`coupling`/`citation`) so the frontend can do
+  emphasis modes. (Old `services/map/similarity.py` + `/api/map/similarity` deleted.)
+- **Indexing foundation** — `services/zotero/ingest.py`: `MAX_INDEX_PAGES` (default 15) caps per-doc
+  parsing; each item gets a **paper-level vector** (mean of chunk vectors) in
+  `inscien_lab_paper_vectors`; and now a **best-effort OpenAlex fetch** (`_enrich_citations`,
+  fail-open, network outside the lock) so the Atlas's citation signals are ready with **no fetch
+  gate**. `services/lab/qdrant_store.py`: paper-vector ensure/recreate/upsert/get/backfill (no
+  reparse).
+- **Citation satellite layer** — still `services/refs/` (`discovery_graph`/`citing_graph`, now
+  tolerant of unresolved raw-id refs via `_as_ref`). In the UI these are **emphasis overlays** on
+  the same stable map (Connections: Cites → / ← Cited by / Both / Gaps), fetched + resolved lazily.
+- **Frontend (one stable canvas)** — `GraphView.tsx` (react-force-graph-2d): layout computed once
+  and **pinned** (positions survive emphasis/satellite toggles), cluster **hulls + labels**, color
+  by cluster/collection, emphasis dim/highlight, node-click **inspect panel** (`NodeInspector.tsx`:
+  metadata + Open PDF / Narrate / Open DOI — Narrate selects the paper and jumps to the Narrate
+  tab). `GraphMode.tsx` is the **Scope → Connections → View** rail. Map is the default tab; only
+  Map + Narrate are shown in `ActionBar` now (ask/verify/compare/write hidden, backends kept).
 
 ### Narrate
 Unchanged: `services/narration/` (Kokoro CPU TTS), `NarrateMode.tsx`. **Good, leave as-is.**
@@ -112,27 +121,33 @@ now to de-risk):
 
 ---
 
-## 6. Known weak point + next steps
+## 6. Status + next steps
 
-**Status: Map milestone is _done_ (built + operational) but _not tuned_.** User's read: "useful
-but not fully ready." It's a tuning + visualization gap, not a value gap.
+**Status: the Atlas rebuild is _code-complete_ and passes frontend typecheck/lint; backend awaits
+in-container verification** (no Python in the authoring env). The old clustering weak link
+(connected-components → blob/shatter) is replaced by fused-graph Louvain; citations are folded into
+indexing and into the same map as emphasis overlays; the node inspect panel ties Map → Narrate.
 
-**The weak link:** clustering. Connected-components over a thresholded kNN graph is crude (merges
-into one blob or shatters into singletons).
+**Verify in the container** (see §7 of the implementation, summarized here):
+- `python scripts/check_fused_map.py` — Louvain finds 2 communities on a bridged 2-group graph
+  (the old code merged to one), is deterministic, and a low-cosine directly-cited pair is rescued.
+- Index a DOI item → confirm a `mapped` record lands in `data/openalex.json` during the job and
+  `/api/map` renders citation edges with **no** confirm gate; index offline → still succeeds.
+- e2e: collection → floating labeled clusters; Hulls/Clusters toggles; Connections overlays don't
+  move the ground; click → inspect panel; Narrate this → Narrate tab; only Map + Narrate tabs.
 
 **Next steps, prioritized:**
-1. **Clustering rewrite** — cluster in **embedding space** (k-means / HDBSCAN on the paper
-   vectors in `services/map/similarity.py`) instead of graph components; color/label **by
-   cluster**; tune `SIM_CUTOFF` / `SIM_K`. _Highest leverage._
-2. **Visualization** — render cluster labels/hulls **on the canvas** (`GraphView.tsx`), use edge
-   weight in the force layout, collection-color as a toggle. The "see the territory" payoff.
-3. **Scale/perf** — whole-library readability + faster first-open backfill.
-4. **Citations polish** — make **Gaps** actionable (open/add-to-Zotero affordance).
-5. **Two-mode finalization** — execute the §5 retirement.
+1. **Tune the fusion + Louvain** on the real library against the eval rubric — `W_SEM/W_DIRECT/
+   W_COUPLE`, `SEM_FLOOR/SEM_KNN`, `EDGE_KEEP`, `RESOLUTION`, `HUB_FRAC` in `services/map/fused.py`.
+2. **Scale/perf** — `fused_map` calls `item_metadata` per node (N snapshot reads); batch it for
+   Library scope. Cap edges/labels for very large scopes.
+3. **Citations polish** — make **Gaps** actionable (open/add-to-Zotero affordance).
+4. **Two-mode finalization** — the tabs are hidden; execute the §5 backend retirement when ready.
 
-**Eval rubric** (how to judge "useful"): does opening the Map *tell you something or help you
-act*? Concrete tests: known-related papers land in the same cluster; not a hairball nor dust;
-labels match; gap papers look like ones you should own; Library scope stays readable/fast.
+**Eval rubric** (how to judge "useful"): does opening the Atlas *tell you something or help you
+act*? Known-related papers land in the same cluster; not a hairball nor dust; labels match;
+citation overlays reveal real structure; gap papers look like ones you should own; Library stays
+readable.
 
 ---
 

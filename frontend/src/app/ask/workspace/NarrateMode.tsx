@@ -1,17 +1,20 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { AudioLines } from "lucide-react"
+import { AudioLines, Download, Loader2 } from "lucide-react"
 
 import { activeNarration, getNarration, listNarrations, listPapers, startNarration, API_BASE } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import { useSkillJob, JobProgress, JobError } from "./skillJob"
-import compareStyles from "../components/Compare.module.css"
-import styles from "./Workspace.module.css"
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 type Phase = "idle" | "running" | "done" | "error"
+
+const workspaceRowStyle = { paddingLeft: 24, paddingRight: 24 }
+const bodyStyle = { paddingLeft: 24, paddingRight: 24, paddingTop: 32, paddingBottom: 24 }
 
 export default function NarrateMode() {
   const { selectedKeys } = useZoteroSelection()
@@ -25,8 +28,6 @@ export default function NarrateMode() {
   const [jobId, setJobId] = useState("")
   const { progress, setProgress, error, setError, newRun, isStale, track } = useSkillJob()
 
-  // Poll an existing narration job to completion. Shared by a fresh run and by
-  // re-attaching to a job that was already running when this mode (re)mounted.
   const attach = useCallback((id: string, token: number) =>
     track(token, id, getNarration, {
       onProgress: (s) => { if (s.title) setTitle(s.title) },
@@ -35,7 +36,6 @@ export default function NarrateMode() {
       fallbackError: "Narration failed.",
     }), [track])
 
-  // Reset (and cancel any in-flight poll) when the selected paper changes; resolve title.
   useEffect(() => {
     const token = newRun()
     setPhase("idle")
@@ -47,8 +47,6 @@ export default function NarrateMode() {
         const [{ papers }, { job }] = await Promise.all([listPapers(), activeNarration(docId)])
         if (isStale(token)) return
         setTitle(papers.find((p) => p.docId === docId)?.title || "")
-        // Re-attach to a narration started before navigating away (resume its progress)
-        // rather than offering to regenerate it.
         if (job) {
           setJobId(job.id)
           if (job.title) setTitle(job.title)
@@ -57,8 +55,6 @@ export default function NarrateMode() {
           void attach(job.id, token)
           return
         }
-        // Otherwise auto-detect an already-generated narration so we play it instead of
-        // regenerating.
         const { items } = await listNarrations()
         if (isStale(token)) return
         const existing = items.find((n) => n.docId === docId)
@@ -90,77 +86,82 @@ export default function NarrateMode() {
     }
   }, [docId, attach, newRun, isStale, setError])
 
-  if (loaded) {
-    const audioUrl = `${API_BASE}/api/narrate/${encodeURIComponent(loaded.jobId)}/audio`
+  const audioBlock = (id: string, autoPlay = false) => {
+    const url = `${API_BASE}/api/narrate/${encodeURIComponent(id)}/audio`
     return (
-      <div className={styles.modeCentered}>
-        <div className={compareStyles.confirm}>
-          <div className={compareStyles.confirmHead}>
-            <span className={compareStyles.confirmTitle}>{loaded.title || "Narration"}</span>
-          </div>
-          <div className={styles.audioWrap}>
-            <audio className={styles.audio} controls autoPlay src={audioUrl} />
-            <a className={styles.linkBtn} href={audioUrl} download>
-              Download mp3
-            </a>
-          </div>
-        </div>
+      <div className="flex flex-col gap-3">
+        <audio className="w-full" controls autoPlay={autoPlay} src={url} />
+        <a href={url} download className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Download /> Download mp3
+        </a>
       </div>
     )
   }
 
-  if (!docId) {
-    return (
-      <div className={styles.placeholder}>
-        <h2 className={styles.placeholderTitle}>Narrate</h2>
-        <p className={styles.placeholderHint}>
-          Select exactly one paper in the library to generate an audio narration.
-        </p>
-        <p className={styles.placeholderMeta}>{keys.length} selected</p>
+  const status =
+    loaded || phase === "done" ? "Ready" : phase === "running" ? "Generating" : phase === "error" ? "Error" : "Ready to generate"
+
+  const header = (
+    <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b py-2" style={workspaceRowStyle}>
+      <div className="min-w-0">
+        <h2 className="text-sm font-medium">Narrate</h2>
       </div>
-    )
-  }
+      {phase !== "idle" ? (
+        <Badge variant={phase === "error" ? "destructive" : "secondary"} className="shrink-0">
+          {phase === "running" ? <Loader2 className="animate-spin" /> : null}
+          {status}
+        </Badge>
+      ) : null}
+    </div>
+  )
+
+  const cardTitle = loaded ? loaded.title || "Narration" : docId ? title || "Selected paper" : "Select one paper"
+  const cardDescription = loaded
+    ? "Saved narration is ready to play."
+    : docId
+      ? "Generate a spoken-audio narration of this paper."
+      : "Choose exactly one library item to prepare narration."
+
+  const cardContent = loaded ? (
+    audioBlock(loaded.jobId, true)
+  ) : !docId ? (
+    <p className="text-sm text-muted-foreground">{keys.length} selected</p>
+  ) : phase === "running" ? (
+    <JobProgress
+      progress={progress}
+      fallback="Generating audio"
+      minPct={2}
+      defaultPct={0}
+      note="Generating audio in the background (a few minutes) — you can keep working."
+    />
+  ) : phase === "done" ? (
+    audioBlock(jobId)
+  ) : phase === "error" ? (
+    <JobError error={error} onRetry={run} />
+  ) : (
+    <div className="flex flex-col items-start gap-5">
+      <p className="text-sm text-muted-foreground">
+        The narration job runs in the background and will be saved for replay.
+      </p>
+      <Button onClick={run}>
+        <AudioLines /> Generate narration
+      </Button>
+    </div>
+  )
 
   return (
-    <div className={styles.modeCentered}>
-      <div className={compareStyles.confirm}>
-        <div className={compareStyles.confirmHead}>
-          <span className={compareStyles.confirmTitle}>{title || "Selected paper"}</span>
+    <div className="flex h-full min-h-0 flex-col">
+      {header}
+      <div className="min-h-0 flex-1 overflow-auto" style={bodyStyle}>
+        <div className="max-w-lg">
+          <Card>
+            <CardHeader>
+              <CardTitle>{cardTitle}</CardTitle>
+              <CardDescription>{cardDescription}</CardDescription>
+            </CardHeader>
+            <CardContent>{cardContent}</CardContent>
+          </Card>
         </div>
-
-        {phase === "running" ? (
-          <JobProgress
-            progress={progress}
-            fallback="Generating audio…"
-            minPct={2}
-            defaultPct={0}
-            note="Generating audio in the background (a few minutes) — you can keep working."
-          />
-        ) : phase === "done" ? (
-          <div className={styles.audioWrap}>
-            <audio className={styles.audio} controls src={`${API_BASE}/api/narrate/${encodeURIComponent(jobId)}/audio`} />
-            <a
-              className={styles.linkBtn}
-              href={`${API_BASE}/api/narrate/${encodeURIComponent(jobId)}/audio`}
-              download
-            >
-              Download mp3
-            </a>
-          </div>
-        ) : phase === "error" ? (
-          <JobError error={error} onRetry={run} />
-        ) : (
-          <>
-            <div className={compareStyles.confirmStatus}>
-              Generate a spoken-audio narration of this paper.
-            </div>
-            <div className={compareStyles.confirmActions}>
-              <button type="button" className={compareStyles.runBtn} onClick={run}>
-                <AudioLines size={14} /> Generate narration
-              </button>
-            </div>
-          </>
-        )}
       </div>
     </div>
   )

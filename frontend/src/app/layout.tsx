@@ -1,12 +1,11 @@
 import type { Metadata } from "next"
-import { Plus_Jakarta_Sans, Source_Code_Pro } from "next/font/google"
+import { Source_Code_Pro, Geist } from "next/font/google"
 import "./globals.css"
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-})
+const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
 const sourceCodePro = Source_Code_Pro({
   subsets: ["latin"],
@@ -27,9 +26,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} ${sourceCodePro.variable}`}>
+    <html lang="en" className={cn(sourceCodePro.variable, "font-sans", geist.variable)}>
       <body>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster />
       </body>
     </html>
   )

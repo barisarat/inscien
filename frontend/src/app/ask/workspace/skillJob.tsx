@@ -4,8 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 import { pollJob, type JobStatus } from "@/lib/pollJob"
-import compareStyles from "../components/Compare.module.css"
-import styles from "./Workspace.module.css"
+import { Button } from "@/components/ui/button"
 
 export interface SkillProgress {
   stage?: string
@@ -88,14 +87,14 @@ export function JobProgress({
 }) {
   const pct = Math.max(minPct, progress.progress ?? defaultPct)
   return (
-    <div className={styles.runProgress}>
-      <div className={styles.runStage}>
-        <Loader2 size={13} className={styles.spin} /> {progress.detail || progress.stage || fallback}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 size={13} className="animate-spin" /> {progress.detail || progress.stage || fallback}
       </div>
-      <div className={styles.bar}>
-        <div className={styles.barFill} style={{ width: `${pct}%` }} />
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+        <div className="h-full bg-primary transition-[width]" style={{ width: `${pct}%` }} />
       </div>
-      {note ? <div className={compareStyles.confirmStatus}>{note}</div> : null}
+      {note ? <div className="text-xs text-muted-foreground">{note}</div> : null}
     </div>
   )
 }
@@ -111,11 +110,11 @@ export function JobError({
   retryLabel?: string
 }) {
   return (
-    <div className={styles.errorBox}>
+    <div className="flex flex-col items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
       {error || "Something went wrong."}
-      <button type="button" className={styles.linkBtn} onClick={onRetry}>
+      <Button type="button" size="sm" variant="outline" onClick={onRetry}>
         {retryLabel}
-      </button>
+      </Button>
     </div>
   )
 }

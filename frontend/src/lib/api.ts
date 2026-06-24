@@ -90,21 +90,6 @@ export async function deleteChatSession(id: number): Promise<{ ok: boolean }> {
   return authedAction(`/api/chat/sessions/${id}`, "DELETE")
 }
 
-// Persist a completed background-skill turn (compare/write/narrate) into a chat session,
-// creating it when sessionId is null. Returns the session id so the client can adopt it.
-export interface ChatTurnIn {
-  sessionId?: number | null
-  title?: string
-  userContent: string
-  assistantContent?: string
-  citations?: unknown[]
-  widgets?: unknown[]
-}
-
-export async function saveChatTurn(body: ChatTurnIn): Promise<{ sessionId: number }> {
-  return authedAction("/api/chat/turn", "POST", body)
-}
-
 // ---- Settings (provider/model + display name) ----
 
 // Local by default; "openai" is opt-in. The OpenAI key is env-only (OPENAI_API_KEY) — never
@@ -293,25 +278,49 @@ export interface DiscoveryGraph {
   noDoi: string[]
 }
 
-// ---- Map · Similarity lens (content map over your own papers, embedding-based) ----
+// ---- Map · the Atlas (one fused graph over your own papers) ----
+// Blends semantic similarity + direct citation + bibliographic coupling, clustered via Louvain.
 
-export interface SimilarityNode {
+export interface FusedNode {
   id: string
   label: string
   type: "owned"
-  cluster?: number | null
+  cluster: number
   clusterLabel?: string | null
   collection?: string | null
+  authors?: string[]
+  year?: string | number | null
+  date?: string | null
+  doi?: string | null
+  globalCitedBy?: number | null
+  mapped: boolean // false = has a vector but no OpenAlex record yet (semantic-only node)
 }
 
-export interface SimilarityMap {
-  nodes: SimilarityNode[]
-  edges: { source: string; target: string; weight: number }[]
+export interface FusedEdge {
+  source: string
+  target: string
+  weight: number
+  semantic: number // rescaled cosine contribution (0 if below the floor)
+  coupling: number // bibliographic-coupling / co-citation contribution
+  citation: { direct: boolean; direction: "AtoB" | "BtoA" | "both" | null }
+}
+
+export interface FusedCluster {
+  id: number
+  label?: string | null
+  size: number
+}
+
+export interface FusedMap {
+  nodes: FusedNode[]
+  edges: FusedEdge[]
+  clusters: FusedCluster[]
   missing: string[] // in-scope items with no paper vector yet (not indexed)
+  unmapped: string[] // mapped on the graph but lacking an OpenAlex record (semantic-only)
 }
 
-export async function fetchSimilarityMap(itemKeys: string[]): Promise<SimilarityMap> {
-  return authedAction("/api/map/similarity", "POST", { itemKeys })
+export async function fetchFusedMap(itemKeys: string[]): Promise<FusedMap> {
+  return authedAction("/api/map", "POST", { itemKeys })
 }
 
 export interface GraphFetchStatus {
@@ -362,154 +371,4 @@ export async function fetchCitingGraph(itemKeys: string[]): Promise<DiscoveryGra
 // itemKeys that already have a cached OpenAlex map (navigator 'mapped' dot).
 export async function mappedKeys(): Promise<{ keys: string[] }> {
   return authedGet("/api/graph/mapped-keys")
-}
-
-// ---- Compare (cross-paper grounded comparison table, background job) ----
-
-// One grounded cell: a short value bound to a page-precise citation (or "Not reported"
-// with no citation when the paper doesn't state it).
-export interface CompareCitation {
-  title: string
-  url?: string
-  sourceId?: string
-  page?: number | null
-  passage?: string
-  bbox?: number[] | null
-}
-
-export interface CompareCell {
-  value: string
-  citation: CompareCitation | null
-}
-
-export interface CompareResult {
-  dimensions: string[]
-  papers: { docId: string; title: string }[]
-  // cells[docId][dimension] -> CompareCell
-  cells: Record<string, Record<string, CompareCell>>
-  synthesis: string
-}
-
-export interface CompareStatus {
-  id: string
-  status: "queued" | "running" | "done" | "error"
-  stage?: string
-  progress?: number
-  detail?: string
-  error?: string
-  result?: CompareResult | null
-}
-
-// Phase 1: fast, synchronous — propose the comparison dimensions for the user to confirm.
-export async function proposeCompare(docIds: string[]): Promise<{ dimensions: string[] }> {
-  return authedAction("/api/compare/propose", "POST", { docIds })
-}
-
-// Phase 2: kick off the long per-cell grounded extraction as a background job.
-export async function startCompare(
-  docIds: string[],
-  dimensions: string[],
-): Promise<{ jobId: string }> {
-  return authedAction("/api/compare", "POST", { docIds, dimensions })
-}
-
-export async function getCompare(jobId: string): Promise<CompareStatus> {
-  return authedGet(`/api/compare/${encodeURIComponent(jobId)}`)
-}
-
-// ---- Verify (claim-checking against the selected papers, background job) ----
-
-export type VerifyVerdict = "supports" | "contradicts" | "mixed" | "not_addressed"
-
-// One page-pinned evidence passage, tagged with the stance it supports.
-export interface VerifyEvidence {
-  stance: "supporting" | "contradicting"
-  title: string
-  url?: string
-  sourceId?: string
-  sourceType?: string
-  contentMode?: string
-  page?: number | null
-  passage?: string
-  bbox?: number[] | null
-}
-
-export interface VerifyPaper {
-  docId: string
-  title: string
-  verdict: VerifyVerdict
-  evidence: VerifyEvidence[]
-}
-
-export interface VerifyResult {
-  claim: string
-  summary: string            // calibrated plain-language line (never a score/verdict)
-  papers: VerifyPaper[]
-}
-
-export interface VerifyStatus {
-  id: string
-  status: "queued" | "running" | "done" | "error"
-  stage?: string
-  progress?: number
-  detail?: string
-  error?: string
-  result?: VerifyResult | null
-}
-
-export async function startVerify(claim: string, docIds: string[]): Promise<{ jobId: string }> {
-  return authedAction("/api/verify", "POST", { claim, docIds })
-}
-
-export async function getVerify(jobId: string): Promise<VerifyStatus> {
-  return authedGet(`/api/verify/${encodeURIComponent(jobId)}`)
-}
-
-// ---- Write (agentic literature-review pipeline, background job) ----
-
-export interface WriteResult {
-  answer: string          // markdown draft (prose + ## References)
-  citations: LabCitationDTO[]
-}
-
-// Doc-level citation carried by a finished draft (shape matches the chat citation).
-export interface LabCitationDTO {
-  title: string
-  url?: string
-  sourceId?: string
-  sourceType?: string
-  contentMode?: string
-  page?: number | null
-  passage?: string
-  bbox?: number[] | null
-}
-
-export interface WriteStatus {
-  id: string
-  status: "queued" | "running" | "done" | "error"
-  stage?: string
-  progress?: number
-  detail?: string
-  error?: string
-  result?: WriteResult | null
-}
-
-// Phase 1: top-N candidate papers + proposed extraction dimensions, for the user to confirm.
-export async function proposePlan(
-  topic: string,
-): Promise<{ papers: PaperItem[]; dimensions: string[] }> {
-  return authedAction("/api/write/plan", "POST", { topic })
-}
-
-// Phase 2: run the extract→compare→synthesize→write pipeline as a background job.
-export async function startWriteup(
-  topic: string,
-  docIds: string[],
-  dimensions: string[],
-): Promise<{ jobId: string }> {
-  return authedAction("/api/write", "POST", { topic, docIds, dimensions })
-}
-
-export async function getWriteup(jobId: string): Promise<WriteStatus> {
-  return authedGet(`/api/write/${encodeURIComponent(jobId)}`)
 }
