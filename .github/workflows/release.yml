@@ -64,7 +64,19 @@ jobs:
       # Kokoro voice is downloaded on demand from the Narrate tab. So there's nothing to fetch here;
       # this keeps the installer small (~tens of MB instead of ~1.5 GB).
 
-      # --- 2) Build the Tauri app (also runs the frontend build via beforeBuildCommand) ------
+      # --- 2) Build the frontend static export explicitly --------------------------------------
+      # We do NOT rely on tauri.conf.json's beforeBuildCommand: tauri-action runs it from the repo
+      # root (so `cd ../frontend` escapes the repo), unlike local `cargo tauri build`. Building here
+      # with a known working-directory avoids that CWD ambiguity across all three OSes. tauri-action
+      # then just bundles the prebuilt `frontend/out` (beforeBuildCommand is cleared in the config).
+      - name: Build frontend (static export)
+        working-directory: frontend
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+
+      # --- 3) Build the Tauri app + attach installers to the draft Release ---------------------
       - name: Build + release
         uses: tauri-apps/tauri-action@v0
         env:

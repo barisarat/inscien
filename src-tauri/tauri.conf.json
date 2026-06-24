@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "io.inscien.app",
   "build": {
-    "beforeBuildCommand": "cd ../frontend && npm ci && npm run build",
+    "beforeBuildCommand": "",
     "frontendDist": "../frontend/out"
   },
   "app": {
