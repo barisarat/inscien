@@ -43,7 +43,8 @@ jobs:
         with: { python-version: "3.12" }
 
       - uses: dtolnay/rust-toolchain@stable
-        with: { targets: ${{ matrix.triple }} }
+        with:
+          targets: ${{ matrix.triple }}
       - uses: swatinem/rust-cache@v2
         with: { workspaces: "src-tauri -> target" }
 
