@@ -420,11 +420,9 @@ export default function GraphView({
     const graph = fgRef.current
     if (!graph) return
     const padding = Math.max(120, Math.min(size.w, size.h) * 0.18)
-    graph.zoomToFit?.(400, padding)
-    window.setTimeout(() => {
-      const zoom = graph.zoom?.()
-      if (typeof zoom === "number" && zoom > 1.1) graph.zoom?.(1.1, 250)
-    }, 450)
+    graph.zoomToFit?.(0, padding)
+    const zoom = graph.zoom?.()
+    if (typeof zoom === "number" && zoom > 1.1) graph.zoom?.(1.1, 0)
   }
 
   const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${visibleIds.size}`
