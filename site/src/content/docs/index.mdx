@@ -1,0 +1,76 @@
+---
+title: InScien
+description: A local, private atlas of your Zotero library - map it, narrate it.
+template: splash
+hero:
+  tagline: Turn your Zotero library into a navigable map and audio narrations. Fully local, page-precise, and yours - no account, no cloud.
+  actions:
+    - text: Download
+      link: '#download'
+      variant: primary
+    - text: Get started
+      link: /inscien/getting-started/installation/
+      icon: right-arrow
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/aratbaris/inscien
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What it does
+
+<CardGrid stagger>
+	<Card title="Map your library">
+		A navigable atlas of your Zotero collection - papers placed by similarity and linked by
+		shared citations, so you can see the shape of a literature at a glance. Runs entirely on
+		your machine and needs no model.
+	</Card>
+	<Card title="Narrate any paper">
+		Turn a paper into a spoken-audio narration you can listen to. A model you choose writes
+		the script; a local CPU voice reads it aloud and saves an mp3 you can replay.
+	</Card>
+	<Card title="Local-first and private">
+		Reads your Zotero library read-only through a private snapshot. Nothing leaves your
+		machine except, optionally, the text you send to your own cloud model.
+	</Card>
+	<Card title="Page-precise">
+		References point back to the exact page in the source PDF, so you can verify anything in
+		a click.
+	</Card>
+</CardGrid>
+
+## Download
+
+Pick your platform, grab the installer from the latest release, and follow the one-time steps.
+The builds are unsigned, so you'll click past a SmartScreen / Gatekeeper warning the first time.
+
+<CardGrid>
+	<Card title="Windows">
+		Get the `..._x64-setup.exe` from the
+		[latest release](https://github.com/aratbaris/inscien/releases/latest).
+		[Install steps ->](/inscien/getting-started/installation/#windows)
+	</Card>
+	<Card title="macOS">
+		Get the `..._aarch64.dmg` from the
+		[latest release](https://github.com/aratbaris/inscien/releases/latest).
+		[Install steps ->](/inscien/getting-started/installation/#macos)
+	</Card>
+	<Card title="Linux">
+		Get the `.AppImage` or `.deb` from the
+		[latest release](https://github.com/aratbaris/inscien/releases/latest).
+		[Install steps ->](/inscien/getting-started/installation/#linux)
+	</Card>
+</CardGrid>
+
+All installers live on the [Releases page](https://github.com/aratbaris/inscien/releases/latest).
+
+## How it works
+
+InScien is a desktop app you download and run locally. It rides read-only on your existing
+[Zotero](https://www.zotero.org) library - no import, no copy, no cloud. The **Map** needs no
+model; **narration** uses a model you connect (a local Ollama, or your own OpenAI key).
+
+[Install it](/inscien/getting-started/installation/) and point it at your Zotero folder to begin.

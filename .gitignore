@@ -199,8 +199,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
+# mkdocs documentation (not used here). NOTE: `site/` is our Astro marketing+docs SOURCE and
+# must be tracked, so this rule is disabled. Astro's build output (site/dist) is ignored by
+# site/.gitignore instead.
+# /site
 
 # mypy
 .mypy_cache/
