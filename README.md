@@ -67,16 +67,6 @@ docker compose up             # backend on :8200, frontend on :3200
 A local Ollama must be running on the host for narration. To build the desktop installers
 yourself, see [PACKAGING.md](PACKAGING.md).
 
-## Repository layout
-
-- `backend/` - FastAPI backend (retrieval, Zotero ingestion, Map, narration). Frozen and
-  bundled into the desktop app as a sidecar.
-- `frontend/` - Next.js UI (static export), reused as-is inside the desktop window.
-- `src-tauri/` - the Tauri desktop shell and the cross-OS release CI.
-- `site/` - the Astro + Starlight marketing and docs site (deployed to GitHub Pages).
-
-Architecture notes are in [CLAUDE.md](CLAUDE.md).
-
 ## Privacy
 
 Your PDFs stay in your Zotero library, mounted read-only. InScien's own state (a SQLite DB,
