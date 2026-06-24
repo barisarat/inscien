@@ -3,7 +3,7 @@ title: Quick start
 description: First run - point InScien at Zotero, index a collection, then map and narrate.
 ---
 
-Once InScien is [installed](/inscien/getting-started/installation/), here's the path from a
+Once InScien is [installed](/getting-started/installation/), here's the path from a
 blank window to a mapped, narratable library.
 
 ## 1. Point InScien at your Zotero library

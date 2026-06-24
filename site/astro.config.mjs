@@ -2,14 +2,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// Deployed to GitHub Pages as a project site: https://aratbaris.github.io/inscien/
-// `base` is required so assets resolve under the /inscien/ path. If you later add a custom
-// domain, set `site` to it and change `base` to '/', and update the manual links that hardcode
-// `/inscien/` in the landing/docs.
+// Deployed to GitHub Pages on the custom apex domain https://inscien.com (see public/CNAME).
+// The site lives at the domain root, so `base` is '/'. (Previously a project site under
+// /inscien/ on github.io; if you ever revert, set site back to the github.io origin and
+// base back to '/inscien', and re-add the /inscien/ prefix on the manual landing/docs links.)
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://aratbaris.github.io',
-	base: '/inscien',
+	site: 'https://inscien.com',
+	base: '/',
 	integrations: [
 		starlight({
 			title: 'InScien',

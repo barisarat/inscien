@@ -46,4 +46,4 @@ plugins your desktop normally already provides:
 sudo pacman -S --needed gst-plugins-base gst-plugins-good gst-libav
 ```
 
-Next: the [Quick start](/inscien/getting-started/quick-start/).
+Next: the [Quick start](/getting-started/quick-start/).

@@ -67,7 +67,24 @@ cargo tauri build --config src-tauri/tauri.conf.json      # → installers under
 ```
 
 ## CI / release
-Push a tag `vX.Y.Z` → the matrix builds Linux/macOS/Windows and uploads a **draft** GitHub Release.
+The whole cross-OS build is one push. To cut release `vX.Y.Z`:
+
+```bash
+# 1) Bump the in-installer version to match the tag (this is the app/about version,
+#    separate from the git tag), then commit it.
+#    Edit src-tauri/tauri.conf.json: "version": "X.Y.Z"
+git commit -am "bump version to X.Y.Z for release"
+
+# 2) Push main FIRST — the tag build checks out the tagged commit, so all release
+#    commits must already be on the remote.
+git push origin main
+
+# 3) Tag and push the tag — this triggers .github/workflows/release.yml.
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The matrix then builds Linux/macOS/Windows and uploads a **draft** GitHub Release.
 Review + publish. (Signing/notarization is a later cycle — v1 ships unsigned.)
 
 ## Installing an unsigned v1

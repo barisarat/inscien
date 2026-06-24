@@ -18,7 +18,7 @@ After that, narration runs without re-downloading - the voice stays on your mach
 - A connected model - a local Ollama or an OpenAI key (see **Settings & models**). This writes
   the narration script.
 - On minimal Linux setups, audio playback also needs GStreamer plugins (see
-  [Installation](/inscien/getting-started/installation/)). On Windows and macOS this is
+  [Installation](/getting-started/installation/)). On Windows and macOS this is
   built in.
 
 Generated narrations are saved per paper, so you can replay one without regenerating it.
