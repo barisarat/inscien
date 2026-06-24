@@ -15,12 +15,12 @@ const toggleVariants = cva(
         // Canonical segmented-control item: white surface, blue-soft active/selected state.
         // Used for every single-select chip (mode switch, scope, overlay/color/layout).
         segment:
-          "border border-input bg-card hover:bg-muted hover:text-foreground aria-pressed:border-brand-soft-border aria-pressed:bg-brand-soft aria-pressed:text-brand aria-pressed:hover:bg-brand-soft data-[state=on]:border-brand-soft-border data-[state=on]:bg-brand-soft data-[state=on]:text-brand data-[state=on]:hover:bg-brand-soft",
+          "border border-border/70 bg-card hover:border-border hover:bg-muted hover:text-foreground aria-pressed:border-brand-soft-border aria-pressed:bg-brand-soft aria-pressed:text-brand aria-pressed:hover:bg-brand-soft data-[state=on]:border-brand-soft-border data-[state=on]:bg-brand-soft data-[state=on]:text-brand data-[state=on]:hover:bg-brand-soft",
       },
       size: {
         default:
           "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        sm: "h-7 min-w-7 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "h-7 min-w-8 rounded-[min(var(--radius-md),12px)] px-3.5 text-[0.8rem] has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
       },
     },

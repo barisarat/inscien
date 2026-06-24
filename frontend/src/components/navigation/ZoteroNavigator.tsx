@@ -33,6 +33,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { StatusDot } from "@/components/ui/status-dot"
 
+const SIDEBAR_GUTTER = { paddingLeft: "1.5rem", paddingRight: "1.5rem" }
+
 export default function ZoteroNavigator() {
   const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
@@ -188,7 +190,7 @@ export default function ZoteroNavigator() {
   const renderCollection = (col: ZoteroCollection, depth: number) => {
     const isOpen = expanded.has(col.collectionID)
     const rows = items[col.collectionID]
-    const pad = (n: number) => ({ paddingLeft: n + depth * 12 })
+    const pad = (n: number) => ({ paddingLeft: n + 8 + depth * 12 })
     return (
       <div key={col.collectionID}>
         <div className="flex items-center gap-0.5" style={pad(0)}>
@@ -201,7 +203,7 @@ export default function ZoteroNavigator() {
           >
             <ChevronRight className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
           </Button>
-          <SidebarMenuButton className="h-7 min-w-0 flex-1 pr-3" onClick={() => selectCollection(col)} title="Select this collection">
+          <SidebarMenuButton className="h-7 min-w-0 flex-1 pr-4" onClick={() => selectCollection(col)} title="Select this collection">
             <span className="truncate">{col.name}</span>
             {typeof col.itemCount === "number" && col.itemCount > 0 ? (
               <Badge variant="secondary" className="ml-auto max-w-[4.5rem]">{col.indexedCount ?? 0}/{col.itemCount}</Badge>
@@ -226,7 +228,7 @@ export default function ZoteroNavigator() {
                 return (
                   <div
                     key={item.itemKey}
-                    className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-3 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
+                    className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-4 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
                     style={pad(26)}
                     title={item.isBookDefaultOff ? "Book - opt in to index" : item.title ?? item.itemKey}
                   >
@@ -284,7 +286,7 @@ export default function ZoteroNavigator() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="h-13 justify-center border-b px-4 py-0">
+      <SidebarHeader className="h-13 justify-center border-b py-0" style={SIDEBAR_GUTTER}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">Library</span>
           <Button variant="ghost" size="icon-sm" onClick={() => void load()} aria-label="Refresh">
@@ -295,12 +297,12 @@ export default function ZoteroNavigator() {
 
       <SidebarContent className="gap-0">
         {selectedKeys.size > 0 ? (
-          <SidebarGroup className="border-b px-4 py-2">
+          <SidebarGroup className="border-b py-3" style={SIDEBAR_GUTTER}>
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="sm"
-                className="-ml-2 gap-1.5 px-2 text-xs font-medium"
+                className="gap-1.5 px-2 text-xs font-medium"
                 onClick={() => setSelectedOpen((v) => !v)}
                 aria-expanded={selectedOpen}
               >
@@ -311,9 +313,9 @@ export default function ZoteroNavigator() {
               <Button variant="ghost" size="xs" onClick={clear}>Clear</Button>
             </div>
             {selectedOpen ? (
-              <div className="mt-1 flex flex-col gap-0.5">
+              <div className="mt-2 mb-2 flex flex-col gap-1">
                 {Array.from(selectedKeys).map((key) => (
-                  <div key={key} className="flex min-w-0 items-center gap-1.5 text-xs">
+                  <div key={key} className="flex min-w-0 items-center gap-2 py-0.5 text-xs">
                     <span className="min-w-0 flex-1 truncate" title={titleByKey.get(key) || key}>
                       {titleByKey.get(key) || key}
                     </span>
@@ -327,27 +329,27 @@ export default function ZoteroNavigator() {
             ) : null}
           </SidebarGroup>
         ) : (
-          <div className="px-4 py-2 text-xs text-muted-foreground">Select papers to scope your map</div>
+          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>Select papers to scope your map</div>
         )}
 
         {!loading && !error && libraryMissing ? (
-          <div className="px-4 py-2 text-xs text-muted-foreground">
+          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
             No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
             <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack - see the README.
           </div>
         ) : null}
         {!loading && !error && !liveConnected && !libraryMissing ? (
-          <div className="px-4 py-2 text-xs text-muted-foreground">
+          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
             Live Zotero library not connected - showing the last snapshot.
           </div>
         ) : null}
         {persistError ? (
-          <div className="px-4 py-2 text-xs text-muted-foreground">
+          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
             Your selection won't be saved across reloads - browser storage is blocked.
           </div>
         ) : null}
 
-        <SidebarGroup className="px-4 py-2">
+        <SidebarGroup className="py-2" style={SIDEBAR_GUTTER}>
           {loading ? (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Loading library...</div>
           ) : error ? (

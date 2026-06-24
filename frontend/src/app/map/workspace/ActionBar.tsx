@@ -25,7 +25,7 @@ export default function ActionBar({ mode, onChange }: Props) {
           key={m}
           size="sm"
           variant="segment"
-          className="gap-1.5"
+          className="gap-1.5 !px-4"
           pressed={mode === m}
           aria-current={mode === m ? "page" : undefined}
           onPressedChange={(pressed) => {

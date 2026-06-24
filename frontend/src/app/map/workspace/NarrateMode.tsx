@@ -20,7 +20,6 @@ import {
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import { useSkillJob, JobProgress, JobError } from "./skillJob"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -175,9 +174,9 @@ export default function NarrateMode() {
   const audioBlock = (id: string, autoPlay = false) => {
     const url = `${API_BASE}/api/narrate/${encodeURIComponent(id)}/audio`
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col items-center gap-3">
         <audio className="w-full" controls autoPlay={autoPlay} src={url} />
-        <a href={url} download className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <a href={url} download className={buttonVariants({ variant: "outline", size: "sm", className: "gap-2 !px-8" })}>
           <Download /> Download mp3
         </a>
       </div>
@@ -185,10 +184,11 @@ export default function NarrateMode() {
   }
 
   const header = (
-    <div className="flex h-13 shrink-0 items-center justify-between gap-3 border-b px-6">
-      <div className="min-w-0">
-        <h2 className="text-sm font-medium">Narrate</h2>
-      </div>
+    <div
+      className="flex h-13 shrink-0 items-center gap-2 border-b bg-background text-sm"
+      style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
+    >
+      <span className="font-medium">Narrate</span>
       {phase === "running" ? (
         <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="size-3.5 animate-spin" /> Generating...
@@ -225,11 +225,11 @@ export default function NarrateMode() {
   ) : phase === "error" ? (
     <JobError error={error} onRetry={run} />
   ) : modelReady === false ? (
-    <div className="flex flex-col items-start gap-3">
+    <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-sm text-muted-foreground">
         Narration needs a language model. Connect a local Ollama model or an OpenAI key in Settings.
       </p>
-      <Link href="/settings" className={buttonVariants({ variant: "outline", size: "sm" })}>
+      <Link href="/settings" className={buttonVariants({ variant: "outline", size: "sm", className: "gap-2 !px-8" })}>
         <Settings /> Open Settings
       </Link>
     </div>
@@ -244,21 +244,21 @@ export default function NarrateMode() {
   ) : dlPhase === "error" ? (
     <JobError error={dl.error} onRetry={downloadModel} retryLabel="Retry download" />
   ) : ttsReady === false ? (
-    <div className="flex flex-col items-start gap-3">
+    <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-sm text-muted-foreground">
         Narration uses a local voice model (<span className="whitespace-nowrap">~1 GB</span>). Download it
         once to enable spoken audio - it stays on your machine for every future narration.
       </p>
-      <Button onClick={downloadModel}>
+      <Button className="gap-2 !px-8" onClick={downloadModel}>
         <Download /> Download narration voice
       </Button>
     </div>
   ) : (
-    <div className="flex flex-col items-start gap-3">
+    <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-sm text-muted-foreground">
         The narration job runs in the background and will be saved for replay.
       </p>
-      <Button onClick={run}>
+      <Button className="gap-2 !px-8" onClick={run}>
         <AudioLines /> Generate narration
       </Button>
     </div>
@@ -267,16 +267,14 @@ export default function NarrateMode() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {header}
-      <div className="min-h-0 flex-1 overflow-auto px-6 py-8">
-        <div className="max-w-lg">
-          <Card>
-            <CardHeader>
-              <CardTitle>{cardTitle}</CardTitle>
-              <CardDescription>{cardDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>{cardContent}</CardContent>
-          </Card>
-        </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto px-6 py-8">
+        <section className="flex w-full max-w-xl flex-col items-center gap-6 text-center">
+          <div className="flex max-w-full flex-col items-center gap-1.5">
+            <h3 className="max-w-full text-base leading-snug font-medium">{cardTitle}</h3>
+            <p className="text-sm text-muted-foreground">{cardDescription}</p>
+          </div>
+          <div className="flex w-full flex-col items-center">{cardContent}</div>
+        </section>
       </div>
     </div>
   )

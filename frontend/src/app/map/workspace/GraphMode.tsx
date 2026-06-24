@@ -7,16 +7,12 @@ import {
   fetchCitingGraph,
   fetchDiscoveryGraph,
   fetchFusedMap,
-  fetchIndexedKeys,
-  fetchZoteroCollections,
-  fetchZoteroIndexableKeys,
   getGraphFetch,
   startCitingFetch,
   startGraphFetch,
   type DiscoveryGraph,
   type FusedMap,
   type GraphNode,
-  type ZoteroCollection,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
@@ -26,18 +22,10 @@ import NodeInspector, { type Neighbor } from "../components/NodeInspector"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Toggle } from "@/components/ui/toggle"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 // Citation "emphasis" over the same stable map: highlight what your papers cite / what cites
 // them / both / the shared gaps. "none" is the pure fused Atlas.
 type Connections = "none" | "cite" | "cited" | "both" | "gaps"
-type Scope = { kind: "selection" } | { kind: "library" } | { kind: "collection"; id: number; name: string }
 
 const GAP_MIN = 2 // an external cited by >= this many of your papers is a "gap" worth surfacing
 
@@ -51,12 +39,13 @@ function Chips<T extends string>({ value, options, onChange }: {
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1.5" role="group">
+    <div className="flex shrink-0 items-center gap-1" role="group">
       {options.map((o) => (
         <Toggle
           key={o.v}
           size="sm"
           variant="segment"
+          className="!px-4"
           pressed={value === o.v}
           onPressedChange={(pressed) => {
             if (pressed) onChange(o.v)
@@ -100,10 +89,6 @@ export default function GraphMode() {
   const { setMany, clear } = useZoteroSelection()
   const { openPdf, setMode } = useWorkspace()
 
-  const [scope, setScope] = useState<Scope>({ kind: "selection" })
-  const [scopeKeys, setScopeKeys] = useState<string[]>([])
-  const [collections, setCollections] = useState<{ id: number; name: string; depth: number }[]>([])
-
   // View controls.
   const [connections, setConnections] = useState<Connections>("none")
   const [colorBy, setColorBy] = useState<ColorBy>("cluster")
@@ -121,48 +106,10 @@ export default function GraphMode() {
 
   const { newRun, isStale, track } = useSkillJob()
 
-  // Flat collection list for the scope dropdown.
-  useEffect(() => {
-    void (async () => {
-      try {
-        const { collections } = await fetchZoteroCollections()
-        const flat: { id: number; name: string; depth: number }[] = []
-        const walk = (nodes: ZoteroCollection[], depth: number) => {
-          for (const c of nodes) {
-            flat.push({ id: c.collectionID, name: c.name, depth })
-            walk(c.children || [], depth + 1)
-          }
-        }
-        walk(collections, 0)
-        setCollections(flat)
-      } catch {
-        /* navigator surfaces the real error */
-      }
-    })()
-  }, [])
-
-  // Resolve the chosen scope -> the item keys the map runs over.
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      if (scope.kind === "selection") {
-        setScopeKeys(Array.from(selectedKeys).sort())
-        return
-      }
-      try {
-        const res = scope.kind === "library" ? await fetchIndexedKeys() : await fetchZoteroIndexableKeys(scope.id)
-        if (!cancelled) setScopeKeys([...res.itemKeys].sort())
-      } catch {
-        if (!cancelled) setScopeKeys([])
-      }
-    })()
-    return () => { cancelled = true }
-  }, [scope, selectedKeys])
-
-  const itemKeys = scopeKeys
+  const itemKeys = useMemo(() => Array.from(selectedKeys).sort(), [selectedKeys])
   const keysKey = itemKeys.join(",")
 
-  // Build the fused Atlas whenever the scope changes. Pure read - no OpenAlex gate.
+  // Build the fused Atlas whenever the selected papers change. Pure read - no OpenAlex gate.
   useEffect(() => {
     const t = newRun()
     setFused(null)
@@ -295,58 +242,15 @@ export default function GraphMode() {
     setMode("narrate")
   }, [clear, setMany, setMode])
 
-  const scopeControl = (
-    <div className="flex min-w-0 items-center gap-1.5">
-      <Toggle
-        size="sm"
-        variant="segment"
-        pressed={scope.kind === "selection"}
-        onPressedChange={(pressed) => {
-          if (pressed) setScope({ kind: "selection" })
-        }}
-      >
-        Selection
-      </Toggle>
-      <Toggle
-        size="sm"
-        variant="segment"
-        pressed={scope.kind === "library"}
-        onPressedChange={(pressed) => {
-          if (pressed) setScope({ kind: "library" })
-        }}
-      >
-        Library
-      </Toggle>
-      <Select
-        value={scope.kind === "collection" ? String(scope.id) : ""}
-        onValueChange={(v) => {
-          const id = Number(v)
-          const c = collections.find((x) => x.id === id)
-          if (c) setScope({ kind: "collection", id, name: c.name })
-        }}
-      >
-        <SelectTrigger size="sm" className="w-44 max-w-full">
-          <SelectValue placeholder="Collection" />
-        </SelectTrigger>
-        <SelectContent>
-          {collections.map((c) => (
-            <SelectItem key={c.id} value={String(c.id)}>{`${"  ".repeat(c.depth)}${c.name}`}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-
   // --- empty / loading / error ---------------------------------------------
   if (phase === "empty") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          Select papers in the library to map them - or choose a whole collection / your whole library
-          below. The Atlas clusters your papers by content <em>and</em> citations; overlay what they cite.
+          Select papers in the library to map them. The Atlas clusters your papers by content <em>and</em>
+          citations; overlay what they cite.
         </p>
-        {scopeControl}
       </div>
     )
   }
@@ -365,7 +269,6 @@ export default function GraphMode() {
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
-        {scopeControl}
       </div>
     )
   }
@@ -376,9 +279,12 @@ export default function GraphMode() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b bg-background">
-        <div className="flex h-13 items-center justify-between gap-4 overflow-x-auto px-6">
+        <div
+          className="flex h-13 items-center gap-4 overflow-x-auto"
+          style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
+        >
           <div className="flex min-w-0 items-center gap-2 text-sm">
-            <span className="font-medium">Atlas</span>
+            <span className="font-medium">Map</span>
             <span className="shrink-0 text-muted-foreground">{ownedCount} papers</span>
             {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
             {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
@@ -388,10 +294,12 @@ export default function GraphMode() {
               </span>
             ) : null}
           </div>
-          <div className="flex min-w-0 justify-end">{scopeControl}</div>
         </div>
-        <div className="flex h-13 items-center gap-6 overflow-x-auto border-t px-6">
-          <div className="flex shrink-0 items-center gap-3">
+        <div
+          className="flex h-13 items-center gap-4 overflow-x-auto border-t"
+          style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
+        >
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Overlay</span>
             <Chips<Connections>
               value={connections}
@@ -406,19 +314,19 @@ export default function GraphMode() {
             />
           </div>
           <Separator orientation="vertical" className="h-6 shrink-0" />
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Color</span>
             <Chips<ColorBy>
               value={colorBy}
               options={[{ v: "cluster", label: "Clusters" }, { v: "collection", label: "Collections" }]}
               onChange={setColorBy}
             />
-            <Toggle size="sm" variant="segment" pressed={showClusters} onPressedChange={setShowClusters}>
+            <Toggle size="sm" variant="segment" className="!px-4" pressed={showClusters} onPressedChange={setShowClusters}>
               Hulls
             </Toggle>
           </div>
           <Separator orientation="vertical" className="h-6 shrink-0" />
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Layout</span>
             <Chips<GraphLayout>
               value={layout}
@@ -428,7 +336,14 @@ export default function GraphMode() {
           </div>
         </div>
 
-        {connections !== "none" ? <div className="border-t px-6 py-2 text-xs text-muted-foreground">{DISCLOSURE}</div> : null}
+        {connections !== "none" ? (
+          <div
+            className="border-t py-2 text-xs text-muted-foreground"
+            style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
+          >
+            {DISCLOSURE}
+          </div>
+        ) : null}
       </div>
 
       {ownedCount === 0 ? (
