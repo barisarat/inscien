@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState, type PointerEvent } from "react"
-import { ChevronRight, Loader2, Play, RefreshCw, X } from "lucide-react"
+import { useCallback, useEffect, useState, type PointerEvent, type ReactNode } from "react"
+import { BookOpen, Check, ChevronRight, Loader2, Map as MapIcon, Play, RefreshCw, X } from "lucide-react"
 
 import {
   fetchZoteroCollections,
@@ -30,13 +30,31 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import { StatusDot } from "@/components/ui/status-dot"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 const SIDEBAR_GUTTER = { paddingLeft: "1.5rem", paddingRight: "1.5rem" }
 
 type Props = {
   onResizeStart?: (event: PointerEvent<HTMLButtonElement>) => void
+}
+
+function PaperStatusIcon({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            aria-label={label}
+            role="img"
+            className="inline-flex h-6 w-7 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground"
+          >
+            {children}
+          </span>
+        }
+      />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  )
 }
 
 export default function ZoteroNavigator({ onResizeStart }: Props) {
@@ -247,38 +265,58 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                       {item.title ?? item.itemKey}
                       {item.year ? <span className="ml-1 text-muted-foreground">{item.year}</span> : null}
                     </button>
-                    <div className="flex w-20 shrink-0 items-center justify-end gap-1">
+                    <div className="grid w-[6.25rem] shrink-0 grid-cols-3 items-center justify-items-center gap-1">
                       {narrations.has(item.itemKey) ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label="Play narration"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            const n = narrations.get(item.itemKey)!
-                            setMode("narrate")
-                            setActiveArtifact({
-                              kind: "narration",
-                              docId: item.itemKey,
-                              jobId: n.jobId,
-                              title: n.title || item.title || "",
-                            })
-                          }}
-                        >
-                          <Play />
-                        </Button>
-                      ) : null}
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                className="!w-7"
+                                aria-label="Play narration"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  const n = narrations.get(item.itemKey)!
+                                  setMode("narrate")
+                                  setActiveArtifact({
+                                    kind: "narration",
+                                    docId: item.itemKey,
+                                    jobId: n.jobId,
+                                    title: n.title || item.title || "",
+                                  })
+                                }}
+                              >
+                                <Play />
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Play narration</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="h-6 w-7" aria-hidden />
+                      )}
                       {mapped.has(item.itemKey) ? (
-                        <StatusDot tone="strong" title="Mapped - references fetched from OpenAlex" />
-                      ) : null}
+                        <PaperStatusIcon label="Map data ready">
+                          <MapIcon className="size-3.5" />
+                        </PaperStatusIcon>
+                      ) : (
+                        <span className="h-6 w-7" aria-hidden />
+                      )}
                       {isBusy ? (
-                        <Loader2 className="size-3 shrink-0 animate-spin" />
+                        <Loader2 className="size-3.5 shrink-0 animate-spin" />
                       ) : isIdx ? (
-                        <Badge variant="secondary">Indexed</Badge>
+                        <PaperStatusIcon label="Indexed locally">
+                          <Check className="size-3.5" />
+                        </PaperStatusIcon>
                       ) : item.isBookDefaultOff ? (
-                        <Badge variant="outline">Book</Badge>
-                      ) : null}
+                        <PaperStatusIcon label="Book - opt in to index">
+                          <BookOpen className="size-3.5" />
+                        </PaperStatusIcon>
+                      ) : (
+                        <span className="h-6 w-7" aria-hidden />
+                      )}
                     </div>
                   </div>
                 )

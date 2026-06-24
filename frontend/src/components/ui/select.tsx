@@ -111,6 +111,7 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  style,
   ...props
 }: SelectPrimitive.Item.Props) {
   return (
@@ -120,6 +121,11 @@ function SelectItem({
         "relative flex min-h-9 w-full cursor-default items-center gap-2 rounded-md py-2.5 pr-11 pl-4 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
+      style={{
+        paddingLeft: "1.25rem",
+        paddingRight: "3rem",
+        ...style,
+      }}
       {...props}
     >
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
@@ -127,7 +133,7 @@ function SelectItem({
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-3 flex size-4 items-center justify-center" />
+          <span className="pointer-events-none absolute right-4 flex size-4 items-center justify-center" />
         }
       >
         <CheckIcon className="pointer-events-none" />
