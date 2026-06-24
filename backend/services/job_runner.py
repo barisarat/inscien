@@ -52,9 +52,9 @@ class JobRunner:
         # pipeline reports stage="done" as its last step. The "done" transition is owned
         # solely by `_run` *after* `work` returns, so a poller can't observe status="done"
         # before the result dict has been merged into the job.
-        def cb(stage, percent, detail=""):
+        def cb(stage, percent, detail="", **extra):
             ensure_current_generation(generation)
-            self._set(job_id, stage=stage, progress=percent, detail=detail, status="running")
+            self._set(job_id, stage=stage, progress=percent, detail=detail, status="running", **extra)
         return cb
 
     # --- lifecycle ---------------------------------------------------------

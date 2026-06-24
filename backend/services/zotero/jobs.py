@@ -13,7 +13,7 @@ from core.paths import data_path
 from services.job_runner import JobRunner
 from services.zotero.ingest import index_items
 
-_PUBLIC_FIELDS = ("id", "status", "stage", "progress", "detail", "error", "result")
+_PUBLIC_FIELDS = ("id", "status", "stage", "progress", "detail", "currentItemKey", "error", "result")
 _runner = JobRunner(
     "zotero",
     os.getenv("ZOTERO_JOBS_DIR") or data_path("zotero_jobs"),

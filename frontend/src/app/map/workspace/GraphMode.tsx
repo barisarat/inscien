@@ -18,7 +18,7 @@ import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import { useSkillJob } from "./skillJob"
 import GraphView, { type AtlasEdge, type AtlasNode, type ColorBy, type Emphasis, type GraphLayout } from "../components/GraphView"
-import NodeInspector, { type Neighbor } from "../components/NodeInspector"
+import NodeInspector from "../components/NodeInspector"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Toggle } from "@/components/ui/toggle"
@@ -93,6 +93,7 @@ export default function GraphMode() {
   const [connections, setConnections] = useState<Connections>("none")
   const [colorBy, setColorBy] = useState<ColorBy>("cluster")
   const [layout, setLayout] = useState<GraphLayout>("network")
+  const [showTitles, setShowTitles] = useState(false)
 
   // Data.
   const [fused, setFused] = useState<FusedMap | null>(null)
@@ -219,19 +220,6 @@ export default function GraphMode() {
     return { nodeIds: ids, isActiveEdge: (e) => !!e.external }
   }, [connections, composed.edges])
 
-  // Strongest neighbours of the selected node (for the inspect panel) - derived from edges.
-  const neighbors = useMemo<Neighbor[]>(() => {
-    if (!selectedId) return []
-    const labelOf = new Map(composed.nodes.map((n) => [n.id, n.label]))
-    const out: Neighbor[] = []
-    for (const e of composed.edges) {
-      const other = e.source === selectedId ? e.target : e.target === selectedId ? e.source : null
-      if (other && labelOf.has(other)) out.push({ id: other, label: labelOf.get(other)!, weight: e.weight ?? (e.direct ? 1 : 0.3), direct: !!e.direct })
-    }
-    out.sort((a, b) => b.weight - a.weight)
-    return out.slice(0, 6)
-  }, [selectedId, composed])
-
   const selectedNode = useMemo(() => composed.nodes.find((n) => n.id === selectedId) ?? null, [composed.nodes, selectedId])
 
   const narrate = useCallback((n: AtlasNode) => {
@@ -311,6 +299,19 @@ export default function GraphMode() {
               onChange={setLayout}
             />
           </div>
+          <Separator orientation="vertical" className="h-6 shrink-0" />
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">View</span>
+            <Toggle
+              size="sm"
+              variant="segment"
+              className="!px-4"
+              pressed={showTitles}
+              onPressedChange={setShowTitles}
+            >
+              Titles
+            </Toggle>
+          </div>
         </div>
 
         {connections !== "none" ? (
@@ -344,6 +345,7 @@ export default function GraphMode() {
             layout={layout}
             colorBy={colorBy}
             showHulls
+            showLabels={showTitles}
             emphasis={emphasis}
             selectedId={selectedId}
             layoutKey={keysKey}
@@ -352,11 +354,9 @@ export default function GraphMode() {
           {selectedNode ? (
             <NodeInspector
               node={selectedNode}
-              neighbors={neighbors}
               onClose={() => setSelectedId(null)}
               onOpenPdf={(n) => openPdf({ sourceId: n.id, title: n.label, page: 1 })}
               onNarrate={narrate}
-              onSelectNeighbor={(id) => setSelectedId(id)}
             />
           ) : null}
         </div>

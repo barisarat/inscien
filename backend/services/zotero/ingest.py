@@ -208,10 +208,11 @@ def index_items(item_keys, progress=None):
             # Per-item isolation: a single bad PDF (parse/embed/upsert failure) must not
             # abort the whole job or leave the manifest out of sync with Qdrant + ledger.
             try:
+                emit("indexing", pct, f"{key}: indexing", currentItemKey=key)
                 pdf = resolve_pdf_path(key)
                 if not pdf:
                     skipped_no_pdf += 1
-                    emit("indexing", pct, f"{key}: no PDF - skipped")
+                    emit("indexing", pct, f"{key}: no PDF - skipped", currentItemKey=key)
                     continue
 
                 meta = item_metadata(key) or {"itemKey": key}
@@ -221,7 +222,7 @@ def index_items(item_keys, progress=None):
                 prev = ledger.get(key)
                 if prev and prev.get("status") == "indexed" and prev.get("file_hash") == file_hash:
                     skipped += 1
-                    emit("indexing", pct, f"{key}: up to date")
+                    emit("indexing", pct, f"{key}: up to date", currentItemKey=key)
                     continue
 
                 vectors = embed_texts([c["text"] for c in chunks])
@@ -241,13 +242,13 @@ def index_items(item_keys, progress=None):
                     # exactly the items committed to Qdrant + the ledger (resumable).
                     _flush_manifest()
                 indexed += 1
-                emit("indexing", pct, f"{(meta.get('title') or key)[:48]} - {len(chunks)} chunks")
+                emit("indexing", pct, f"{(meta.get('title') or key)[:48]} - {len(chunks)} chunks", currentItemKey=key)
 
                 # Best-effort: fetch this paper's OpenAlex record so the Map's citation signals
                 # are ready without a separate fetch step. Fail-open - the item is already
                 # indexed; a network/lookup failure must never mark it failed.
                 try:
-                    emit("indexing", pct, f"{(meta.get('title') or key)[:40]} - fetching citations")
+                    emit("indexing", pct, f"{(meta.get('title') or key)[:40]} - fetching citations", currentItemKey=key)
                     _enrich_citations(key, meta, generation)
                 except DerivedStateReset:
                     raise
@@ -255,7 +256,7 @@ def index_items(item_keys, progress=None):
                     logger.exception("index_items: citation enrichment failed for %s (non-fatal)", key)
             except DerivedStateReset:
                 db.rollback()
-                emit("cancelled", pct, "indexing cancelled by reset")
+                emit("cancelled", pct, "indexing cancelled by reset", currentItemKey=key)
                 raise
             except Exception:
                 logger.exception("index_items: failed to index %s", key)
@@ -276,7 +277,7 @@ def index_items(item_keys, progress=None):
                         db.rollback()
                     _flush_manifest()
                 failed += 1
-                emit("indexing", pct, f"{key}: failed - skipped")
+                emit("indexing", pct, f"{key}: failed - skipped", currentItemKey=key)
 
         with DERIVED_STATE_LOCK:
             ensure_current_generation(generation)
@@ -288,7 +289,7 @@ def index_items(item_keys, progress=None):
             "failed": failed,
             "totalChunks": len(merged),
         }
-        emit("done", 100, f"indexed {indexed}, skipped {skipped}, no-PDF {skipped_no_pdf}, failed {failed}")
+        emit("done", 100, f"indexed {indexed}, skipped {skipped}, no-PDF {skipped_no_pdf}, failed {failed}", currentItemKey=None)
         return summary
     except DerivedStateReset:
         logger.info("index_items: cancelled by reset")

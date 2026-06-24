@@ -273,6 +273,7 @@ export default function GraphView({
   layout = "network",
   colorBy = "cluster",
   showHulls = true,
+  showLabels = false,
   emphasis = null,
   selectedId = null,
   layoutKey = "",
@@ -282,6 +283,7 @@ export default function GraphView({
   layout?: GraphLayout
   colorBy?: ColorBy
   showHulls?: boolean
+  showLabels?: boolean
   emphasis?: Emphasis
   selectedId?: string | null
   layoutKey?: string // changes only when the underlying owned scope changes -> fresh layout
@@ -435,6 +437,7 @@ export default function GraphView({
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onNodeClick={(node: any) => onSelectNode(node.__src as AtlasNode)}
+          nodeLabel={(node: { __src: AtlasNode }) => node.__src.label}
           nodeCanvasObjectMode={() => "after"}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, scale: number) => {
@@ -447,6 +450,7 @@ export default function GraphView({
               ctx.lineWidth = 1.5 / scale
               ctx.stroke()
             }
+            if (!showLabels) return
             if (src.type === "external" && (src.citedBy ?? 0) < 2 && node.id !== selectedId) return
             if (dim && node.id !== selectedId) return
             const label = String(src.label || "").slice(0, 32)

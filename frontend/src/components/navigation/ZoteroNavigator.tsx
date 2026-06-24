@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState, type PointerEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useState, type PointerEvent, type ReactNode } from "react"
 import { BookOpen, Check, ChevronRight, Loader2, Map as MapIcon, Play, RefreshCw, X } from "lucide-react"
 
 import {
@@ -70,12 +70,14 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [indexing, setIndexing] = useState<Set<string>>(new Set())
+  const [activeIndexingByJob, setActiveIndexingByJob] = useState<Map<string, string>>(new Map())
   const [reconciling, setReconciling] = useState(false)
   const [reconcileMsg, setReconcileMsg] = useState<string | null>(null)
   const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
   const [mapped, setMapped] = useState<Set<string>>(new Set())
   const [selectedOpen, setSelectedOpen] = useState(false)
   const [titleByKey, setTitleByKey] = useState<Map<string, string>>(new Map())
+  const activeIndexingKeys = useMemo(() => new Set(activeIndexingByJob.values()), [activeIndexingByJob])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -136,10 +138,20 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       const fresh = keys.filter((k) => !indexedKeys.has(k))
       if (!fresh.length) return
       setIndexing((prev) => new Set([...prev, ...fresh]))
+      let jobId: string | null = null
       try {
-        const { jobId } = await startZoteroIndex(fresh)
-        await pollJob(jobId, getZoteroIndexJob, {
+        const started = await startZoteroIndex(fresh)
+        const runningJobId = started.jobId
+        jobId = runningJobId
+        await pollJob(runningJobId, getZoteroIndexJob, {
           intervalMs: 1200,
+          onProgress: (job) => {
+            const currentItemKey = job.currentItemKey
+            if (!currentItemKey) return
+            const currentIndex = fresh.indexOf(currentItemKey)
+            if (currentIndex > 0) markIndexed(fresh.slice(0, currentIndex))
+            setActiveIndexingByJob((prev) => new Map(prev).set(runningJobId, currentItemKey))
+          },
           onDone: () => markIndexed(fresh),
           onError: (job) => setError(`Indexing failed: ${job.error ?? ""}`),
         })
@@ -149,6 +161,11 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         setIndexing((prev) => {
           const next = new Set(prev)
           fresh.forEach((k) => next.delete(k))
+          return next
+        })
+        setActiveIndexingByJob((prev) => {
+          const next = new Map(prev)
+          if (jobId) next.delete(jobId)
           return next
         })
       }
@@ -248,7 +265,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
               rows.map((item) => {
                 const isSel = selectedKeys.has(item.itemKey)
                 const isIdx = indexedKeys.has(item.itemKey)
-                const isBusy = indexing.has(item.itemKey)
+                const isBusy = activeIndexingKeys.has(item.itemKey)
                 return (
                   <div
                     key={item.itemKey}
@@ -371,7 +388,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                     <span className="min-w-0 flex-1 truncate" title={titleByKey.get(key) || key}>
                       {titleByKey.get(key) || key}
                     </span>
-                    {indexing.has(key) ? <Loader2 className="size-3 animate-spin" /> : null}
+                    {activeIndexingKeys.has(key) ? <Loader2 className="size-3 animate-spin" /> : null}
                     <Button variant="ghost" size="icon-xs" aria-label="Remove from selection" onClick={() => setMany([key], false)}>
                       <X />
                     </Button>

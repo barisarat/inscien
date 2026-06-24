@@ -4,7 +4,6 @@ import { ExternalLink, PanelRightClose, X } from "lucide-react"
 
 import { API_BASE } from "@/lib/api"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Toggle } from "@/components/ui/toggle"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import PdfDocument from "./PdfDocument"
 
@@ -36,26 +35,33 @@ export default function PdfViewerPanel({
 
   return (
     <aside className="flex h-full min-h-0 flex-col border-l bg-card">
-      <div className="flex h-13 shrink-0 items-center gap-1.5 border-b px-3">
-        <div className="flex flex-1 items-center gap-1.5 overflow-x-auto" role="tablist">
+      <div className="flex h-13 shrink-0 items-center gap-2 border-b" style={{ paddingLeft: "1.5rem", paddingRight: "1rem" }}>
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto py-2" role="tablist">
           {tabs.map((tab) => {
             const active = tab.id === activePdf?.id
             return (
-              <div key={tab.id} className="flex shrink-0 items-center gap-0.5">
-                <Toggle
-                  size="sm"
-                  variant="segment"
-                  pressed={active}
-                  onPressedChange={(pressed) => {
-                    if (pressed) onSelectTab(tab.id)
-                  }}
+              <div
+                key={tab.id}
+                className={`flex h-8 min-w-0 max-w-[14rem] shrink-0 items-center gap-2 rounded-lg border px-2.5 text-xs transition-colors ${
+                  active
+                    ? "border-brand-soft-border bg-brand-soft text-brand"
+                    : "border-border/70 bg-card text-foreground hover:border-border hover:bg-muted"
+                }`}
+                role="tab"
+                aria-selected={active}
+              >
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-left font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  onClick={() => onSelectTab(tab.id)}
                   title={tab.title}
                 >
-                  <span className="max-w-[12rem] truncate">{tab.title}</span>
-                </Toggle>
+                  {tab.title}
+                </button>
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="size-5 shrink-0"
                   aria-label={`Close ${tab.title}`}
                   onClick={(e) => {
                     e.stopPropagation()

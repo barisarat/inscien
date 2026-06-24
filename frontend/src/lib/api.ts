@@ -146,6 +146,7 @@ export interface ZoteroIndexJob {
   stage: string
   progress: number
   detail?: string
+  currentItemKey?: string | null
   error?: string
   result?: { indexed: number; skipped: number; skippedNoPdf: number; totalChunks: number }
 }
