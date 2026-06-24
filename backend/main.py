@@ -135,7 +135,7 @@ def health_ready():
 # Serve the built frontend (Next static export) when present. The production image bakes the
 # export into FRONTEND_DIST and serves it here, so the UI and API share one origin - no CORS,
 # no separate Next server. Mounted LAST so the /api routers and /health above take precedence;
-# html=True resolves /ask -> /ask/index.html. In development FRONTEND_DIST is unset (the Next
+# html=True resolves /map -> /map/index.html. In development FRONTEND_DIST is unset (the Next
 # dev server serves the UI on its own port), so this is a no-op.
 FRONTEND_DIST = os.getenv("FRONTEND_DIST")
 if FRONTEND_DIST and os.path.isdir(FRONTEND_DIST):

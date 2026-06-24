@@ -7,7 +7,7 @@ export const metadata = {
   description: "A local atlas of your Zotero library - map your papers by content and citations, and narrate them.",
 }
 
-export default function AskPage() {
+export default function MapPage() {
   return (
     <ZoteroSelectionProvider>
       <WorkspaceProvider>

@@ -1,6 +1,6 @@
 "use client"
 
-// Next.js App Router error boundary for the /ask subtree - the whole app, since `/`
+// Next.js App Router error boundary for the /map subtree - the whole app, since `/`
 // redirects here. Catches render errors in the workspace shell, the providers, and the Map /
 // Narrate modes so an unexpected throw shows a calm recovery screen instead of a blank page.
 
@@ -10,7 +10,7 @@ import Link from "next/link"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button, buttonVariants } from "@/components/ui/button"
 
-export default function AskError({
+export default function MapError({
   error,
   reset,
 }: {
@@ -18,7 +18,7 @@ export default function AskError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("Unhandled error in /ask:", error)
+    console.error("Unhandled error in /map:", error)
   }, [error])
 
   return (
@@ -33,7 +33,7 @@ export default function AskError({
         </CardHeader>
         <CardFooter className="gap-2">
           <Button onClick={() => reset()}>Reload</Button>
-          <Link href="/ask" className={buttonVariants({ variant: "outline" })}>
+          <Link href="/map" className={buttonVariants({ variant: "outline" })}>
             Back to the Map
           </Link>
         </CardFooter>

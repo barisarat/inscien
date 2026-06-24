@@ -19,7 +19,7 @@ import {
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { pollJob } from "@/lib/pollJob"
-import { useWorkspace } from "@/app/ask/workspace/WorkspaceProvider"
+import { useWorkspace } from "@/app/map/workspace/WorkspaceProvider"
 import {
   Sidebar,
   SidebarContent,

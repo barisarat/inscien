@@ -86,7 +86,7 @@ export default function SettingsPage() {
   return (
     <main className="min-h-svh bg-muted/20 px-6 py-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <Link href="/ask" className={buttonVariants({ variant: "ghost", size: "sm", className: "w-fit gap-1.5" })}>
+        <Link href="/map" className={buttonVariants({ variant: "ghost", size: "sm", className: "w-fit gap-1.5" })}>
           <ArrowLeft size={16} /> Back to the Map
         </Link>
 

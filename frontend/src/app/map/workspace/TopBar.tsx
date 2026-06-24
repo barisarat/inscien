@@ -17,7 +17,7 @@ export default function TopBar({ mode, onChange }: Props) {
   return (
     <header className="sticky top-0 z-30 flex h-13 shrink-0 items-center gap-3 border-b bg-background px-3">
       <SidebarTrigger />
-      <Link href="/ask" className="text-base font-semibold tracking-tight">
+      <Link href="/map" className="text-base font-semibold tracking-tight">
         InScien
       </Link>
       <div className="flex flex-1 items-center justify-center">
