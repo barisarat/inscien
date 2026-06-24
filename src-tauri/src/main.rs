@@ -3,10 +3,10 @@
 
 // InScien desktop shell.
 //
-// Lifecycle: resolve the OS app-data dir + the bundled frontend → resolve the (user-picked) Zotero
-// folder → pick a free loopback port → spawn the frozen backend sidecar (which serves BOTH the API
-// and the static UI) with the env it needs → wait for /health → open a window pointed at
-// http://127.0.0.1:<port> → kill the sidecar on exit.
+// Lifecycle: resolve the OS app-data dir + the bundled frontend -> resolve the (user-picked) Zotero
+// folder -> pick a free loopback port -> spawn the frozen backend sidecar (which serves BOTH the API
+// and the static UI) with the env it needs -> wait for /health -> open a window pointed at
+// http://127.0.0.1:<port> -> kill the sidecar on exit.
 //
 // ML weights are NOT bundled: the backend defaults the embedding cache and Kokoro voice weights
 // under INSCIEN_DATA_DIR (writable). fastembed auto-downloads bge-small on first index; the Kokoro
@@ -119,7 +119,7 @@ fn main() {
 
             // --- Zotero folder ------------------------------------------------------------
             // From saved config, else the ZOTERO_DATA_DIR env (handy for dev/the spike). We do
-            // NOT pop a blocking native dialog here — that deadlocks because the GTK event loop
+            // NOT pop a blocking native dialog here - that deadlocks because the GTK event loop
             // isn't running yet during setup() (and won't show at all on a bare WM). First-run
             // folder selection is deferred to an in-app action. If unset, the app still launches
             // (Map works on already-indexed data; the navigator shows the "set your library" state).
@@ -137,7 +137,7 @@ fn main() {
             env.insert("PORT".into(), port.to_string());
             env.insert("INSCIEN_DATA_DIR".into(), data_dir.to_string_lossy().into_owned());
             env.insert("FRONTEND_DIST".into(), frontend_dist.to_string_lossy().into_owned());
-            // ML weights (fastembed cache, Kokoro voice) default under INSCIEN_DATA_DIR — don't
+            // ML weights (fastembed cache, Kokoro voice) default under INSCIEN_DATA_DIR - don't
             // override them, so the on-demand download lands where the backend reads.
             // Narration is bring-your-own; default to a host Ollama (the in-app gate handles "none").
             env.insert("OLLAMA_BASE_URL".into(), "http://localhost:11434/v1".into());
@@ -176,7 +176,7 @@ fn main() {
                     .min_inner_size(940.0, 620.0)
                     .build();
                 } else {
-                    eprintln!("[inscien] backend did not become healthy within 60s — check the [backend] logs above");
+                    eprintln!("[inscien] backend did not become healthy within 60s - check the [backend] logs above");
                 }
             });
 

@@ -1,6 +1,6 @@
-"""Background-job runner for `/narrate` — a thin wrapper over the shared `JobRunner`
+"""Background-job runner for `/narrate` - a thin wrapper over the shared `JobRunner`
 (`services/job_runner.py`), plus narration-specific helpers (audio path + the done/active
-registries the library uses to show ▶ / re-attach to an in-progress narration).
+registries the library uses to show > / re-attach to an in-progress narration).
 
 Narration is LLM + CPU-TTS only (Ollama for the script, Kokoro for audio), both in-process,
 so there is no separate GPU tts container.

@@ -13,7 +13,7 @@ export type GraphLayout = "network" | "timeline"
 export type ColorBy = "cluster" | "collection"
 
 // The renderer's unified node/edge model. The Atlas (fused map) supplies owned nodes; the
-// citation satellite layer (OpenAlex discovery/citing) supplies external nodes — both flow in here.
+// citation satellite layer (OpenAlex discovery/citing) supplies external nodes - both flow in here.
 export interface AtlasNode {
   id: string
   label: string
@@ -36,7 +36,7 @@ export interface AtlasEdge {
   weight?: number
   direct?: boolean // a real citation (vs a semantic/coupling link)
   direction?: "AtoB" | "BtoA" | "both" | null
-  external?: boolean // belongs to the citation satellite layer (owned↔external), not the fused core
+  external?: boolean // belongs to the citation satellite layer (owned<->external), not the fused core
 }
 
 export type Emphasis = {
@@ -93,7 +93,7 @@ function nodeVal(n: AtlasNode): number {
   return 0.45 + Math.min(1.2, Math.max(0, (n.citedBy ?? 0) - 1) * 0.35)
 }
 
-// --- timeline layout (kept for the citation satellite layer: year × citations) --------------
+// --- timeline layout (kept for the citation satellite layer: year x citations) --------------
 const W = 900
 const H = 560
 const GUTTER = 110
@@ -256,7 +256,7 @@ export default function GraphView({
   showHulls?: boolean
   emphasis?: Emphasis
   selectedId?: string | null
-  layoutKey?: string // changes only when the underlying owned scope changes → fresh layout
+  layoutKey?: string // changes only when the underlying owned scope changes -> fresh layout
   onSelectNode: (node: AtlasNode) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -266,7 +266,7 @@ export default function GraphView({
   // Persistent positions so emphasis/satellite toggles never relayout the ground.
   const posRef = useRef<Map<string, { x: number; y: number }>>(new Map())
 
-  // A fresh scope means a fresh layout — drop remembered positions.
+  // A fresh scope means a fresh layout - drop remembered positions.
   useEffect(() => {
     posRef.current = new Map()
   }, [layoutKey])
@@ -299,7 +299,7 @@ export default function GraphView({
   const visibleIds = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes])
   const timeline = useMemo(() => (layout === "timeline" ? computeTimeline(visibleNodes) : null), [layout, visibleNodes])
 
-  // Centroid of a cluster's already-placed nodes — so a newly-added node starts near its kin.
+  // Centroid of a cluster's already-placed nodes - so a newly-added node starts near its kin.
   const clusterCentroid = (cluster: number | null | undefined) => {
     if (cluster == null) return null
     let sx = 0, sy = 0, k = 0

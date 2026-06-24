@@ -1,4 +1,4 @@
-"""Fused map — the Atlas's single graph over the user's *own* papers.
+"""Fused map - the Atlas's single graph over the user's *own* papers.
 
 ONE weighted graph that blends three relationship signals between in-scope papers, then finds
 communities over it (numpy Louvain). This replaces the old similarity-only map (semantic kNN +
@@ -6,16 +6,16 @@ connected-components), which over-merged on a single bridging edge and threw awa
 geometry and the *literal* citation links we already have data for.
 
 Signals (all undirected on the map, computed only over the owned/in-scope set):
-  - semantic   — cosine of paper-level vectors (mean of chunk vectors). Continuous, leads.
-  - direct     — A's reference list contains B (OpenAlex id / DOI). Binary, reinforces/rescues.
-  - coupling   — A and B share references (bibliographic coupling) and/or share citers
+  - semantic   - cosine of paper-level vectors (mean of chunk vectors). Continuous, leads.
+  - direct     - A's reference list contains B (OpenAlex id / DOI). Binary, reinforces/rescues.
+  - coupling   - A and B share references (bibliographic coupling) and/or share citers
                  (co-citation). Normalized by overlap-over-min-size.
 
 Fusion is additive (`w = W_SEM*sem + W_DIRECT*direct + W_COUPLE*couple`) so semantic dominates but
 a citation-linked pair the embeddings missed is still rescued above the keep threshold. Clusters
 come from the *same* fused graph via Louvain, so the floating groups you see ARE the clusters.
 
-Pure vector/graph math — deterministic keyword cluster labels (no LLM, no agent loop).
+Pure vector/graph math - deterministic keyword cluster labels (no LLM, no agent loop).
 """
 
 import logging
@@ -35,7 +35,7 @@ SEM_KNN = 6           # semantic neighbours kept per paper (sparsify the dense c
 
 # --- fusion weights (semantic leads; citation reinforces / rescues) -------------------------
 W_SEM = 1.00          # weight on the rescaled semantic term (alone can reach ~1.0)
-W_DIRECT = 0.60       # weight on a direct citation between A,B (alone clears EDGE_KEEP → rescue)
+W_DIRECT = 0.60       # weight on a direct citation between A,B (alone clears EDGE_KEEP -> rescue)
 W_COUPLE = 0.45       # weight on bibliographic coupling / co-citation
 COUPLE_BLEND = 0.5    # within coupling: blend of (bib-coupling, co-citation) when both present
 
@@ -46,7 +46,7 @@ HUB_FRAC = 0.40       # skip an external ref shared by > this fraction of the co
 
 # --- clustering -----------------------------------------------------------------------------
 LOUVAIN_SEED = 1234   # determinism (seeded node-visit order)
-RESOLUTION = 1.0      # modularity resolution (lower → bigger communities)
+RESOLUTION = 1.0      # modularity resolution (lower -> bigger communities)
 MIN_LABEL_SIZE = 2    # smallest cluster that gets a keyword label
 LABEL_TERMS = 3       # max keywords per cluster label
 
@@ -80,7 +80,7 @@ def _collections(item_keys):
 
 
 def _tokens(title):
-    """Lowercase content words from a title (≥3 chars, no stopwords, no bare numbers)."""
+    """Lowercase content words from a title (>=3 chars, no stopwords, no bare numbers)."""
     return [
         t for t in re.split(r"[^a-z0-9]+", (title or "").lower())
         if len(t) >= 3 and not t.isdigit() and t not in _STOPWORDS
@@ -88,12 +88,12 @@ def _tokens(title):
 
 
 def _keyword_labels(members, titles):
-    """Deterministic, corpus-aware cluster labels from paper titles — no LLM.
+    """Deterministic, corpus-aware cluster labels from paper titles - no LLM.
 
-    For each cluster (size ≥ MIN_LABEL_SIZE), score its title terms by
+    For each cluster (size >= MIN_LABEL_SIZE), score its title terms by
     `tf_in_cluster / (1 + clusters_containing_term)` so the label is *distinctive* (not the same
     generic words on every blob), take the top few terms Title-Cased. Returns {cluster_id: label}
-    (only clusters that earn one). Deterministic tie-breaks → identical labels run-to-run.
+    (only clusters that earn one). Deterministic tie-breaks -> identical labels run-to-run.
     """
     cluster_tokens = {
         cid: [tok for k in ks for tok in _tokens(titles.get(k, ""))]
@@ -134,10 +134,10 @@ def _load_citation_signals(present):
     """Pull the per-paper citation signals for the mapped subset of `present` from the refstore
     cache. Returns dicts used to compute direct + coupling edges.
 
-      mapped_keys  — set of in-scope keys with a current OpenAlex record
-      key_by_oaid  — {openalexId: itemKey} for reverse lookup (direct citation)
-      ref_ids      — {itemKey: set(referenced openalexIds)}
-      cite_ids     — {itemKey: set(citing openalexIds)}  (only where citingWorks present)
+      mapped_keys  - set of in-scope keys with a current OpenAlex record
+      key_by_oaid  - {openalexId: itemKey} for reverse lookup (direct citation)
+      ref_ids      - {itemKey: set(referenced openalexIds)}
+      cite_ids     - {itemKey: set(citing openalexIds)}  (only where citingWorks present)
     """
     cache = refstore._load()
     mapped_keys, ref_ids, cite_ids, key_by_oaid = set(), {}, {}, {}
@@ -219,7 +219,7 @@ def _coupling_scores(present, ref_ids, cite_ids):
 # --- graph construction ----------------------------------------------------------------------
 
 def _semantic_block(present, vectors):
-    """L2-normalize the paper vectors and return the n×n cosine matrix (one matmul)."""
+    """L2-normalize the paper vectors and return the nxn cosine matrix (one matmul)."""
     mat = np.asarray([vectors[k] for k in present], dtype="float32")
     norms = np.linalg.norm(mat, axis=1, keepdims=True)
     norms[norms == 0] = 1.0
@@ -239,7 +239,7 @@ def _build_edges(present, cos, direct, couple):
     def _pair(i, j):  # canonical index order so a pair is added once, not twice
         return (i, j) if i < j else (j, i)
 
-    # Candidate pairs: semantic kNN (cap the hairball) ∪ every citation/coupling pair.
+    # Candidate pairs: semantic kNN (cap the hairball)  or  every citation/coupling pair.
     cand = set()
     if n > 1:
         k = min(SEM_KNN, n - 1)
@@ -293,7 +293,7 @@ def _build_level(n, edge_list):
 
 def _one_level(n, adj, degree, m, resolution, rng):
     """Local moving: repeatedly move each node to the neighbouring community giving the best
-    modularity gain, until no move helps. Returns node→community labels."""
+    modularity gain, until no move helps. Returns node->community labels."""
     com = list(range(n))
     tot = list(degree)
     two_m = 2.0 * m
@@ -329,7 +329,7 @@ def _communities(n, edges, resolution=RESOLUTION, seed=LOUVAIN_SEED):
     if n == 0:
         return []
     rng = np.random.default_rng(seed)
-    labels = list(range(n))  # original node → current-level node
+    labels = list(range(n))  # original node -> current-level node
     cur_n = n
     cur_edges = [(e["i"], e["j"], float(e["weight"])) for e in edges]
     while True:
@@ -362,11 +362,11 @@ def fused_map(item_keys, with_labels=True):
     """The Atlas graph for an in-scope set of papers.
 
     Returns {nodes, edges, clusters, missing, unmapped}:
-      nodes    — owned papers with cluster id/label, collection, and metadata.
-      edges    — fused, decomposed (semantic/coupling/citation) undirected links.
-      clusters — {id, label, size}, largest first.
-      missing  — in-scope keys with no paper vector yet (not indexed).
-      unmapped — in-scope keys that have a vector but no OpenAlex record (semantic-only nodes).
+      nodes    - owned papers with cluster id/label, collection, and metadata.
+      edges    - fused, decomposed (semantic/coupling/citation) undirected links.
+      clusters - {id, label, size}, largest first.
+      missing  - in-scope keys with no paper vector yet (not indexed).
+      unmapped - in-scope keys that have a vector but no OpenAlex record (semantic-only nodes).
     """
     item_keys = list(dict.fromkeys(item_keys))
     if not item_keys:
@@ -384,7 +384,7 @@ def fused_map(item_keys, with_labels=True):
     if not present:
         return {"nodes": [], "edges": [], "clusters": [], "missing": missing, "unmapped": []}
 
-    # Signals → fused edges.
+    # Signals -> fused edges.
     mapped_keys, key_by_oaid, ref_ids, cite_ids = _load_citation_signals(present)
     cos = _semantic_block(present, vectors)
     direct = _direct_edges(present, key_by_oaid, ref_ids)

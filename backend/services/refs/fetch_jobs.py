@@ -1,4 +1,4 @@
-"""Background-job runner for the OpenAlex reference fetch (`/graph` confirm step) — a thin
+"""Background-job runner for the OpenAlex reference fetch (`/graph` confirm step) - a thin
 wrapper over the shared `JobRunner` (`services/job_runner.py`). Single-worker, so it's
 polite to OpenAlex (one batch at a time).
 """

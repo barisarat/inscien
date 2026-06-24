@@ -1,5 +1,5 @@
 """Narration endpoints. The backend resolves the paper from the library and runs the whole
-narration job in-process (script via the shared LLM client, audio via Kokoro on CPU) — there
+narration job in-process (script via the shared LLM client, audio via Kokoro on CPU) - there
 is no separate tts service. The frontend contract is unchanged:
 
   POST /api/narrate          {docId|query}  -> {jobId, title}      (background)
@@ -71,7 +71,7 @@ def start(body: NarrateIn):
     if not paper:
         raise HTTPException(status_code=404, detail="Couldn't find that paper in your library.")
 
-    # Zotero items live in storage/ — resolve the absolute path to the stored PDF.
+    # Zotero items live in storage/ - resolve the absolute path to the stored PDF.
     file_ref = None
     try:
         from services.zotero.reader import resolve_pdf_path
@@ -89,9 +89,9 @@ def start(body: NarrateIn):
 
 @router.get("/registry")
 def registry():
-    """Completed narrations, 1:1 by paper, so the library can show a ▶ that replays the
+    """Completed narrations, 1:1 by paper, so the library can show a > that replays the
     saved mp3 without regenerating. Filtered to papers still in the current library, so a
-    reset or a Zotero-side removal doesn't leave a ▶ for a paper that no longer exists."""
+    reset or a Zotero-side removal doesn't leave a > for a paper that no longer exists."""
     valid = {p["docId"] for p in corpus_papers()}
     items = [
         {**n, "audioUrl": f"/api/narrate/{n['jobId']}/audio"}
@@ -103,13 +103,13 @@ def registry():
 
 @router.get("/active")
 def active(docId: str):
-    """The in-progress (queued/running) narration for a paper, or {job: null} — lets the
+    """The in-progress (queued/running) narration for a paper, or {job: null} - lets the
     UI re-attach to a narration started before the user navigated away. Defined before the
     /{job_id} route so it isn't shadowed by the catch-all."""
     return {"job": active_narration(docId)}
 
 
-# --- TTS model (Kokoro weights) — present check + a download job with progress -------------
+# --- TTS model (Kokoro weights) - present check + a download job with progress -------------
 # The desktop build doesn't bundle the ~1GB weights; the user downloads them once before the
 # first narration. (Defined before /{job_id} so "model" isn't read as a job id.)
 

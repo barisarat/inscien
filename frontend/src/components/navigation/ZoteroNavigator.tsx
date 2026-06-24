@@ -229,7 +229,7 @@ export default function ZoteroNavigator() {
                     key={item.itemKey}
                     className={`flex min-w-0 items-center gap-2 rounded-md py-1 pr-3 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
                     style={pad(26)}
-                    title={item.isBookDefaultOff ? "Book — opt in to index" : item.title ?? item.itemKey}
+                    title={item.isBookDefaultOff ? "Book - opt in to index" : item.title ?? item.itemKey}
                   >
                     <Checkbox checked={isSel} onCheckedChange={() => toggleItem(item)} />
                     <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => toggleItem(item)}>
@@ -259,7 +259,7 @@ export default function ZoteroNavigator() {
                         </Button>
                       ) : null}
                       {mapped.has(item.itemKey) ? (
-                        <span className="size-1.5 shrink-0 rounded-full bg-primary" title="Mapped — references fetched from OpenAlex" />
+                        <span className="size-1.5 shrink-0 rounded-full bg-primary" title="Mapped - references fetched from OpenAlex" />
                       ) : null}
                       {isBusy ? (
                         <Loader2 size={12} className="shrink-0 animate-spin" />
@@ -329,17 +329,17 @@ export default function ZoteroNavigator() {
         {!loading && !error && libraryMissing ? (
           <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
             No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
-            <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack — see the README.
+            <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack - see the README.
           </div>
         ) : null}
         {!loading && !error && !liveConnected && !libraryMissing ? (
           <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
-            Live Zotero library not connected — showing the last snapshot.
+            Live Zotero library not connected - showing the last snapshot.
           </div>
         ) : null}
         {persistError ? (
           <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
-            Your selection won’t be saved across reloads — browser storage is blocked.
+            Your selection won't be saved across reloads - browser storage is blocked.
           </div>
         ) : null}
 

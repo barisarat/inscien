@@ -1,6 +1,6 @@
-"""Kokoro TTS weights — presence check + a download job with progress.
+"""Kokoro TTS weights - presence check + a download job with progress.
 
-The desktop build does NOT bundle the Kokoro weights (they'd push the installer to ~1.5GB) — the
+The desktop build does NOT bundle the Kokoro weights (they'd push the installer to ~1.5GB) - the
 user downloads them once, with a visible progress bar, before the first narration. They land in the
 writable data dir and the TTS engine reads them from there. Docker still bakes them into the image
 (`KOKORO_MODEL_PATH`/`KOKORO_VOICES_PATH` env), so `model_present()` is true there and this is a no-op.
@@ -67,7 +67,7 @@ def _download(progress):
                     f.write(chunk)
                     done += len(chunk)
                     pct = int(done / total * 100) if total else 0
-                    progress("downloading", min(99, pct), f"{name} · {done >> 20} MB")
+                    progress("downloading", min(99, pct), f"{name} - {done >> 20} MB")
         tmp.replace(dest)
 
     progress("done", 100, "ready")

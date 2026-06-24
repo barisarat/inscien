@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/papers", tags=["papers"])
 
 
 def corpus_papers():
-    """[{docId, title, fileName}] — one entry per chunk-manifest doc, using the Zotero
+    """[{docId, title, fileName}] - one entry per chunk-manifest doc, using the Zotero
     titles carried on the chunks (used by the picker and narration resolution)."""
     manifest = load_manifest_chunks()
     docs = {}
@@ -35,7 +35,7 @@ def corpus_papers():
 
 def resolve_titles(doc_ids):
     """{docId: title} from the chunk manifest, falling back to the id when unknown.
-    Shared by the /compare and /write skills to label papers in their outputs."""
+    Used by the Map to label papers and clusters."""
     by_id = {d["docId"]: d["title"] for d in corpus_papers()}
     return {doc_id: (by_id.get(doc_id) or doc_id) for doc_id in doc_ids}
 
@@ -55,7 +55,7 @@ def get_paper(doc_id: str):
         zotero_path = resolve_pdf_path(doc_id)
     except Exception as exc:
         # A reader/config error (Zotero library unreadable/unmounted) is NOT "paper not
-        # found" — report it as such instead of masquerading as a 404.
+        # found" - report it as such instead of masquerading as a 404.
         logger.warning("resolve_pdf_path failed for %s", doc_id, exc_info=True)
         raise HTTPException(status_code=503, detail="Could not read the Zotero library.") from exc
 
@@ -65,7 +65,7 @@ def get_paper(doc_id: str):
     path = Path(zotero_path)
     # Let FileResponse build the Content-Disposition: it RFC 5987-encodes non-ASCII
     # filenames (e.g. a Unicode hyphen U+2010 common in paper titles). Building the header
-    # by hand fails — HTTP headers are latin-1, so such characters raise UnicodeEncodeError.
+    # by hand fails - HTTP headers are latin-1, so such characters raise UnicodeEncodeError.
     return FileResponse(
         str(path),
         media_type="application/pdf",

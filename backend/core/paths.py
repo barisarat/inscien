@@ -1,4 +1,4 @@
-"""Durable data-dir resolution — one base dir for everything InScien persists.
+"""Durable data-dir resolution - one base dir for everything InScien persists.
 
 SQLite, the embedded Qdrant store, the chunk manifest, the OpenAlex cache, job records, narration
 audio, the Zotero snapshot, and the embedding-model cache all live under one base directory. In
@@ -20,5 +20,5 @@ def data_dir() -> str:
 
 
 def data_path(*parts: str) -> str:
-    """A path under the data dir, e.g. `data_path("qdrant")` → `<data_dir>/qdrant`."""
+    """A path under the data dir, e.g. `data_path("qdrant")` -> `<data_dir>/qdrant`."""
     return str(Path(data_dir(), *parts))

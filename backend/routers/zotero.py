@@ -1,7 +1,7 @@
 """Zotero-native endpoints: browse the live library, index a selection, track sync state.
 
-Organization (collections/membership) is read *live* from the Zotero snapshot — never
-baked into the index — so reorganizing in Zotero needs no re-index. The index only owns
+Organization (collections/membership) is read *live* from the Zotero snapshot - never
+baked into the index - so reorganizing in Zotero needs no re-index. The index only owns
 content (chunks keyed by itemKey) and the sync ledger (what's indexed).
 """
 
@@ -74,7 +74,7 @@ def collections(db: Session = Depends(get_db)):
 @router.get("/collections/{collection_id}/items")
 def collection_items(collection_id: int, db: Session = Depends(get_db)):
     """Direct (non-recursive) PDF-bearing items of a collection, with metadata + index
-    state. Items with no synced PDF are omitted — that's Zotero's job, not ours."""
+    state. Items with no synced PDF are omitted - that's Zotero's job, not ours."""
     ledger.ensure_table()
     indexed = ledger.indexed_keys(db)
     items = []
@@ -89,14 +89,14 @@ def collection_items(collection_id: int, db: Session = Depends(get_db)):
 
 @router.get("/indexed-keys")
 def indexed_keys_all(db: Session = Depends(get_db)):
-    """Every itemKey currently indexed — the Map's 'whole library' scope."""
+    """Every itemKey currently indexed - the Map's 'whole library' scope."""
     ledger.ensure_table()
     return {"itemKeys": sorted(ledger.indexed_keys(db))}
 
 
 @router.get("/collections/{collection_id}/indexable-keys")
 def indexable_keys(collection_id: int):
-    """Recursive item keys in a collection that are actually indexable — PDF-bearing and
+    """Recursive item keys in a collection that are actually indexable - PDF-bearing and
     not a default-off book. Powers 'select this whole collection' in the navigator."""
     out = []
     for key in reader.resolve_collection_items(collection_id, recursive=True):

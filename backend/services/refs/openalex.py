@@ -1,9 +1,9 @@
-"""Thin OpenAlex client — the one online dependency of the citation map.
+"""Thin OpenAlex client - the one online dependency of the citation map.
 
 We send only a paper's public DOI to OpenAlex (free, no account/key, CC0 data) to get its
 canonical id + clean reference list, then resolve those reference ids to titles/years.
 Anonymous by design: no mailto/email, a generic User-Agent, the shared common pool. Calls
-are tolerant — any failure returns None / partial data so a build degrades gracefully
+are tolerant - any failure returns None / partial data so a build degrades gracefully
 rather than raising.
 """
 
@@ -47,7 +47,7 @@ def _short_id(openalex_id):
 
 
 def _strip_doi(doi_url):
-    """OpenAlex returns DOIs as 'https://doi.org/10.x' — keep the bare '10.x'."""
+    """OpenAlex returns DOIs as 'https://doi.org/10.x' - keep the bare '10.x'."""
     if not doi_url:
         return None
     for prefix in ("https://doi.org/", "http://doi.org/", "doi.org/"):
@@ -137,7 +137,7 @@ def resolve_works(ids):
     """Resolve OpenAlex work ids to metadata.
 
     `ids` are full id urls (as found in `referencedWorks`). Returns
-    {fullId: {title, year, doi, citedBy}} — keyed by the full id so callers can match the
+    {fullId: {title, year, doi, citedBy}} - keyed by the full id so callers can match the
     ids they passed in. Batches of <=50 (one page each); partial failures are skipped.
     """
     out = {}

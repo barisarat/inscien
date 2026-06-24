@@ -44,7 +44,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
   const [activeArtifact, setActiveArtifact] = useState<ActiveArtifact>(null)
 
-  // Switching mode via the action bar starts fresh — drop any loaded run. (loadRun
+  // Switching mode via the action bar starts fresh - drop any loaded run. (loadRun
   // sets the artifact *after* calling setMode, so reloads still win.)
   const setMode = useCallback((m: WorkspaceMode) => {
     setModeRaw(m)

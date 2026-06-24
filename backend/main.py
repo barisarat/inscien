@@ -2,7 +2,7 @@ import sys
 
 from dotenv import load_dotenv
 
-# In a frozen desktop build all config comes from the parent (Tauri) environment — don't pick up a
+# In a frozen desktop build all config comes from the parent (Tauri) environment - don't pick up a
 # stray `.env` from the working directory (e.g. dev Docker paths like /workspace/data).
 if not getattr(sys, "frozen", False):
     load_dotenv()
@@ -35,12 +35,12 @@ ENV_NAME = os.getenv("ENV_NAME", "development")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import models.zotero_sync  # noqa: F401 — register the sync-ledger table
+    import models.zotero_sync  # noqa: F401 - register the sync-ledger table
     Base.metadata.create_all(bind=engine)
     # No migration framework: additively add columns that create_all can't add to an
     # already-existing table (e.g. llm_provider on a returning user's app_settings).
     ensure_app_settings_columns()
-    # In-process jobs don't survive a restart — fail any that were mid-run.
+    # In-process jobs don't survive a restart - fail any that were mid-run.
     from services.narration.jobs import recover_stale as recover_narration
     from services.narration.model import recover_stale as recover_narrate_model
     from services.zotero.jobs import recover_stale as recover_zotero
@@ -92,7 +92,7 @@ app.include_router(zotero_router)
 
 @app.get("/health")
 async def health():
-    # Liveness only — fast and dependency-free, so the compose healthcheck reflects "the API
+    # Liveness only - fast and dependency-free, so the compose healthcheck reflects "the API
     # process is serving" and never flaps on a host Ollama being down. See /health/ready.
     return {"status": "ok"}
 
@@ -133,9 +133,9 @@ def health_ready():
 
 
 # Serve the built frontend (Next static export) when present. The production image bakes the
-# export into FRONTEND_DIST and serves it here, so the UI and API share one origin — no CORS,
+# export into FRONTEND_DIST and serves it here, so the UI and API share one origin - no CORS,
 # no separate Next server. Mounted LAST so the /api routers and /health above take precedence;
-# html=True resolves /ask → /ask/index.html. In development FRONTEND_DIST is unset (the Next
+# html=True resolves /ask -> /ask/index.html. In development FRONTEND_DIST is unset (the Next
 # dev server serves the UI on its own port), so this is a no-op.
 FRONTEND_DIST = os.getenv("FRONTEND_DIST")
 if FRONTEND_DIST and os.path.isdir(FRONTEND_DIST):

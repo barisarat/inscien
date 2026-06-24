@@ -4,7 +4,7 @@ import { WorkspaceProvider } from "./workspace/WorkspaceProvider"
 
 export const metadata = {
   title: "InScien",
-  description: "A local atlas of your Zotero library — map your papers by content and citations, and narrate them.",
+  description: "A local atlas of your Zotero library - map your papers by content and citations, and narrate them.",
 }
 
 export default function AskPage() {

@@ -1,7 +1,7 @@
 """Unified LLM access for InScien.
 
 InScien is **local by default**: generation runs against the user's local Ollama via its
-OpenAI-compatible Chat Completions endpoint — zero cost, offline, nothing leaves the machine.
+OpenAI-compatible Chat Completions endpoint - zero cost, offline, nothing leaves the machine.
 A user may **opt in** to an OpenAI (or OpenAI-compatible) cloud model for higher quality: set
 `llm_provider="openai"` in settings and provide the key via the `OPENAI_API_KEY` environment
 variable. The key is never stored in the DB; if it isn't set, generation stays local.
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LOCAL_MODEL = "qwen2.5:3b"
 DEFAULT_OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1")
-# OpenAI (or any OpenAI-compatible endpoint — set OPENAI_BASE_URL for Groq/OpenRouter/etc.).
+# OpenAI (or any OpenAI-compatible endpoint - set OPENAI_BASE_URL for Groq/OpenRouter/etc.).
 # `or` (not a getenv default) so an empty-string env value still falls back to the real URL.
 DEFAULT_OPENAI_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
 # Generous total request timeout so legitimately slow local generations still finish; a
@@ -56,7 +56,7 @@ def _read_settings():
             "openai_api_key": (row.openai_api_key or "").strip() or None,
         }
     except Exception:
-        # Default to local on any read failure — a broken settings read must never silently
+        # Default to local on any read failure - a broken settings read must never silently
         # route generation to the cloud.
         logger.exception("failed to read settings; falling back to env defaults")
         return {"provider": "local", "model": None, "ollama_base_url": None, "openai_api_key": None}
@@ -259,7 +259,7 @@ def chat_create(messages, tools=None, tool_choice=None, stream=False, max_tokens
     if provider == "openai":
         # Newer OpenAI models (gpt-5 / o-series) reject the legacy `max_tokens` and require
         # `max_completion_tokens`; they also only accept the default temperature, so we omit
-        # any explicit temperature the local path would have sent (e.g. grounding's 0).
+        # any explicit temperature the local path would have sent.
         kwargs["max_completion_tokens"] = max_tokens
     else:
         # Ollama speaks the legacy Chat Completions params.

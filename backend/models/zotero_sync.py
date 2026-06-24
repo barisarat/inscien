@@ -1,6 +1,6 @@
 """Per-item sync ledger: the one thing the index adds on top of Zotero.
 
-Zotero stays the source of truth for *organization* (collections, membership — read
+Zotero stays the source of truth for *organization* (collections, membership - read
 live). The index only owns *content*, and this table answers the single question the
 index adds: "is this item indexed, and is it up to date?" Keyed by Zotero itemKey, so
 it lines up 1:1 with chunk `sourceId`.

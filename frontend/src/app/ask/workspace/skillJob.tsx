@@ -19,10 +19,10 @@ interface TrackHandlers<T extends JobStatus> {
   fallbackError?: string
 }
 
-// Shared background-job plumbing for the skill modes (Compare/Write/Narrate/Graph): the
-// run-generation token + unmount cancellation, progress/error state, and the `pollJob`
-// wiring. Each mode keeps its own `phase` enum and success handling; this just removes the
-// four copies of "bump token, reset, poll-with-cancellation, surface errors".
+// Shared background-job plumbing for the workspace modes (Narrate, and the Map's citations
+// fetch): the run-generation token + unmount cancellation, progress/error state, and the
+// `pollJob` wiring. Each mode keeps its own `phase` enum and success handling; this just
+// removes the duplicated "bump token, reset, poll-with-cancellation, surface errors".
 export function useSkillJob() {
   const runToken = useRef(0)
   const [progress, setProgress] = useState<SkillProgress>({})

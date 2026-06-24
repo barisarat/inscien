@@ -1,11 +1,11 @@
-"""Shared in-process background-job runner for the skills (compare / write / narrate /
-graph-fetch).
+"""Shared in-process background-job runner for the app's background jobs (narration, the
+voice-model download, OpenAlex reference fetches, and Zotero indexing).
 
-Each skill is LLM/IO-bound and runs in the lean backend, so it uses the same pattern: a
-single-worker (serialized) executor, job state persisted to a volume so the UI can poll
-across reloads, and stale `queued`/`running` jobs failed on startup (an in-process worker
-doesn't survive a restart). This class is that pattern, parameterized by the skill's jobs
-dir + public-field projection; each skill module is a thin wrapper over an instance.
+Each is IO/LLM-bound, so it uses the same pattern: a single-worker (serialized) executor,
+job state persisted to a volume so the UI can poll across reloads, and stale
+`queued`/`running` jobs failed on startup (an in-process worker doesn't survive a restart).
+This class is that pattern, parameterized by the job's jobs dir + public-field projection;
+each job module is a thin wrapper over an instance.
 """
 
 import json
@@ -48,7 +48,7 @@ class JobRunner:
             self._persist(job)
 
     def _progress(self, job_id, generation):
-        # A progress update never flips the job to its terminal "done" status — even when a
+        # A progress update never flips the job to its terminal "done" status - even when a
         # pipeline reports stage="done" as its last step. The "done" transition is owned
         # solely by `_run` *after* `work` returns, so a poller can't observe status="done"
         # before the result dict has been merged into the job.

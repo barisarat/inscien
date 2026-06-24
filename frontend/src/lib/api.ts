@@ -21,7 +21,7 @@ async function getErrorMessage(res: Response): Promise<string> {
 }
 
 // A failed fetch (backend down / network / CORS) throws a raw TypeError ("Failed to fetch")
-// — turn it into an actionable message that names the likely cause.
+// - turn it into an actionable message that names the likely cause.
 const BACKEND_UNREACHABLE = `Couldn't reach the InScien backend${API_BASE ? ` at ${API_BASE}` : ""}. Is it running?`
 
 async function doFetch(path: string, init?: RequestInit): Promise<Response> {
@@ -32,7 +32,7 @@ async function doFetch(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-// InScien is single-user/local with no auth — these are plain calls (the backend
+// InScien is single-user/local with no auth - these are plain calls (the backend
 // chat endpoints are unauthenticated).
 async function authedGet<T>(path: string): Promise<T> {
   const res = await doFetch(path, { method: "GET" })
@@ -52,7 +52,7 @@ async function authedAction<T>(path: string, method: string, body?: unknown): Pr
 
 // ---- Settings (provider/model + display name) ----
 
-// Local by default; "openai" is opt-in. The OpenAI key is env-only (OPENAI_API_KEY) — never
+// Local by default; "openai" is opt-in. The OpenAI key is env-only (OPENAI_API_KEY) - never
 // sent through the API; the backend only reports whether it's present.
 export interface AppSettings {
   displayName: string
@@ -163,7 +163,7 @@ export async function fetchZoteroItems(collectionId: number): Promise<{ items: Z
   return authedGet(`/api/zotero/collections/${collectionId}/items`)
 }
 
-// Every indexed itemKey — the Map's "whole library" scope.
+// Every indexed itemKey - the Map's "whole library" scope.
 export async function fetchIndexedKeys(): Promise<{ itemKeys: string[] }> {
   return authedGet("/api/zotero/indexed-keys")
 }
@@ -203,7 +203,7 @@ export async function getNarration(jobId: string): Promise<NarrationStatus> {
   return authedGet(`/api/narrate/${encodeURIComponent(jobId)}`)
 }
 
-// The in-progress (queued/running) narration for a paper, or null — used to re-attach to
+// The in-progress (queued/running) narration for a paper, or null - used to re-attach to
 // a narration started before the user navigated away.
 export async function activeNarration(docId: string): Promise<{ job: NarrationStatus | null }> {
   return authedGet(`/api/narrate/active?docId=${encodeURIComponent(docId)}`)
@@ -241,7 +241,7 @@ export interface GraphNode {
   label: string
   type: "owned" | "external"
   year?: string | number | null
-  date?: string | null // OpenAlex publication_date (YYYY-MM-DD) — drives the timeline x-axis
+  date?: string | null // OpenAlex publication_date (YYYY-MM-DD) - drives the timeline x-axis
   citedBy?: number | null // external: within-selection degree (shared anchors render bigger)
   globalCitedBy?: number | null // global OpenAlex cited-by count
   doi?: string | null
@@ -255,7 +255,7 @@ export interface DiscoveryGraph {
   noDoi: string[]
 }
 
-// ---- Map · the Atlas (one fused graph over your own papers) ----
+// ---- Map - the Atlas (one fused graph over your own papers) ----
 // Blends semantic similarity + direct citation + bibliographic coupling, clustered via Louvain.
 
 export interface FusedNode {
@@ -316,7 +316,7 @@ export interface GraphFetchJob {
   result?: { mapped: string[] } | null
 }
 
-// Pre-fetch coverage of a selection — how many papers already have a cached map.
+// Pre-fetch coverage of a selection - how many papers already have a cached map.
 export async function graphFetchStatus(itemKeys: string[]): Promise<GraphFetchStatus> {
   return authedAction("/api/graph/fetch-status", "POST", { itemKeys })
 }
@@ -330,13 +330,13 @@ export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
   return authedGet(`/api/graph/fetch/${encodeURIComponent(jobId)}`)
 }
 
-// Assemble the discovery map over the mapped subset of the selection.
+// Assemble the citation graph over the mapped subset of the selection.
 export async function fetchDiscoveryGraph(itemKeys: string[]): Promise<DiscoveryGraph> {
   return authedAction("/api/graph", "POST", { itemKeys })
 }
 
 // Cited-by (forward): works that cite your papers. Fetch is a background job (polled via
-// getGraphFetch — same runner); the graph is assembled from the cache.
+// getGraphFetch - same runner); the graph is assembled from the cache.
 export async function startCitingFetch(itemKeys: string[]): Promise<{ jobId: string }> {
   return authedAction("/api/graph/citing-fetch", "POST", { itemKeys })
 }

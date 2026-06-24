@@ -10,7 +10,7 @@ import NarrateMode from "./NarrateMode"
 import { useWorkspace } from "./WorkspaceProvider"
 
 // The whole app shell: the Zotero library sidebar + the active mode (Map / Narrate) and a
-// draggable PDF viewer panel inside the sidebar inset. No chat — InScien is two transformation modes.
+// draggable PDF viewer panel inside the sidebar inset. No chat - InScien is two transformation modes.
 export default function WorkspaceShell() {
   const { mode, setMode, pdfTabs, activePdfTabId, hasOpenPdf, selectPdfTab, closePdfTab, closePdfPanel } =
     useWorkspace()

@@ -1,7 +1,7 @@
 """Read-only access to the user's local Zotero library.
 
 Everything here reads a *private snapshot* of `zotero.sqlite` (a `shutil.copy`), never
-the live DB — Zotero may hold a WAL lock while running, and an `immutable=1` read of our
+the live DB - Zotero may hold a WAL lock while running, and an `immutable=1` read of our
 own copy fully derisks any interaction with the real library. The snapshot is refreshed
 lazily when the live DB's mtime advances (on-demand staleness, per the design).
 
@@ -29,7 +29,7 @@ _snapshot_lock = threading.Lock()
 
 # Whether the live Zotero DB was reachable at the last snapshot refresh. When False we
 # are serving the existing read-only snapshot (live source unmounted/absent), so the
-# navigator may be stale — endpoints surface this to the UI via `live_connected()`.
+# navigator may be stale - endpoints surface this to the UI via `live_connected()`.
 _live_connected = True
 
 
@@ -66,7 +66,7 @@ def _normalize_doi(value):
 # --- snapshot + connection -------------------------------------------------
 
 def library_present():
-    """Whether any readable Zotero library exists — the live mounted DB or a prior snapshot.
+    """Whether any readable Zotero library exists - the live mounted DB or a prior snapshot.
 
     False means a fresh install with nothing mounted yet: reads would raise FileNotFoundError.
     Endpoints check this first to return a clean "no library" status instead of a 500.
@@ -116,7 +116,7 @@ def _connect():
 
 
 def snapshot_mtime():
-    """mtime of the live DB the snapshot tracks — a cheap cache key for the tree.
+    """mtime of the live DB the snapshot tracks - a cheap cache key for the tree.
 
     Falls back to the snapshot's own mtime when the live DB is absent, so the cache key
     stays stable (and callers don't crash) while we serve a stale snapshot.
@@ -206,7 +206,7 @@ def resolve_collection_items(collection_id, recursive=True):
 
 
 def live_item_keys():
-    """Every item key present in the live library (excluding trash) — the authoritative set
+    """Every item key present in the live library (excluding trash) - the authoritative set
     of what still exists in Zotero. Used to find indexed items that were deleted from Zotero.
 
     Returns a superset of valid parent keys (includes attachments/notes), so diffing the
@@ -249,7 +249,7 @@ def collection_direct_items():
 
 
 def item_primary_collection(item_keys):
-    """{itemKey: collectionName} — one collection per item (lowest collectionID) for grouping
+    """{itemKey: collectionName} - one collection per item (lowest collectionID) for grouping
     nodes on the Map. Items in no collection are omitted."""
     wanted = set(item_keys)
     direct = collection_direct_items()  # {collectionID: set(itemKey)}

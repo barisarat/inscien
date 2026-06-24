@@ -39,7 +39,7 @@ def get_settings(db: Session = Depends(get_db)):
 
 @router.get("/models")
 def list_models(db: Session = Depends(get_db)):
-    """Selectable LOCAL models — every model served by the user's Ollama. Cloud (OpenAI) models
+    """Selectable LOCAL models - every model served by the user's Ollama. Cloud (OpenAI) models
     are free-text (ids drift), so they're not enumerated here; `cloudModelHint` is just a
     placeholder suggestion for the input field."""
     row = settings_repo.get_settings(db)
@@ -47,7 +47,7 @@ def list_models(db: Session = Depends(get_db)):
 
     status = list_ollama_models_status(base)
     options = [
-        {"value": f"local|{model_id}", "label": f"{model_id} · local",
+        {"value": f"local|{model_id}", "label": f"{model_id} - local",
          "provider": "local", "model": model_id}
         for model_id in status["models"]
     ]

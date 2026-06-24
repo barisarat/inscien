@@ -5,7 +5,7 @@ Map-reduce script generation (a local 7B can't one-shot a paper):
   digests (the narration prompt) -> faithfulness flag -> Kokoro synthesis -> mp3.
 
 Generation runs through the single project LLM client (`services.llm.client`), so narration
-uses the same local Ollama model + base URL as chat — there is no separate TTS LLM path.
+uses the same local Ollama model + base URL as chat - there is no separate TTS LLM path.
 Parsing reuses the shared `services.lab.pdf_parser` (two-column reading-order aware).
 """
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # section reliably (smaller than the embedding chunk size), large enough to avoid over-splitting.
 DOC_CHUNK = 3500
 
-# Standalone bibliography heading — broad enough to catch the common title variants (and an
+# Standalone bibliography heading - broad enough to catch the common title variants (and an
 # optional leading section number / trailing colon) so the reference list is never narrated.
 _HEADING = re.compile(
     r"(?im)^\s*(?:\d{1,2}\.?\s+)?"
@@ -128,7 +128,7 @@ Style and tone
 - Use connective phrasing such as "The key idea", "In contrast", "The main result", or
   "The implication is", without addressing a listener.
 
-Content guidance — explain the problem and why it mattered; the core ideas and model concepts;
+Content guidance - explain the problem and why it mattered; the core ideas and model concepts;
 why the approach works conceptually; how success is evaluated and what the main results show;
 and the broader significance. Avoid step-by-step algorithms, hyperparameter values, and detailed
 numeric tables. The goal is a decision-grade mental model of the paper.

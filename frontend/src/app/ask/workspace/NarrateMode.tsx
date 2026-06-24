@@ -221,7 +221,7 @@ export default function NarrateMode() {
       fallback="Generating audio"
       minPct={2}
       defaultPct={0}
-      note="Generating audio in the background (a few minutes) — you can keep working."
+      note="Generating audio in the background (a few minutes) - you can keep working."
     />
   ) : phase === "done" ? (
     audioBlock(jobId)
@@ -242,14 +242,14 @@ export default function NarrateMode() {
       fallback="Downloading voice model"
       minPct={2}
       defaultPct={0}
-      note="Downloading the narration voice (~1 GB, one time) — you can keep working."
+      note="Downloading the narration voice (~1 GB, one time) - you can keep working."
     />
   ) : dlPhase === "error" ? (
     <JobError error={dl.error} onRetry={downloadModel} retryLabel="Retry download" />
   ) : ttsReady === false ? (
     <div className="flex flex-col items-start gap-5">
       <p className="text-sm text-muted-foreground">
-        Narration uses a local voice model (~1&nbsp;GB). Download it once to enable spoken audio — it
+        Narration uses a local voice model (~1&nbsp;GB). Download it once to enable spoken audio - it
         stays on your machine for every future narration.
       </p>
       <Button onClick={downloadModel}>

@@ -2,7 +2,7 @@
 Database connection and session management.
 
 InScien is single-user and local-first, so the store is a file-based SQLite
-database (no server to run). `DATABASE_URL` overrides the location/backend —
+database (no server to run). `DATABASE_URL` overrides the location/backend -
 the compose file sets it to `sqlite:////workspace/data/inscien.db`.
 """
 
@@ -66,7 +66,7 @@ def get_db():
 def ensure_app_settings_columns() -> None:
     """Additively reconcile `app_settings` columns on a pre-existing DB.
 
-    There is no migration framework — `Base.metadata.create_all` builds missing *tables* but
+    There is no migration framework - `Base.metadata.create_all` builds missing *tables* but
     never adds missing *columns* to a table that already exists. So a returning user's
     `app_settings` won't gain `llm_provider` on its own. Add it with an idempotent, guarded
     `ALTER TABLE ... ADD COLUMN` (SQLite backfills existing rows from the literal DEFAULT). A
@@ -75,7 +75,7 @@ def ensure_app_settings_columns() -> None:
     """
     inspector = inspect(engine)
     if "app_settings" not in inspector.get_table_names():
-        return  # fresh DB — create_all builds it with the column already present
+        return  # fresh DB - create_all builds it with the column already present
 
     existing = {c["name"] for c in inspector.get_columns("app_settings")}
     additive = {

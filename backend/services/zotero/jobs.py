@@ -1,5 +1,5 @@
-"""Background-job runner for Zotero indexing — a thin wrapper over the shared `JobRunner`
-(`services/job_runner.py`), like the compare/write/narrate/graph-fetch job modules.
+"""Background-job runner for Zotero indexing - a thin wrapper over the shared `JobRunner`
+(`services/job_runner.py`), like the other background-job modules (narration, OpenAlex fetches).
 
 Indexing a selection (parse + embed + upsert) can take a while for a big collection, so it
 runs off-request on the runner's single-worker executor, with state persisted to a volume

@@ -1,4 +1,4 @@
-"""Map endpoints — the Atlas (one fused graph over the user's own papers).
+"""Map endpoints - the Atlas (one fused graph over the user's own papers).
 
   POST /api/map {itemKeys, labels?}  -> {nodes, edges, clusters, missing, unmapped}   (sync)
 

@@ -1,6 +1,6 @@
-// Shared background-job poll loop used by the skill modes (Compare/Write/Narrate/Graph)
-// and the navigator's auto-index. Each caller keeps its own cancellation token; this just
-// removes the duplicated "poll until done/error, with progress + cancellation" loop.
+// Shared background-job poll loop used by the Narrate flow, the Map's citations fetch, and
+// the navigator's auto-index. Each caller keeps its own cancellation token; this just removes
+// the duplicated "poll until done/error, with progress + cancellation" loop.
 
 export interface JobStatus {
   status: "queued" | "running" | "done" | "error"

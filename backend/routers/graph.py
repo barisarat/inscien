@@ -4,7 +4,7 @@ The Graph workspace mode maps a *selection* of papers: each selected paper plus 
 it cites (fetched from OpenAlex by DOI) become nodes. Fetching is a background job (one
 OpenAlex call per paper); the map itself is assembled from the cache on demand.
 
-Privacy: only each selected paper's public DOI is sent to OpenAlex — no PDF, notes, or
+Privacy: only each selected paper's public DOI is sent to OpenAlex - no PDF, notes, or
 library content. See `services/refs/openalex.py`.
 """
 

@@ -158,7 +158,7 @@ def upsert_lab_points(points):
 
 
 def delete_lab_points_by_source(source_id):
-    """Remove all points for one document (sourceId) — used before re-indexing an item
+    """Remove all points for one document (sourceId) - used before re-indexing an item
     so a shrunk page/passage count never leaves stale points behind."""
     settings = get_lab_settings()
     client = get_qdrant_client()
@@ -173,7 +173,7 @@ def delete_lab_points_by_source(source_id):
 
 def ensure_source_payload_index():
     """Keyword payload index on sourceId so multi-item (MatchAny) scope filters stay
-    index-backed. Idempotent — a no-op if the index already exists."""
+    index-backed. Idempotent - a no-op if the index already exists."""
     settings = get_lab_settings()
     client = get_qdrant_client()
     try:
@@ -195,51 +195,6 @@ def get_lab_collection_count():
         "collection": settings["qdrant_collection"],
         "points_count": info.points_count,
     }
-
-
-def search_lab_chunks(query_vector, limit, doc_id=None, item_keys=None):
-    settings = get_lab_settings()
-    client = get_qdrant_client()
-
-    # A payload filter on sourceId scopes the vector search. `/compare` scopes to one
-    # paper (`doc_id`); the Zotero navigator scopes to a *selection* (`item_keys`, a set
-    # of itemKeys). Unscoped search omits the filter and searches the whole library.
-    query_filter = None
-    if doc_id:
-        query_filter = Filter(
-            must=[FieldCondition(key="sourceId", match=MatchValue(value=doc_id))]
-        )
-    elif item_keys:
-        query_filter = Filter(
-            must=[FieldCondition(key="sourceId", match=MatchAny(any=list(item_keys)))]
-        )
-
-    response = client.query_points(
-        collection_name=settings["qdrant_collection"],
-        query=query_vector,
-        limit=limit,
-        with_payload=True,
-        query_filter=query_filter,
-    )
-
-    items = []
-
-    for result in response.points:
-        payload = result.payload or {}
-
-        items.append({
-            "score": float(result.score),
-            "sourceType": payload.get("sourceType", ""),
-            "sourceId": payload.get("sourceId", ""),
-            "chunkId": payload.get("chunkId", ""),
-            "title": payload.get("title", ""),
-            "url": payload.get("url", ""),
-            "contentMode": payload.get("contentMode", ""),
-            "text": payload.get("text", ""),
-            "metadata": payload.get("metadata", {}),
-        })
-
-    return items
 
 
 # --- Paper-level vectors (one per item; mean of its chunk vectors) -----------------------
@@ -353,7 +308,7 @@ def _scroll_chunk_vectors(item_key):
 
 def backfill_paper_vectors(item_keys, payload_for=None):
     """Build paper vectors for items missing one, by averaging their already-indexed chunk
-    vectors — no reparse. `payload_for(item_key) -> dict` supplies optional node metadata.
+    vectors - no reparse. `payload_for(item_key) -> dict` supplies optional node metadata.
     Returns the count built."""
     import numpy as np
 

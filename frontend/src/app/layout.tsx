@@ -16,7 +16,7 @@ const sourceCodePro = Source_Code_Pro({
 
 export const metadata: Metadata = {
   title: "InScien | Private research assistant",
-  description: "Ask your own research papers and get answers with page-precise, verifiable citations — local and private.",
+  description: "Ask your own research papers and get answers with page-precise, verifiable citations - local and private.",
   icons: {
     icon: "/icon.png",
     shortcut: "/icon.png",

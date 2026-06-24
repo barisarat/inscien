@@ -3,8 +3,8 @@
 This is the swappable parsing interface: `parse_pdf(path)` returns blocks in human
 reading order, each `{text, page, bbox}` (page 1-based; bbox = [x0, y0, x1, y1] in
 PDF points). The corpus is born-digital LaTeX (a real text layer), so no OCR is
-needed. Two-column reading order — where a naive extractor reads straight across both
-columns — is fixed by sorting blocks into a left/right column per page. Swap this
+needed. Two-column reading order - where a naive extractor reads straight across both
+columns - is fixed by sorting blocks into a left/right column per page. Swap this
 module for Docling/Marker later without touching the chunker or store.
 """
 
@@ -28,7 +28,7 @@ def _ordered_blocks(page):
     ]
 
     mid = page.rect.width / 2.0
-    # Read left column top-to-bottom, then right column — within a column, by y then x.
+    # Read left column top-to-bottom, then right column - within a column, by y then x.
     text_blocks.sort(key=lambda b: (_column_index(b, mid), round(b[1], 1), b[0]))
 
     return [

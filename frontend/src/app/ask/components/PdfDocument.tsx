@@ -15,7 +15,7 @@ void pdfjs
 type RenderedPage = { pageNumber: number; width: number; originalWidth: number }
 
 function normalize(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, " ").replace(/[…]+$/, "").trim()
+  return value.toLowerCase().replace(/\s+/g, " ").replace(/[...]+$/, "").trim()
 }
 
 function escapeHtml(value: string): string {
@@ -25,12 +25,12 @@ function escapeHtml(value: string): string {
 /**
  * Renders the full PDF, scrollable, and highlights the cited passage on `targetPage`:
  *  - PRIMARY: when a `bbox` ([x0,y0,x1,y1] in PDF points, PyMuPDF top-left origin) is known,
- *    draw a rectangle overlay at bbox×scale — immune to hyphenation / two-column reflow.
+ *    draw a rectangle overlay at bboxxscale - immune to hyphenation / two-column reflow.
  *    scale = renderedWidth / originalWidth, captured per page from react-pdf's render
  *    callback (no Y-flip: PyMuPDF and the rendered DOM share a top-left origin).
- *  - FALLBACK: no bbox → the legacy text-layer match (a customTextRenderer wraps items whose
+ *  - FALLBACK: no bbox -> the legacy text-layer match (a customTextRenderer wraps items whose
  *    text is part of the passage).
- *  - HONEST MISS: no bbox and the text match found nothing → a small note, so a miss is
+ *  - HONEST MISS: no bbox and the text match found nothing -> a small note, so a miss is
  *    visible instead of silent. The page still scrolls into view either way.
  */
 export default function PdfDocument({
@@ -56,12 +56,12 @@ export default function PdfDocument({
 
   const hasBbox = Array.isArray(bbox) && bbox.length === 4
   const normalizedPassage = passage ? normalize(passage) : ""
-  // A distinctive short needle (first ~8 words) — fallback when whole-line containment
+  // A distinctive short needle (first ~8 words) - fallback when whole-line containment
   // misses on hyphenated / two-column text.
   const needle = normalizedPassage.split(" ").slice(0, 8).join(" ")
 
   // Track container width so pages fit the panel. Defer to rAF and only update on a
-  // real change so measuring → setState → relayout can't feed back into an infinite
+  // real change so measuring -> setState -> relayout can't feed back into an infinite
   // loop ("Maximum update depth exceeded"). contentRect already excludes padding.
   useEffect(() => {
     const el = containerRef.current
@@ -147,8 +147,8 @@ export default function PdfDocument({
       <Document
         file={fileUrl}
         onLoadSuccess={({ numPages: n }) => setNumPages(n)}
-        loading={<div className={styles.docStatus}>Loading PDF…</div>}
-        error={<div className={styles.docStatus}>Couldn’t load this PDF.</div>}
+        loading={<div className={styles.docStatus}>Loading PDF...</div>}
+        error={<div className={styles.docStatus}>Couldn't load this PDF.</div>}
       >
         {Array.from({ length: numPages }, (_, i) => {
           const page = i + 1
@@ -170,7 +170,7 @@ export default function PdfDocument({
               ) : null}
               {isTarget && showMiss ? (
                 <div className={styles.locateNote}>
-                  Couldn’t pinpoint the exact passage on this page.
+                  Couldn't pinpoint the exact passage on this page.
                 </div>
               ) : null}
             </div>

@@ -3,7 +3,7 @@
 Run inside the backend container:  python scripts/check_fused_map.py
 
 Exercises the pure functions that carry the clustering quality + citation-fusion fix:
-  1. Louvain finds 2 communities on two dense groups joined by one bridge edge — the case
+  1. Louvain finds 2 communities on two dense groups joined by one bridge edge - the case
      the old connected-components clustering collapsed into ONE blob.
   2. Louvain is deterministic (same input -> identical labels across runs).
   3. A directly-cited pair is kept as an edge even when its cosine is below the semantic floor

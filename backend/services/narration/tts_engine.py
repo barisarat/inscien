@@ -1,7 +1,7 @@
 """Text-to-speech synthesis via Kokoro (ONNX, CPU).
 
-Kokoro is a small Apache-2.0 voice model that runs fast on CPU through onnxruntime — the
-same runtime fastembed already uses — so narration needs no GPU and no torch. The model
+Kokoro is a small Apache-2.0 voice model that runs fast on CPU through onnxruntime - the
+same runtime fastembed already uses - so narration needs no GPU and no torch. The model
 weights (`kokoro-*.onnx` + `voices-*.bin`) are baked into the backend image, so synthesis
 works fully offline. This replaces the old XTTS (GPU + non-commercial license) engine.
 """
@@ -31,7 +31,7 @@ BITRATE = "192k"
 
 def _ffmpeg_exe():
     """Path to the ffmpeg to mux the mp3. Prefer the self-contained binary shipped by
-    imageio-ffmpeg (bundled into the frozen desktop builds — Windows/macOS have no system
+    imageio-ffmpeg (bundled into the frozen desktop builds - Windows/macOS have no system
     ffmpeg), then an explicit override, then PATH (Docker's image ffmpeg)."""
     override = (os.getenv("FFMPEG_BINARY") or "").strip()
     if override:
@@ -138,7 +138,7 @@ def _system_subprocess_env():
 
     PyInstaller's bootloader points LD_LIBRARY_PATH (DYLD_* on macOS) at the app's bundled libs
     in sys._MEIPASS and stashes the caller's original in `<VAR>_ORIG`. A system binary that
-    inherits the bundled path loads our incompatible libraries and fails — so restore the
+    inherits the bundled path loads our incompatible libraries and fails - so restore the
     original path (or drop the injected one if there was none) when frozen. A no-op when running
     normally (not frozen)."""
     env = dict(os.environ)
@@ -153,7 +153,7 @@ def _system_subprocess_env():
 
 
 def _concat_to_mp3(part_paths, out_path, work_dir):
-    """Concatenate WAV parts into a single mp3 via ffmpeg's concat demuxer — streams the parts
+    """Concatenate WAV parts into a single mp3 via ffmpeg's concat demuxer - streams the parts
     sequentially so memory never holds the whole audio (unlike loading them all in pydub)."""
     list_path = os.path.join(work_dir, "parts.txt")
     with open(list_path, "w", encoding="utf-8") as f:
@@ -196,7 +196,7 @@ def synthesize(script, out_path, progress):
             samples, sample_rate = kokoro.create(chunk, voice=VOICE, speed=1.0, lang=LANG)
             seg = _to_segment(samples, sample_rate)
             # Silence at the segment's own rate so every WAV part is uniform (mono/16-bit/same
-            # rate) — the ffmpeg concat demuxer requires consistent parameters across parts.
+            # rate) - the ffmpeg concat demuxer requires consistent parameters across parts.
             seg = seg + AudioSegment.silent(duration=SILENCE_MS, frame_rate=seg.frame_rate)
             part = os.path.join(work_dir, f"part-{i:05d}.wav")
             seg.export(part, format="wav")

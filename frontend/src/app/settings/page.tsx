@@ -63,7 +63,7 @@ export default function SettingsPage() {
         provider === "openai"
           ? cloudModel.trim()
           : selected.includes("|") ? selected.slice(selected.indexOf("|") + 1) : selected
-      // Send the key only when the user typed one — a blank field leaves the stored key intact.
+      // Send the key only when the user typed one - a blank field leaves the stored key intact.
       const key = openAiKey.trim()
       await updateSettings({
         displayName,
@@ -147,8 +147,8 @@ export default function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="local">Local (Ollama) — private, free</SelectItem>
-                  <SelectItem value="openai">OpenAI — cloud, higher quality</SelectItem>
+                  <SelectItem value="local">Local (Ollama) - private, free</SelectItem>
+                  <SelectItem value="openai">OpenAI - cloud, higher quality</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -162,8 +162,8 @@ export default function SettingsPage() {
                       <SelectValue
                         placeholder={
                           ollamaReachable
-                            ? "Ollama has no models — pull one first"
-                            : "Ollama isn’t reachable — start it and refresh"
+                            ? "Ollama has no models - pull one first"
+                            : "Ollama isn't reachable - start it and refresh"
                         }
                       />
                     </SelectTrigger>
@@ -196,7 +196,7 @@ export default function SettingsPage() {
                     autoComplete="off"
                     value={openAiKey}
                     onChange={(e) => setOpenAiKey(e.target.value)}
-                    placeholder={openAiKeyPresent ? "•••••••••• (saved — type to replace)" : "sk-..."}
+                    placeholder={openAiKeyPresent ? "Saved - type a new key to replace it" : "sk-..."}
                   />
                   <p className={`text-xs leading-5 ${openAiKeyPresent ? "text-muted-foreground" : "text-destructive"}`}>
                     {openAiKeyPresent

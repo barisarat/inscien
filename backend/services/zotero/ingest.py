@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 BATCH_SIZE = 32
 # Cap per-document parsing/embedding by page count so books / very-long items don't bloat the
 # index (and a whole collection can be fully indexed cheaply). The first pages carry a paper's
-# "aboutness" — which is all the Map (similarity) and Narration need. Cap by ACTUAL length, not
+# "aboutness" - which is all the Map (similarity) and Narration need. Cap by ACTUAL length, not
 # the (unreliable) Zotero item-type. Changing this requires a reset + re-index to take effect.
 MAX_INDEX_PAGES = int(os.getenv("MAX_INDEX_PAGES", "15"))
 
@@ -84,7 +84,7 @@ def _enrich_citations(item_key, meta, generation):
 
     Network I/O (`fetch_work`) runs OUTSIDE the derived-state lock; only the small cache write
     is guarded. Reference *resolution* (titles/years for the external satellite layer) stays
-    lazy on the `/api/graph` endpoints — the fused map only needs the raw referenced ids. Any
+    lazy on the `/api/graph` endpoints - the fused map only needs the raw referenced ids. Any
     failure is swallowed by the caller: the item is already fully indexed and the map simply
     degrades to a semantic-only node for it (the citation endpoints still retry on demand).
     """
@@ -113,7 +113,7 @@ def build_chunks_for_item(item_key, pdf_path, meta):
 
     chunks = []
     for page in sorted(by_page):
-        if page > MAX_INDEX_PAGES:  # length cap — see MAX_INDEX_PAGES
+        if page > MAX_INDEX_PAGES:  # length cap - see MAX_INDEX_PAGES
             break
         for index, passage in enumerate(_page_passages(by_page[page])):
             chunks.append({
@@ -188,7 +188,7 @@ def index_items(item_keys, progress=None):
                 pdf = resolve_pdf_path(key)
                 if not pdf:
                     skipped_no_pdf += 1
-                    emit("indexing", pct, f"{key}: no PDF — skipped")
+                    emit("indexing", pct, f"{key}: no PDF - skipped")
                     continue
 
                 file_hash = _file_hash(pdf)
@@ -214,7 +214,7 @@ def index_items(item_keys, progress=None):
                     for points in point_batches:
                         upsert_lab_points(points)
                     # Paper-level vector = mean of the item's chunk vectors (reflects the capped
-                    # content) → powers the Map's Similarity lens.
+                    # content) -> powers the Map's Similarity lens.
                     if all_vectors:
                         paper_vec = np.mean(np.asarray(all_vectors, dtype="float32"), axis=0).tolist()
                         upsert_paper_vector(key, paper_vec, _paper_payload(key, meta))
@@ -225,13 +225,13 @@ def index_items(item_keys, progress=None):
                     # exactly the items committed to Qdrant + the ledger (resumable).
                     _flush_manifest()
                 indexed += 1
-                emit("indexing", pct, f"{(meta.get('title') or key)[:48]} — {len(chunks)} chunks")
+                emit("indexing", pct, f"{(meta.get('title') or key)[:48]} - {len(chunks)} chunks")
 
                 # Best-effort: fetch this paper's OpenAlex record so the Map's citation signals
-                # are ready without a separate fetch step. Fail-open — the item is already
+                # are ready without a separate fetch step. Fail-open - the item is already
                 # indexed; a network/lookup failure must never mark it failed.
                 try:
-                    emit("indexing", pct, f"{(meta.get('title') or key)[:40]} — fetching citations")
+                    emit("indexing", pct, f"{(meta.get('title') or key)[:40]} - fetching citations")
                     _enrich_citations(key, meta, generation)
                 except DerivedStateReset:
                     raise
@@ -260,7 +260,7 @@ def index_items(item_keys, progress=None):
                         db.rollback()
                     _flush_manifest()
                 failed += 1
-                emit("indexing", pct, f"{key}: failed — skipped")
+                emit("indexing", pct, f"{key}: failed - skipped")
 
         with DERIVED_STATE_LOCK:
             ensure_current_generation(generation)
@@ -284,8 +284,8 @@ def index_items(item_keys, progress=None):
 def reset_index():
     """Full reset to a clean slate: drop + recreate the Qdrant collection, empty the
     manifest, clear the ledger, and clear derived artifacts (the OpenAlex cache, the Zotero
-    index-job files, and the compare/writeup/narration/graph-fetch job files + narration
-    mp3s). Everything after this is additive via `index_items`.
+    index-job files, and the narration + OpenAlex-fetch job files + narration mp3s).
+    Everything after this is additive via `index_items`.
     """
     with DERIVED_STATE_LOCK:
         # Invalidate any running background writer before wiping stores. Writers that were
@@ -316,7 +316,7 @@ def reset_index():
                 clear_all(db)
             finally:
                 db.close()
-            # Drop the OpenAlex cache too — its records are keyed to itemKeys that no longer exist.
+            # Drop the OpenAlex cache too - its records are keyed to itemKeys that no longer exist.
             # Rebuildable, so failure here is non-fatal (logged, not raised).
             try:
                 from services.refs.refstore import reset_cache
@@ -331,10 +331,10 @@ def reset_index():
 def prune_orphans(progress=None):
     """Remove index entries for items no longer in the live Zotero library (deleted papers).
 
-    Diffs the indexed set (manifest sourceIds ∪ ledger keys) against the live library and
+    Diffs the indexed set (manifest sourceIds  or  ledger keys) against the live library and
     drops each orphan's Qdrant points, manifest chunks, and ledger row. Explicit/user-driven.
 
-    Safety: if the live library can't be read or comes back empty, prune NOTHING — an
+    Safety: if the live library can't be read or comes back empty, prune NOTHING - an
     unmounted/empty library must never look like "everything was deleted".
     """
     emit = progress or (lambda *_args, **_kwargs: None)
@@ -348,10 +348,10 @@ def prune_orphans(progress=None):
     except Exception:
         logger.exception("prune_orphans: could not read the live Zotero library")
         return {"skipped": True, "pruned": 0,
-                "reason": "Couldn't read your Zotero library — nothing was removed."}
+                "reason": "Couldn't read your Zotero library - nothing was removed."}
     if not live:
         return {"skipped": True, "pruned": 0,
-                "reason": "Your Zotero library looks empty or unavailable — nothing was removed."}
+                "reason": "Your Zotero library looks empty or unavailable - nothing was removed."}
 
     by_source = defaultdict(list)
     for chunk in read_json_file(manifest_path):

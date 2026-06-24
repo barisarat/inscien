@@ -1,7 +1,7 @@
 """Config for the Zotero-native source.
 
-InScien rides on the user's *local* Zotero library — `zotero.sqlite` + a
-`storage/<KEY>/<file>.pdf` tree — read-only, via a private snapshot copy (never the
+InScien rides on the user's *local* Zotero library - `zotero.sqlite` + a
+`storage/<KEY>/<file>.pdf` tree - read-only, via a private snapshot copy (never the
 live DB; Zotero may hold a WAL lock). The data dir is bind-mounted read-only into the
 backend at `/workspace/zotero`. No Zotero web API, no API key.
 """
@@ -14,7 +14,7 @@ from core.paths import data_path
 logger = logging.getLogger(__name__)
 
 
-# Item types treated as "heavy" and unselected by default in the navigator — they
+# Item types treated as "heavy" and unselected by default in the navigator - they
 # blow up chunk counts and indexing time. The user can still opt them in explicitly.
 BOOK_ITEM_TYPES = {"book", "bookSection", "thesis"}
 

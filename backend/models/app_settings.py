@@ -5,9 +5,9 @@ from core.db import Base
 
 
 class AppSettings(Base):
-    """Single-row, single-user settings — the user's "usage params".
+    """Single-row, single-user settings - the user's "usage params".
 
-    `llm_provider` selects the generation backend: "local" (the default — the user's local
+    `llm_provider` selects the generation backend: "local" (the default - the user's local
     Ollama) or "openai" (an OpenAI / OpenAI-compatible endpoint, opt-in). `llm_model` holds the
     active model id for whichever provider is selected.
 

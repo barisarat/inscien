@@ -39,10 +39,10 @@ import {
 type Connections = "none" | "cite" | "cited" | "both" | "gaps"
 type Scope = { kind: "selection" } | { kind: "library" } | { kind: "collection"; id: number; name: string }
 
-const GAP_MIN = 2 // an external cited by ≥ this many of your papers is a "gap" worth surfacing
+const GAP_MIN = 2 // an external cited by >= this many of your papers is a "gap" worth surfacing
 
 const DISCLOSURE =
-  "Citation overlays use OpenAlex (open scholarly data) — each selected paper's DOI fetches its " +
+  "Citation overlays use OpenAlex (open scholarly data) - each selected paper's DOI fetches its " +
   "public references/citers. This is the only feature that reaches the internet."
 
 const workspaceRowStyle = { paddingLeft: 24, paddingRight: 24 }
@@ -144,7 +144,7 @@ export default function GraphMode() {
     })()
   }, [])
 
-  // Resolve the chosen scope → the item keys the map runs over.
+  // Resolve the chosen scope -> the item keys the map runs over.
   useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -165,7 +165,7 @@ export default function GraphMode() {
   const itemKeys = scopeKeys
   const keysKey = itemKeys.join(",")
 
-  // Build the fused Atlas whenever the scope changes. Pure read — no OpenAlex gate.
+  // Build the fused Atlas whenever the scope changes. Pure read - no OpenAlex gate.
   useEffect(() => {
     const t = newRun()
     setFused(null)
@@ -276,7 +276,7 @@ export default function GraphMode() {
     return { nodeIds: ids, isActiveEdge: (e) => !!e.external }
   }, [connections, composed.edges])
 
-  // Strongest neighbours of the selected node (for the inspect panel) — derived from edges.
+  // Strongest neighbours of the selected node (for the inspect panel) - derived from edges.
   const neighbors = useMemo<Neighbor[]>(() => {
     if (!selectedId) return []
     const labelOf = new Map(composed.nodes.map((n) => [n.id, n.label]))
@@ -292,7 +292,7 @@ export default function GraphMode() {
   const selectedNode = useMemo(() => composed.nodes.find((n) => n.id === selectedId) ?? null, [composed.nodes, selectedId])
 
   const narrate = useCallback((n: AtlasNode) => {
-    // Narrate operates on the single selected paper — make this the selection, then jump to Narrate.
+    // Narrate operates on the single selected paper - make this the selection, then jump to Narrate.
     clear()
     setMany([n.id], true)
     setMode("narrate")
@@ -348,7 +348,7 @@ export default function GraphMode() {
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-lg font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          Select papers in the library to map them — or choose a whole collection / your whole library
+          Select papers in the library to map them - or choose a whole collection / your whole library
           below. The Atlas clusters your papers by content <em>and</em> citations; overlay what they cite.
         </p>
         {scopeControl}
@@ -368,7 +368,7 @@ export default function GraphMode() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-lg font-medium">Map</h2>
-        <p className="max-w-md text-sm text-muted-foreground">Couldn’t build the map. {error}</p>
+        <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
         {scopeControl}
       </div>
     )
@@ -437,7 +437,7 @@ export default function GraphMode() {
 
       {ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="max-w-md text-sm text-muted-foreground">The selected papers aren’t indexed yet — index them in the library first.</p>
+          <p className="max-w-md text-sm text-muted-foreground">The selected papers aren't indexed yet - index them in the library first.</p>
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col">

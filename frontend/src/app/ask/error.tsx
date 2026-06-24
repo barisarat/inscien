@@ -1,6 +1,6 @@
 "use client"
 
-// Next.js App Router error boundary for the /ask subtree — the whole app, since `/`
+// Next.js App Router error boundary for the /ask subtree - the whole app, since `/`
 // redirects here. Catches render errors in the workspace shell, the providers, and the Map /
 // Narrate modes so an unexpected throw shows a calm recovery screen instead of a blank page.
 
@@ -27,8 +27,8 @@ export default function AskError({
         <CardHeader>
           <CardTitle>Something broke unexpectedly</CardTitle>
           <CardDescription>
-            The workspace hit an error it couldn’t recover from on its own. Your library and indexed
-            papers are safe — try reloading the view.
+            The workspace hit an error it couldn't recover from on its own. Your library and indexed
+            papers are safe - try reloading the view.
           </CardDescription>
         </CardHeader>
         <CardFooter className="gap-2">

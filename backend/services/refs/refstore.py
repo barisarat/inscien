@@ -1,13 +1,12 @@
-"""OpenAlex-backed reference cache + selection-scoped discovery graph.
+"""OpenAlex-backed reference cache for the Map's Citations lens, scoped to the selection.
 
-Per-paper records keyed by Zotero itemKey, persisted to a single JSON cache (separate from
-the agent's `references.json` so the two concerns stay independent). A record is one of:
-  mapped     — DOI resolved in OpenAlex; has openalexId + resolved references
-  no_doi     — the Zotero item has no DOI field
-  not_found  — has a DOI but OpenAlex returned nothing (404 / error)
+Per-paper records keyed by Zotero itemKey, persisted to a single JSON cache. A record is one of:
+  mapped     - DOI resolved in OpenAlex; has openalexId + resolved references
+  no_doi     - the Zotero item has no DOI field
+  not_found  - has a DOI but OpenAlex returned nothing (404 / error)
 
 `mapped` records are cached permanently (skipped on re-fetch). Misses (no_doi/not_found)
-are always retried — a DOI may have been added to Zotero since, and re-checking is cheap.
+are always retried - a DOI may have been added to Zotero since, and re-checking is cheap.
 """
 
 import json
@@ -23,13 +22,13 @@ from services.zotero.reader import item_metadata
 
 CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH") or data_path("openalex.json"))
 
-# Cap on forward citers fetched per paper (Cited-by lens) — most-influential first.
+# Cap on forward citers fetched per paper (Cited-by lens) - most-influential first.
 CITING_LIMIT = int(os.getenv("OPENALEX_CITING_LIMIT", "100"))
 # A reference cited by at least this many of your selected papers is a "gap" worth surfacing.
 GAP_MIN = int(os.getenv("OPENALEX_GAP_MIN", "2"))
 
 # Bump when the cached record shape changes so older records are transparently re-fetched
-# (a mapped record from an earlier schema is treated as unmapped → re-fetched on demand).
+# (a mapped record from an earlier schema is treated as unmapped -> re-fetched on demand).
 # v2 added publication_date on the paper and its references.
 SCHEMA_VERSION = 2
 
@@ -57,7 +56,7 @@ def reset_cache():
 
 
 def _is_mapped(rec):
-    """Mapped *and* current-schema — a stale-schema record re-fetches like a miss."""
+    """Mapped *and* current-schema - a stale-schema record re-fetches like a miss."""
     return bool(rec) and rec.get("status") == "mapped" and rec.get("v") == SCHEMA_VERSION
 
 
@@ -66,7 +65,7 @@ def _as_ref(entry):
 
     Index-time enrichment writes raw OpenAlex id strings (resolution is lazy); a fully fetched
     record has resolved dicts. Accept either so the graph builders never crash on unresolved
-    ids — an unresolved external just renders with its id until a fetch resolves its title."""
+    ids - an unresolved external just renders with its id until a fetch resolves its title."""
     if isinstance(entry, dict):
         return entry
     if isinstance(entry, str):
@@ -80,7 +79,7 @@ def mapped_keys():
 
 
 def fetch_status(item_keys):
-    """{mapped, unmapped, noDoi} for a selection — the pre-fetch coverage check.
+    """{mapped, unmapped, noDoi} for a selection - the pre-fetch coverage check.
 
     `unmapped` = anything not yet mapped (uncached or a cached miss to retry); `noDoi` is
     the subset already known to lack a DOI, surfaced so the UI can explain the gap.
@@ -101,7 +100,7 @@ def fetch_status(item_keys):
 def fetch_items(item_keys, progress=None):
     """Fetch + cache OpenAlex records for the not-yet-mapped subset of `item_keys`.
 
-    One `fetch_work` per paper (DOI → record), then a single batched `resolve_works` pass
+    One `fetch_work` per paper (DOI -> record), then a single batched `resolve_works` pass
     over every referenced id collected across the batch. Emits per-paper progress via
     `progress(stage, percent, detail)`.
     """
@@ -114,7 +113,7 @@ def fetch_items(item_keys, progress=None):
     for done, key in enumerate(todo):
         meta = item_metadata(key) or {}
         title = meta.get("title") or key
-        emit("fetching", 2 + int(80 * done / total), f"fetching ({done}/{len(todo)}) · {title[:60]}")
+        emit("fetching", 2 + int(80 * done / total), f"fetching ({done}/{len(todo)}) - {title[:60]}")
         doi = meta.get("doi")
         if not doi:
             cache[key] = {"doi": None, "openalexId": None, "year": meta.get("year"),
@@ -137,7 +136,7 @@ def fetch_items(item_keys, progress=None):
             ensure_current_generation(generation)
             _save(cache)
 
-    # Resolve reference ids → metadata for every requested mapped record whose references
+    # Resolve reference ids -> metadata for every requested mapped record whose references
     # are still raw ids. Covers this run AND any left unresolved by a prior interrupted run
     # (a mapped record with unresolved refs would otherwise be skipped above and never fixed).
     pending_refs = set()
@@ -197,7 +196,7 @@ def fetch_citing_items(item_keys, progress=None):
     for done, key in enumerate(todo):
         meta = item_metadata(key) or {}
         title = meta.get("title") or key
-        emit("fetching", 2 + int(80 * done / total), f"cited-by ({done}/{len(todo)}) · {title[:60]}")
+        emit("fetching", 2 + int(80 * done / total), f"cited-by ({done}/{len(todo)}) - {title[:60]}")
         rec = cache.get(key)
         if not _is_mapped(rec):
             rec = cache[key] = _map_record(meta, meta.get("doi"))
@@ -208,7 +207,7 @@ def fetch_citing_items(item_keys, progress=None):
             ensure_current_generation(generation)
             _save(cache)
 
-    # Resolve citing ids → metadata (covers this run + any interrupted prior run).
+    # Resolve citing ids -> metadata (covers this run + any interrupted prior run).
     pending, to_resolve = set(), []
     for key in item_keys:
         cw = (cache.get(key) or {}).get("citingWorks")
@@ -234,7 +233,7 @@ def fetch_citing_items(item_keys, progress=None):
 
 
 def citing_graph(item_keys):
-    """Forward map: owned papers + the works that cite them (edges point citer → owned)."""
+    """Forward map: owned papers + the works that cite them (edges point citer -> owned)."""
     cache = _load()
     nodes, edges = [], []
     unmapped, no_doi = [], []
