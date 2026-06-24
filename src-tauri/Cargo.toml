@@ -1,0 +1,21 @@
+[package]
+name = "inscien"
+version = "0.1.0"
+description = "InScien — a local atlas of your Zotero library"
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = "2"
+
+[features]
+# default to a webview that uses the OS engine (WebView2 / WebKit / WebKitGTK)
+custom-protocol = ["tauri/custom-protocol"]

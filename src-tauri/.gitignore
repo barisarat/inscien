@@ -1,0 +1,8 @@
+# Rust build output
+/target
+# Tauri-generated schemas/code
+/gen
+# Frozen backend sidecar binaries (produced per-build by PyInstaller)
+/binaries
+# Bundled ML weights (fetched by scripts/fetch-weights.sh — large, not in git)
+/resources

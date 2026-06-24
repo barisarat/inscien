@@ -10,10 +10,11 @@ import json
 import os
 from pathlib import Path
 
+from core.paths import data_path
 from services.job_runner import JobRunner
 from services.narration.pipeline import run_narration
 
-JOBS_DIR = Path(os.getenv("NARRATION_JOBS_DIR", "/workspace/data/narration_jobs"))
+JOBS_DIR = Path(os.getenv("NARRATION_JOBS_DIR") or data_path("narration_jobs"))
 AUDIO_DIR = JOBS_DIR / "audio"
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 

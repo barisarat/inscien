@@ -61,3 +61,6 @@ pymupdf>=1.24,<2.0
 # plus pydub for stitching chunks and mp3 export (uses the ffmpeg installed in the image).
 kokoro-onnx>=0.4
 pydub>=0.25
+# pydub imports the stdlib `audioop`, which was removed in Python 3.13. This backport restores it
+# on 3.13+ (no-op on 3.12 and earlier, where the stdlib module still exists).
+audioop-lts; python_version >= "3.13"

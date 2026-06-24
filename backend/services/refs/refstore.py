@@ -16,11 +16,12 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+from core.paths import data_path
 from services.refs.openalex import fetch_citing_works, fetch_work, resolve_works
 from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
 from services.zotero.reader import item_metadata
 
-CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH", "/workspace/data/openalex.json"))
+CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH") or data_path("openalex.json"))
 
 # Cap on forward citers fetched per paper (Cited-by lens) — most-influential first.
 CITING_LIMIT = int(os.getenv("OPENALEX_CITING_LIMIT", "100"))

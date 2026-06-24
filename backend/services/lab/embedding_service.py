@@ -11,7 +11,10 @@ def get_embedding_model():
 
     if _model is None:
         settings = get_lab_settings()
-        _model = TextEmbedding(model_name=settings["embedding_model"])
+        _model = TextEmbedding(
+            model_name=settings["embedding_model"],
+            cache_dir=settings["fastembed_cache_path"],
+        )
 
     return _model
 

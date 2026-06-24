@@ -1,0 +1,77 @@
+name: release
+
+# Build the cross-OS desktop installers and attach them to a GitHub Release.
+# Trigger by pushing a tag like `v0.1.0`, or run manually.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+            sidecar_ext: ""
+          - os: macos-14            # Apple Silicon
+            triple: aarch64-apple-darwin
+            sidecar_ext: ""
+          - os: windows-latest
+            triple: x86_64-pc-windows-msvc
+            sidecar_ext: ".exe"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux system deps (WebKitGTK for Tauri 2 + ffmpeg/espeak for TTS)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf \
+            build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev \
+            ffmpeg espeak-ng
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "24", cache: "npm", cache-dependency-path: frontend/package-lock.json }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: ${{ matrix.triple }} }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: "src-tauri -> target" }
+
+      # --- 1) Freeze the backend into a single sidecar binary ---------------------------------
+      - name: PyInstaller freeze backend
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          pip install -r requirements.txt
+          pyinstaller inscien.spec
+          mkdir -p ../src-tauri/binaries
+          cp "dist/inscien-backend${{ matrix.sidecar_ext }}" \
+             "../src-tauri/binaries/inscien-backend-${{ matrix.triple }}${{ matrix.sidecar_ext }}"
+
+      # --- 2) Fetch the bundled ML weights (Kokoro + bge-small) -------------------------------
+      - name: Fetch ML weights
+        shell: bash
+        run: ./scripts/fetch-weights.sh
+
+      # --- 3) Build the Tauri app (also runs the frontend build via beforeBuildCommand) ------
+      - name: Build + release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src-tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: "InScien ${{ github.ref_name }}"
+          releaseBody: "Unsigned v1 build. See PACKAGING.md for install notes (Gatekeeper/SmartScreen)."
+          releaseDraft: true
+          args: --target ${{ matrix.triple }}

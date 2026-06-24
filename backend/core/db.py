@@ -11,6 +11,8 @@ import os
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
+from core.paths import data_path
+
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
@@ -25,7 +27,7 @@ def _get_database_url() -> str:
     explicit = _norm(os.getenv("DATABASE_URL"))
     if explicit:
         return explicit
-    path = _norm(os.getenv("SQLITE_PATH")) or "/workspace/data/inscien.db"
+    path = _norm(os.getenv("SQLITE_PATH")) or data_path("inscien.db")
     return f"sqlite:///{path}"
 
 
