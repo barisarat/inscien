@@ -19,22 +19,23 @@ type Props = {
 
 export default function ActionBar({ mode, onChange }: Props) {
   return (
-    <nav className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1 shadow-xs" aria-label="Workspace mode">
+    <div className="flex items-center gap-1.5" role="group" aria-label="Workspace mode">
       {MODES.map(({ mode: m, label, Icon }) => (
         <Toggle
           key={m}
           size="sm"
+          variant="segment"
+          className="gap-1.5"
           pressed={mode === m}
-          className="border border-transparent data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:shadow-xs"
           aria-current={mode === m ? "page" : undefined}
           onPressedChange={(pressed) => {
             if (pressed) onChange(m)
           }}
         >
-          <Icon size={15} />
+          <Icon className="size-3.5" />
           {label}
         </Toggle>
       ))}
-    </nav>
+    </div>
   )
 }

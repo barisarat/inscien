@@ -26,9 +26,6 @@ import { Badge } from "@/components/ui/badge"
 
 type Phase = "idle" | "running" | "done" | "error"
 
-const workspaceRowStyle = { paddingLeft: 24, paddingRight: 24 }
-const bodyStyle = { paddingLeft: 24, paddingRight: 24, paddingTop: 32, paddingBottom: 24 }
-
 export default function NarrateMode() {
   const { selectedKeys } = useZoteroSelection()
   const { activeArtifact } = useWorkspace()
@@ -187,19 +184,19 @@ export default function NarrateMode() {
     )
   }
 
-  const status =
-    loaded || phase === "done" ? "Ready" : phase === "running" ? "Generating" : phase === "error" ? "Error" : "Ready to generate"
-
   const header = (
-    <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b py-2" style={workspaceRowStyle}>
+    <div className="flex h-13 shrink-0 items-center justify-between gap-3 border-b px-6">
       <div className="min-w-0">
         <h2 className="text-sm font-medium">Narrate</h2>
       </div>
-      {phase !== "idle" ? (
-        <Badge variant={phase === "error" ? "destructive" : "secondary"} className="shrink-0">
-          {phase === "running" ? <Loader2 className="animate-spin" /> : null}
-          {status}
-        </Badge>
+      {phase === "running" ? (
+        <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" /> Generating...
+        </span>
+      ) : loaded || phase === "done" ? (
+        <Badge variant="secondary" className="shrink-0">Ready</Badge>
+      ) : phase === "error" ? (
+        <Badge variant="destructive" className="shrink-0">Error</Badge>
       ) : null}
     </div>
   )
@@ -247,17 +244,17 @@ export default function NarrateMode() {
   ) : dlPhase === "error" ? (
     <JobError error={dl.error} onRetry={downloadModel} retryLabel="Retry download" />
   ) : ttsReady === false ? (
-    <div className="flex flex-col items-start gap-5">
+    <div className="flex flex-col items-start gap-3">
       <p className="text-sm text-muted-foreground">
-        Narration uses a local voice model (~1&nbsp;GB). Download it once to enable spoken audio - it
-        stays on your machine for every future narration.
+        Narration uses a local voice model (<span className="whitespace-nowrap">~1 GB</span>). Download it
+        once to enable spoken audio - it stays on your machine for every future narration.
       </p>
       <Button onClick={downloadModel}>
         <Download /> Download narration voice
       </Button>
     </div>
   ) : (
-    <div className="flex flex-col items-start gap-5">
+    <div className="flex flex-col items-start gap-3">
       <p className="text-sm text-muted-foreground">
         The narration job runs in the background and will be saved for replay.
       </p>
@@ -270,7 +267,7 @@ export default function NarrateMode() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {header}
-      <div className="min-h-0 flex-1 overflow-auto" style={bodyStyle}>
+      <div className="min-h-0 flex-1 overflow-auto px-6 py-8">
         <div className="max-w-lg">
           <Card>
             <CardHeader>

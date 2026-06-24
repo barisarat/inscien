@@ -4,6 +4,8 @@ import { ExternalLink, PanelRightClose, X } from "lucide-react"
 
 import { API_BASE } from "@/lib/api"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import PdfDocument from "./PdfDocument"
 
 export type PdfTab = {
@@ -34,50 +36,67 @@ export default function PdfViewerPanel({
 
   return (
     <aside className="flex h-full min-h-0 flex-col border-l bg-card">
-      <div className="flex h-11 shrink-0 items-center gap-1 border-b px-2">
-        <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+      <div className="flex h-13 shrink-0 items-center gap-1.5 border-b px-3">
+        <div className="flex flex-1 items-center gap-1.5 overflow-x-auto" role="tablist">
           {tabs.map((tab) => {
             const active = tab.id === activePdf?.id
             return (
-              <div
-                key={tab.id}
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-sm ${
-                  active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                <button type="button" className="max-w-[12rem] truncate" onClick={() => onSelectTab(tab.id)} title={tab.title}>
-                  {tab.title}
-                </button>
-                <button
-                  type="button"
+              <div key={tab.id} className="flex shrink-0 items-center gap-0.5">
+                <Toggle
+                  size="sm"
+                  variant="segment"
+                  pressed={active}
+                  onPressedChange={(pressed) => {
+                    if (pressed) onSelectTab(tab.id)
+                  }}
+                  title={tab.title}
+                >
+                  <span className="max-w-[12rem] truncate">{tab.title}</span>
+                </Toggle>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
                   aria-label={`Close ${tab.title}`}
-                  className="rounded p-0.5 text-muted-foreground hover:text-foreground"
                   onClick={(e) => {
                     e.stopPropagation()
                     onCloseTab(tab.id)
                   }}
                 >
-                  <X size={13} />
-                </button>
+                  <X />
+                </Button>
               </div>
             )
           })}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           {fileUrl ? (
-            <a
-              href={`${fileUrl}#page=${activePdf?.targetPage ?? 1}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open in a browser tab"
-              className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-            >
-              <ExternalLink />
-            </a>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <a
+                    href={`${fileUrl}#page=${activePdf?.targetPage ?? 1}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open in a browser tab"
+                    className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+                  >
+                    <ExternalLink />
+                  </a>
+                }
+              />
+              <TooltipContent>Open in a browser tab</TooltipContent>
+            </Tooltip>
           ) : null}
-          <Button variant="ghost" size="icon-sm" onClick={onClosePanel} aria-label="Close panel">
-            <PanelRightClose />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" onClick={onClosePanel} aria-label="Close panel">
+                  <PanelRightClose />
+                </Button>
+              }
+            />
+            <TooltipContent>Close panel</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

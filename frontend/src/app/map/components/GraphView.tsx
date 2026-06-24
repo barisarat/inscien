@@ -44,29 +44,57 @@ export type Emphasis = {
   isActiveEdge?: (e: AtlasEdge) => boolean // edges to highlight (others fade)
 } | null
 
-const OWNED_COLOR = "#2563eb"
-const EXTERNAL_COLOR = "#8b92a5"
+// The canvas palette lives in design tokens (--graph-* in globals.css). We read it once via
+// getComputedStyle and cache it, so a token change reaches the map and nothing is hardcoded.
+// Fallbacks match the tokens for SSR / when the stylesheet has not applied yet.
+const GRAPH_FALLBACK = {
+  owned: "#2563eb",
+  external: "#8b92a5",
+  clusters: [
+    "#2563eb", "#16a34a", "#db2777", "#d97706", "#7c3aed",
+    "#0891b2", "#dc2626", "#65a30d", "#9333ea", "#0d9488",
+    "#ea580c", "#0ea5e9", "#be123c", "#4d7c0f", "#7e22ce",
+  ],
+  edge: "rgba(0,0,0,0.06)",
+  cited: "rgba(37,99,235,0.45)",
+  citedStrong: "rgba(37,99,235,0.9)",
+  label: "rgba(74,79,94,0.85)",
+}
 
-const PALETTE = [
-  "#2563eb", "#16a34a", "#db2777", "#d97706", "#7c3aed",
-  "#0891b2", "#dc2626", "#65a30d", "#9333ea", "#0d9488",
-  "#ea580c", "#0ea5e9", "#be123c", "#4d7c0f", "#7e22ce",
-]
+let _palette: typeof GRAPH_FALLBACK | null = null
+function palette(): typeof GRAPH_FALLBACK {
+  if (_palette) return _palette
+  if (typeof window === "undefined") return GRAPH_FALLBACK
+  const cs = getComputedStyle(document.documentElement)
+  const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback
+  _palette = {
+    owned: v("--graph-owned", GRAPH_FALLBACK.owned),
+    external: v("--graph-external", GRAPH_FALLBACK.external),
+    clusters: GRAPH_FALLBACK.clusters.map((f, i) => v(`--graph-${i + 1}`, f)),
+    edge: v("--graph-edge", GRAPH_FALLBACK.edge),
+    cited: v("--graph-cited", GRAPH_FALLBACK.cited),
+    citedStrong: v("--graph-cited-strong", GRAPH_FALLBACK.citedStrong),
+    label: v("--graph-label", GRAPH_FALLBACK.label),
+  }
+  return _palette
+}
 
 function collectionColor(name?: string | null): string {
-  if (!name) return OWNED_COLOR
+  const clusters = palette().clusters
+  if (!name) return palette().owned
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return PALETTE[h % PALETTE.length]
+  return clusters[h % clusters.length]
 }
 
 function clusterColor(cluster?: number | null): string {
-  if (cluster == null) return EXTERNAL_COLOR
-  return PALETTE[cluster % PALETTE.length]
+  if (cluster == null) return palette().external
+  const clusters = palette().clusters
+  return clusters[cluster % clusters.length]
 }
 
 function nodeColorFor(n: AtlasNode, colorBy: ColorBy): string {
-  if (n.type === "external") return EXTERNAL_COLOR
+  if (n.type === "external") return palette().external
   return colorBy === "cluster" ? clusterColor(n.cluster) : collectionColor(n.collection)
 }
 
@@ -147,7 +175,7 @@ function computeTimeline(nodes: AtlasNode[]): { pos: Map<string, { x: number; y:
 function drawAxes(ctx: CanvasRenderingContext2D, globalScale: number, ticks: Ticks) {
   ctx.save()
   ctx.lineWidth = 1 / globalScale
-  ctx.strokeStyle = "rgba(0,0,0,0.06)"
+  ctx.strokeStyle = palette().edge
   ctx.font = `${11 / globalScale}px sans-serif`
   ctx.fillStyle = "rgba(0,0,0,0.4)"
   ctx.textAlign = "center"
@@ -392,9 +420,9 @@ export default function GraphView({
           linkColor={(l: any) => {
             const active = emphasis?.isActiveEdge ? emphasis.isActiveEdge(l.__e) : true
             const cited = l.__e?.direct
-            if (!active) return "rgba(140,146,165,0.06)"
-            if (cited) return "rgba(37,99,235,0.45)"
-            return layout === "timeline" ? "rgba(140,146,165,0.18)" : "rgba(140,146,165,0.35)"
+            if (!active) return withAlpha(palette().external, 0.06)
+            if (cited) return palette().cited
+            return withAlpha(palette().external, layout === "timeline" ? 0.18 : 0.35)
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkWidth={(l: any) => (l.__e?.direct ? 1.6 : 1)}
@@ -415,7 +443,7 @@ export default function GraphView({
             if (node.id === selectedId) {
               ctx.beginPath()
               ctx.arc(node.x, node.y, 3 + 7 / scale, 0, 2 * Math.PI)
-              ctx.strokeStyle = "rgba(37,99,235,0.9)"
+              ctx.strokeStyle = palette().citedStrong
               ctx.lineWidth = 1.5 / scale
               ctx.stroke()
             }
@@ -425,7 +453,7 @@ export default function GraphView({
             ctx.font = `${11 / scale}px sans-serif`
             ctx.textAlign = "center"
             ctx.textBaseline = "top"
-            ctx.fillStyle = src.type === "owned" ? "rgba(37,99,235,0.9)" : "rgba(74,79,94,0.85)"
+            ctx.fillStyle = src.type === "owned" ? palette().citedStrong : palette().label
             ctx.fillText(label, node.x, node.y + 6 / scale)
           }}
         />

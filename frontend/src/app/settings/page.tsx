@@ -87,23 +87,23 @@ export default function SettingsPage() {
     <main className="min-h-svh bg-muted/20 px-6 py-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <Link href="/map" className={buttonVariants({ variant: "ghost", size: "sm", className: "w-fit gap-1.5" })}>
-          <ArrowLeft size={16} /> Back to the Map
+          <ArrowLeft className="size-4" /> Back to the Map
         </Link>
 
         <div className="max-w-2xl">
           <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             InScien maps your library fully locally. Narration uses a model you choose: local
             Ollama for privacy, or OpenAI for higher-quality cloud narration.
           </p>
         </div>
 
         <Card className="rounded-lg border bg-card py-0 shadow-sm ring-0">
-          <CardHeader className="border-b bg-muted/30 p-5">
+          <CardHeader className="border-b bg-muted/30 p-6">
             <CardTitle>Profile</CardTitle>
             <CardDescription>Used for local personalization only.</CardDescription>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex max-w-xl flex-col gap-2">
               <Label htmlFor="displayName">Your name</Label>
               <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Aratbaris" />
@@ -112,11 +112,11 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="rounded-lg border bg-card py-0 shadow-sm ring-0">
-          <CardHeader className="border-b bg-muted/30 p-5">
+          <CardHeader className="border-b bg-muted/30 p-6">
             <CardTitle>Library</CardTitle>
             <CardDescription>The Zotero data folder InScien reads (read-only).</CardDescription>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex max-w-xl flex-col gap-2">
               <Label htmlFor="zoteroDir">Zotero data folder</Label>
               <Input
@@ -125,7 +125,7 @@ export default function SettingsPage() {
                 onChange={(e) => setZoteroDataDir(e.target.value)}
                 placeholder="e.g. /home/you/Zotero  or  C:\Users\you\Zotero"
               />
-              <p className="text-xs leading-5 text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 The folder containing <code>zotero.sqlite</code> and <code>storage/</code>. InScien
                 reads it through a private snapshot and never modifies it. After changing this,
                 re-index your collections.
@@ -135,11 +135,11 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="rounded-lg border bg-card py-0 shadow-sm ring-0">
-          <CardHeader className="border-b bg-muted/30 p-5">
+          <CardHeader className="border-b bg-muted/30 p-6">
             <CardTitle>Model</CardTitle>
             <CardDescription>Choose the model used for narration generation.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-5 p-5">
+          <CardContent className="flex flex-col gap-5 p-6">
             <div className="flex max-w-xl flex-col gap-2">
               <Label>Provider</Label>
               <Select value={provider} onValueChange={(v) => setProvider(v ?? "")}>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs leading-5 text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Models are read from your running Ollama. Larger models usually produce better narration.
                   </p>
                 </div>
@@ -198,7 +198,7 @@ export default function SettingsPage() {
                     onChange={(e) => setOpenAiKey(e.target.value)}
                     placeholder={openAiKeyPresent ? "Saved - type a new key to replace it" : "sk-..."}
                   />
-                  <p className={`text-xs leading-5 ${openAiKeyPresent ? "text-muted-foreground" : "text-destructive"}`}>
+                  <p className={`text-xs ${openAiKeyPresent ? "text-muted-foreground" : "text-destructive"}`}>
                     {openAiKeyPresent
                       ? "A key is saved. It's stored only on this machine and never shown again; type a new one to replace it."
                       : "No key set. Paste your OpenAI API key here and save. It's stored only on this machine."}
@@ -211,7 +211,7 @@ export default function SettingsPage() {
 
         <div className="flex items-center gap-3">
           <Button onClick={handleSave} disabled={status.kind === "saving"}>
-            {status.kind === "saving" ? "Saving" : "Save settings"}
+            {status.kind === "saving" ? "Saving..." : "Save settings"}
           </Button>
           {status.kind === "saved" ? <span className="text-sm text-muted-foreground">Saved</span> : null}
           {status.kind === "error" ? <span className="text-sm text-destructive">{status.message}</span> : null}

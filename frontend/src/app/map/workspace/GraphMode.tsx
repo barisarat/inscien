@@ -45,21 +45,18 @@ const DISCLOSURE =
   "Citation overlays use OpenAlex (open scholarly data) - each selected paper's DOI fetches its " +
   "public references/citers. This is the only feature that reaches the internet."
 
-const workspaceRowStyle = { paddingLeft: 24, paddingRight: 24 }
-
 function Chips<T extends string>({ value, options, onChange }: {
   value: T
   options: { v: T; label: string }[]
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
+    <div className="flex shrink-0 items-center gap-1.5" role="group">
       {options.map((o) => (
         <Toggle
           key={o.v}
           size="sm"
-          variant="outline"
-          className="bg-background"
+          variant="segment"
           pressed={value === o.v}
           onPressedChange={(pressed) => {
             if (pressed) onChange(o.v)
@@ -299,11 +296,10 @@ export default function GraphMode() {
   }, [clear, setMany, setMode])
 
   const scopeControl = (
-    <div className="flex min-w-0 flex-wrap items-center gap-1">
+    <div className="flex min-w-0 items-center gap-1.5">
       <Toggle
         size="sm"
-        variant="outline"
-        className="bg-background"
+        variant="segment"
         pressed={scope.kind === "selection"}
         onPressedChange={(pressed) => {
           if (pressed) setScope({ kind: "selection" })
@@ -313,8 +309,7 @@ export default function GraphMode() {
       </Toggle>
       <Toggle
         size="sm"
-        variant="outline"
-        className="bg-background"
+        variant="segment"
         pressed={scope.kind === "library"}
         onPressedChange={(pressed) => {
           if (pressed) setScope({ kind: "library" })
@@ -330,7 +325,7 @@ export default function GraphMode() {
           if (c) setScope({ kind: "collection", id, name: c.name })
         }}
       >
-        <SelectTrigger size="sm" className="w-[170px] max-w-full">
+        <SelectTrigger size="sm" className="w-44 max-w-full">
           <SelectValue placeholder="Collection" />
         </SelectTrigger>
         <SelectContent>
@@ -346,7 +341,7 @@ export default function GraphMode() {
   if (phase === "empty") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <h2 className="text-lg font-medium">Map</h2>
+        <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">
           Select papers in the library to map them - or choose a whole collection / your whole library
           below. The Atlas clusters your papers by content <em>and</em> citations; overlay what they cite.
@@ -358,8 +353,9 @@ export default function GraphMode() {
   if (phase === "loading") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="max-w-md text-sm text-muted-foreground">
-          <Loader2 size={14} className="animate-spin" /> Building the Atlas
+        <h2 className="text-sm font-medium">Map</h2>
+        <p className="flex max-w-md items-center justify-center gap-1.5 text-sm text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" /> Building the Atlas...
         </p>
       </div>
     )
@@ -367,7 +363,7 @@ export default function GraphMode() {
   if (phase === "error") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <h2 className="text-lg font-medium">Map</h2>
+        <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
         {scopeControl}
       </div>
@@ -380,21 +376,21 @@ export default function GraphMode() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b bg-background">
-        <div className="flex min-h-13 flex-wrap items-center justify-between gap-4 py-2" style={workspaceRowStyle}>
+        <div className="flex h-13 items-center justify-between gap-4 overflow-x-auto px-6">
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <span className="font-medium">Atlas</span>
             <span className="shrink-0 text-muted-foreground">{ownedCount} papers</span>
             {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
             {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
             {layerBusy ? (
-              <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
-                <Loader2 size={12} className="animate-spin" /> citations
+              <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" /> Citations...
               </span>
             ) : null}
           </div>
           <div className="flex min-w-0 justify-end">{scopeControl}</div>
         </div>
-        <div className="flex min-h-13 items-center gap-7 overflow-x-auto border-t py-2.5" style={workspaceRowStyle}>
+        <div className="flex h-13 items-center gap-6 overflow-x-auto border-t px-6">
           <div className="flex shrink-0 items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">Overlay</span>
             <Chips<Connections>
@@ -417,7 +413,7 @@ export default function GraphMode() {
               options={[{ v: "cluster", label: "Clusters" }, { v: "collection", label: "Collections" }]}
               onChange={setColorBy}
             />
-            <Toggle size="sm" variant="outline" className="bg-background" pressed={showClusters} onPressedChange={setShowClusters}>
+            <Toggle size="sm" variant="segment" pressed={showClusters} onPressedChange={setShowClusters}>
               Hulls
             </Toggle>
           </div>
@@ -432,7 +428,7 @@ export default function GraphMode() {
           </div>
         </div>
 
-        {connections !== "none" ? <div className="border-t py-1.5 text-xs text-muted-foreground" style={workspaceRowStyle}>{DISCLOSURE}</div> : null}
+        {connections !== "none" ? <div className="border-t px-6 py-2 text-xs text-muted-foreground">{DISCLOSURE}</div> : null}
       </div>
 
       {ownedCount === 0 ? (

@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { StatusDot } from "@/components/ui/status-dot"
 
 export type Neighbor = { id: string; label: string; weight: number; direct: boolean }
 
@@ -40,11 +41,11 @@ export default function NodeInspector({
   const doiUrl = node.doi ? `https://doi.org/${node.doi}` : null
 
   return (
-    <div className="absolute top-4 right-4 z-10 w-[22rem] max-w-[calc(100%-2rem)]">
+    <div className="absolute top-4 right-4 z-10 w-80 max-w-[calc(100%-2rem)]">
       <Card size="sm" className="gap-0 rounded-lg border py-0 shadow-xl ring-0">
         <CardHeader className="border-b p-4">
           <CardTitle className="pr-8 text-sm leading-snug">{node.label}</CardTitle>
-          <CardDescription className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
+          <CardDescription className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
             {authors ? <span>{authors}</span> : null}
             {node.year ? <span>{node.year}</span> : null}
             {node.globalCitedBy != null ? <span>{node.globalCitedBy} citations</span> : null}
@@ -74,9 +75,7 @@ export default function NodeInspector({
                       className="w-full justify-start gap-2 px-2"
                       onClick={() => onSelectNeighbor(nb.id)}
                     >
-                      <span
-                        className={`size-1.5 shrink-0 rounded-full ${nb.direct ? "bg-primary" : "bg-muted-foreground/40"}`}
-                      />
+                      <StatusDot tone={nb.direct ? "strong" : "muted"} />
                       <span className="flex-1 truncate text-left">{nb.label}</span>
                     </Button>
                   ))}

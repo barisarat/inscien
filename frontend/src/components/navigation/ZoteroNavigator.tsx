@@ -31,8 +31,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-
-const sidebarGutterStyle = { paddingLeft: 16, paddingRight: 16 }
+import { StatusDot } from "@/components/ui/status-dot"
 
 export default function ZoteroNavigator() {
   const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
@@ -214,11 +213,11 @@ export default function ZoteroNavigator() {
           <div>
             {col.children.map((child) => renderCollection(child, depth + 1))}
             {rows === undefined ? (
-              <div className="flex items-center gap-1.5 py-1 text-xs text-muted-foreground" style={pad(26)}>
-                <Loader2 size={12} className="animate-spin" /> loading
+              <div className="flex items-center gap-1.5 py-1.5 text-xs text-muted-foreground" style={pad(26)}>
+                <Loader2 className="size-3 animate-spin" /> Loading...
               </div>
             ) : rows.length === 0 && col.children.length === 0 ? (
-              <div className="py-1 text-xs text-muted-foreground" style={pad(26)}>no PDF items</div>
+              <div className="py-1.5 text-xs text-muted-foreground" style={pad(26)}>No PDF items</div>
             ) : (
               rows.map((item) => {
                 const isSel = selectedKeys.has(item.itemKey)
@@ -227,12 +226,16 @@ export default function ZoteroNavigator() {
                 return (
                   <div
                     key={item.itemKey}
-                    className={`flex min-w-0 items-center gap-2 rounded-md py-1 pr-3 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
+                    className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-3 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
                     style={pad(26)}
                     title={item.isBookDefaultOff ? "Book - opt in to index" : item.title ?? item.itemKey}
                   >
                     <Checkbox checked={isSel} onCheckedChange={() => toggleItem(item)} />
-                    <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => toggleItem(item)}>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 truncate rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      onClick={() => toggleItem(item)}
+                    >
                       {item.title ?? item.itemKey}
                       {item.year ? <span className="ml-1 text-muted-foreground">{item.year}</span> : null}
                     </button>
@@ -259,14 +262,14 @@ export default function ZoteroNavigator() {
                         </Button>
                       ) : null}
                       {mapped.has(item.itemKey) ? (
-                        <span className="size-1.5 shrink-0 rounded-full bg-primary" title="Mapped - references fetched from OpenAlex" />
+                        <StatusDot tone="strong" title="Mapped - references fetched from OpenAlex" />
                       ) : null}
                       {isBusy ? (
-                        <Loader2 size={12} className="shrink-0 animate-spin" />
+                        <Loader2 className="size-3 shrink-0 animate-spin" />
                       ) : isIdx ? (
-                        <Badge variant="secondary" className="px-1.5">indexed</Badge>
+                        <Badge variant="secondary">Indexed</Badge>
                       ) : item.isBookDefaultOff ? (
-                        <Badge variant="outline" className="px-1.5">book</Badge>
+                        <Badge variant="outline">Book</Badge>
                       ) : null}
                     </div>
                   </div>
@@ -281,7 +284,7 @@ export default function ZoteroNavigator() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="h-13 justify-center border-b py-0" style={sidebarGutterStyle}>
+      <SidebarHeader className="h-13 justify-center border-b px-4 py-0">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">Library</span>
           <Button variant="ghost" size="icon-sm" onClick={() => void load()} aria-label="Refresh">
@@ -292,18 +295,19 @@ export default function ZoteroNavigator() {
 
       <SidebarContent className="gap-0">
         {selectedKeys.size > 0 ? (
-          <SidebarGroup className="border-b py-2" style={sidebarGutterStyle}>
+          <SidebarGroup className="border-b px-4 py-2">
             <div className="flex items-center justify-between">
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs font-medium"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-2 gap-1.5 px-2 text-xs font-medium"
                 onClick={() => setSelectedOpen((v) => !v)}
                 aria-expanded={selectedOpen}
               >
-                <ChevronRight size={13} className={`transition-transform ${selectedOpen ? "rotate-90" : ""}`} />
+                <ChevronRight className={`size-3.5 transition-transform ${selectedOpen ? "rotate-90" : ""}`} />
                 <span>{selectedKeys.size} selected</span>
-                {indexing.size > 0 ? <span className="text-muted-foreground">indexing {indexing.size}</span> : null}
-              </button>
+                {indexing.size > 0 ? <span className="text-muted-foreground">Indexing {indexing.size}</span> : null}
+              </Button>
               <Button variant="ghost" size="xs" onClick={clear}>Clear</Button>
             </div>
             {selectedOpen ? (
@@ -313,7 +317,7 @@ export default function ZoteroNavigator() {
                     <span className="min-w-0 flex-1 truncate" title={titleByKey.get(key) || key}>
                       {titleByKey.get(key) || key}
                     </span>
-                    {indexing.has(key) ? <Loader2 size={11} className="animate-spin" /> : null}
+                    {indexing.has(key) ? <Loader2 className="size-3 animate-spin" /> : null}
                     <Button variant="ghost" size="icon-xs" aria-label="Remove from selection" onClick={() => setMany([key], false)}>
                       <X />
                     </Button>
@@ -323,29 +327,29 @@ export default function ZoteroNavigator() {
             ) : null}
           </SidebarGroup>
         ) : (
-          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>Select papers to scope your map</div>
+          <div className="px-4 py-2 text-xs text-muted-foreground">Select papers to scope your map</div>
         )}
 
         {!loading && !error && libraryMissing ? (
-          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+          <div className="px-4 py-2 text-xs text-muted-foreground">
             No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
             <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack - see the README.
           </div>
         ) : null}
         {!loading && !error && !liveConnected && !libraryMissing ? (
-          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+          <div className="px-4 py-2 text-xs text-muted-foreground">
             Live Zotero library not connected - showing the last snapshot.
           </div>
         ) : null}
         {persistError ? (
-          <div className="py-2 text-xs text-muted-foreground" style={sidebarGutterStyle}>
+          <div className="px-4 py-2 text-xs text-muted-foreground">
             Your selection won't be saved across reloads - browser storage is blocked.
           </div>
         ) : null}
 
-        <SidebarGroup className="py-2" style={sidebarGutterStyle}>
+        <SidebarGroup className="px-4 py-2">
           {loading ? (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 size={12} className="animate-spin" /> loading library</div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Loading library...</div>
           ) : error ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">{error}</div>
           ) : libraryMissing ? (
@@ -361,7 +365,7 @@ export default function ZoteroNavigator() {
       {!loading && !error && !libraryMissing ? (
         <SidebarFooter className="items-center border-t p-3">
           <Button variant="ghost" size="sm" className="justify-center" onClick={() => void handleReconcile()} disabled={reconciling}>
-            {reconciling ? (<><Loader2 size={12} className="animate-spin" /> Cleaning up</>) : "Clean up removed items"}
+            {reconciling ? (<><Loader2 className="size-3 animate-spin" /> Cleaning up...</>) : "Clean up removed items"}
           </Button>
           {reconcileMsg ? <div className="px-2 text-xs text-muted-foreground">{reconcileMsg}</div> : null}
         </SidebarFooter>
