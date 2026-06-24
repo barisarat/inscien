@@ -3,7 +3,7 @@ title: InScien
 description: A local, private atlas of your Zotero library - map it, narrate it.
 template: splash
 hero:
-  tagline: Turn your Zotero library into a navigable map and audio narrations. Fully local, page-precise, and yours - no account, no cloud.
+  tagline: Turn your Zotero library into a navigable map and audio narrations. Local-first, private, and entirely yours.
   actions:
     - text: Download
       link: '#download'
@@ -24,9 +24,9 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
 	<Card title="Map your library">
-		A navigable atlas of your Zotero collection - papers placed by similarity and linked by
-		shared citations, so you can see the shape of a literature at a glance. Runs entirely on
-		your machine and needs no model.
+		A navigable atlas of your Zotero collection: papers clustered by similarity, computed
+		locally, with an optional citations lens (what they cite, what cites them, and gaps) from
+		public OpenAlex data. Needs no model.
 	</Card>
 	<Card title="Narrate any paper">
 		Turn a paper into a spoken-audio narration you can listen to. A model you choose writes
@@ -34,11 +34,11 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 	</Card>
 	<Card title="Local-first and private">
 		Reads your Zotero library read-only through a private snapshot. Nothing leaves your
-		machine except, optionally, the text you send to your own cloud model.
+		machine except, optionally, the text you send to your own cloud model, or public DOI
+		lookups when you use the citations lens.
 	</Card>
-	<Card title="Page-precise">
-		References point back to the exact page in the source PDF, so you can verify anything in
-		a click.
+	<Card title="Read the source">
+		Open any paper's original PDF inside the app to read it, without leaving InScien.
 	</Card>
 </CardGrid>
 
@@ -70,7 +70,7 @@ All installers live on the [Releases page](https://github.com/aratbaris/inscien/
 ## How it works
 
 InScien is a desktop app you download and run locally. It rides read-only on your existing
-[Zotero](https://www.zotero.org) library - no import, no copy, no cloud. The **Map** needs no
+[Zotero](https://www.zotero.org) library, with no import and no copy. The **Map** needs no
 model; **narration** uses a model you connect (a local Ollama, or your own OpenAI key).
 
 [Install it](/inscien/getting-started/installation/) and point it at your Zotero folder to begin.

@@ -1,24 +1,24 @@
 # InScien
 
 A local, private desktop app that turns your own [Zotero](https://www.zotero.org) library
-into a navigable map and audio narrations. It runs entirely on your machine, reads your
-library read-only, and points every reference back to the exact page in the source PDF.
+into a navigable map and audio narrations. It runs on your machine and reads your library
+read-only, so your data stays yours.
 
 Downloads and documentation: https://aratbaris.github.io/inscien/
 
 ## What it does
 
-- **Map.** A navigable atlas of your Zotero collection: papers placed by similarity and linked
-  by shared citations, so you can see the shape of a literature at a glance. The Map needs no
-  model and runs offline.
+- **Map.** A navigable atlas of your Zotero collection: papers clustered by similarity
+  (computed locally), with an optional citations lens (what they cite, what cites them, and
+  gaps) from public OpenAlex data. The Map needs no model.
 - **Narrate.** Turn a paper into a spoken-audio narration. A model you connect writes the
   script; a local CPU voice ([Kokoro](https://github.com/thewh1teagle/kokoro-onnx), Apache-2.0)
   reads it aloud and saves an mp3 you can replay. No GPU required.
 - **Local-first and private.** InScien reads your Zotero library read-only through a private
   snapshot and never modifies it. Nothing leaves your machine except, optionally, the text you
   send to your own cloud model, or public DOI lookups when you build a citation map.
-- **Page-precise.** References point back to the exact page in the source PDF, so anything is
-  verifiable in a click.
+- **Read the source.** Open any paper's original PDF inside the app to read it or check it
+  against the map.
 
 ## Download
 
@@ -81,9 +81,9 @@ Architecture notes are in [CLAUDE.md](CLAUDE.md).
 
 Your PDFs stay in your Zotero library, mounted read-only. InScien's own state (a SQLite DB,
 the search index, and narration audio) lives under a single app-data folder. The only times
-anything leaves your machine are if you choose an OpenAI model (the text you send it) or build
-a citation map (public DOI lookups to [OpenAlex](https://openalex.org)). Everything else,
-including the Map and the local voice, is offline.
+anything leaves your machine are if you choose an OpenAI model (the text you send it) or use the
+citations lens (public DOI lookups to [OpenAlex](https://openalex.org)). Everything else,
+including indexing, the similarity map, and the local voice, runs offline.
 
 ## License
 

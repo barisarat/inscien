@@ -9,7 +9,7 @@ one-time steps for your platform below.
 
 ## Prerequisite: a model for narration
 
-The **Map works offline with no model**. **Narration** needs a model you connect - either a
+The **Map needs no model**. **Narration** needs a model you connect - either a
 local [Ollama](https://ollama.com) (private and free) or an OpenAI API key (higher quality,
 paid). To use a local model, install Ollama and pull one before narrating:
 
