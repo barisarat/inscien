@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from routers.papers import corpus_papers
 from services.narration.jobs import active_narration, audio_path, get_job, list_narrations, start_job
+from services.narration.model import get_download as get_model_download, model_present, start_download
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,28 @@ def active(docId: str):
     UI re-attach to a narration started before the user navigated away. Defined before the
     /{job_id} route so it isn't shadowed by the catch-all."""
     return {"job": active_narration(docId)}
+
+
+# --- TTS model (Kokoro weights) — present check + a download job with progress -------------
+# The desktop build doesn't bundle the ~1GB weights; the user downloads them once before the
+# first narration. (Defined before /{job_id} so "model" isn't read as a job id.)
+
+@router.get("/model")
+def model_status():
+    return {"present": model_present()}
+
+
+@router.post("/model/download")
+def model_download():
+    return {"jobId": start_download()}
+
+
+@router.get("/model/download/{job_id}")
+def model_download_status(job_id: str):
+    job = get_model_download(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    return job
 
 
 @router.get("/{job_id}")

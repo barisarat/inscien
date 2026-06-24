@@ -8,7 +8,8 @@ class SettingsOut(BaseModel):
     llmProvider: str          # "local" | "openai"
     llmModel: str             # active model id for the selected provider
     ollamaBaseUrl: str
-    openAiApiKeyPresent: bool  # whether OPENAI_API_KEY is set in the env (never the key itself)
+    zoteroDataDir: str         # the user's Zotero data folder (or "" to fall back to env/default)
+    openAiApiKeyPresent: bool  # whether a key is set (DB or env) — never the key itself
 
 
 class SettingsIn(BaseModel):
@@ -16,4 +17,7 @@ class SettingsIn(BaseModel):
     llmProvider: Optional[str] = None  # validated to {"local","openai"} in the router
     llmModel: Optional[str] = None
     ollamaBaseUrl: Optional[str] = None
-    # No openAiApiKey field — the key is env-only (OPENAI_API_KEY), never written via the API.
+    zoteroDataDir: Optional[str] = None
+    # Write-only: stored in local SQLite, never returned. Only applied when non-empty, so saving
+    # other settings doesn't wipe an existing key.
+    openAiApiKey: Optional[str] = None

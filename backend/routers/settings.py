@@ -15,8 +15,10 @@ ALLOWED_PROVIDERS = {"local", "openai"}
 CLOUD_MODEL_HINT = "gpt-5.4-nano"
 
 
-def _openai_key_present() -> bool:
-    return bool((os.getenv("OPENAI_API_KEY") or "").strip())
+def _openai_key_present(row) -> bool:
+    """A key is available if it's stored in settings OR set in the environment (env wins as a
+    fallback for the Docker/dev path; the desktop build stores it in the DB)."""
+    return bool((row.openai_api_key or "").strip() or (os.getenv("OPENAI_API_KEY") or "").strip())
 
 
 def _to_out(row) -> SettingsOut:
@@ -25,7 +27,8 @@ def _to_out(row) -> SettingsOut:
         llmProvider=(row.llm_provider or "local"),
         llmModel=row.llm_model or "",
         ollamaBaseUrl=row.ollama_base_url or "",
-        openAiApiKeyPresent=_openai_key_present(),
+        zoteroDataDir=row.zotero_data_dir or "",
+        openAiApiKeyPresent=_openai_key_present(row),
     )
 
 
@@ -66,17 +69,23 @@ def update_settings(body: SettingsIn, db: Session = Depends(get_db)):
         fields["llm_model"] = body.llmModel.strip()
     if body.ollamaBaseUrl is not None:
         fields["ollama_base_url"] = body.ollamaBaseUrl.strip()
+    if body.zoteroDataDir is not None:
+        fields["zotero_data_dir"] = body.zoteroDataDir.strip()
+    # The key is write-only and only applied when non-empty, so saving other settings (or saving
+    # with the key field left blank) never wipes an already-stored key.
+    if body.openAiApiKey is not None and body.openAiApiKey.strip():
+        fields["openai_api_key"] = body.openAiApiKey.strip()
 
-    # Guard against a stranded state: don't let the user select cloud without a key in the
-    # environment or without a model. Compute the *effective* values (incoming if present, else
-    # what's already stored).
+    # Guard against a stranded state: don't let the user select cloud without a key or model.
+    # Compute the *effective* values (incoming if present, else what's already stored).
     row = settings_repo.get_settings(db)
     effective_provider = fields.get("llm_provider", (row.llm_provider or "local"))
     if effective_provider == "openai":
-        if not _openai_key_present():
+        key_present = bool(fields.get("openai_api_key")) or _openai_key_present(row)
+        if not key_present:
             raise HTTPException(
                 status_code=422,
-                detail="Set OPENAI_API_KEY in the environment and restart before selecting the cloud provider.",
+                detail="Add an OpenAI API key before selecting the cloud provider.",
             )
         effective_model = fields.get("llm_model", (row.llm_model or "")).strip()
         if not effective_model:

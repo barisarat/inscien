@@ -26,9 +26,7 @@
     ],
     "externalBin": ["binaries/inscien-backend"],
     "resources": {
-      "../frontend/out": "frontend",
-      "resources/kokoro": "kokoro",
-      "resources/fastembed": "fastembed"
+      "../frontend/out": "frontend"
     },
     "longDescription": "InScien turns your Zotero library into a navigable map and audio narrations — fully local. The Map needs no model; narration uses a model you connect (local Ollama or an OpenAI key).",
     "shortDescription": "A local atlas of your Zotero library."

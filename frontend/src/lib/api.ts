@@ -59,6 +59,7 @@ export interface AppSettings {
   llmProvider: string          // "local" | "openai"
   llmModel: string
   ollamaBaseUrl: string
+  zoteroDataDir: string
   openAiApiKeyPresent: boolean
 }
 
@@ -67,6 +68,8 @@ export interface AppSettingsUpdate {
   llmProvider?: string
   llmModel?: string
   ollamaBaseUrl?: string
+  zoteroDataDir?: string
+  openAiApiKey?: string         // write-only; only sent when the user enters a new key
 }
 
 export async function getSettings(): Promise<AppSettings> {
@@ -215,6 +218,20 @@ export interface NarrationRegistryItem {
 
 export async function listNarrations(): Promise<{ items: NarrationRegistryItem[] }> {
   return authedGet("/api/narrate/registry")
+}
+
+// TTS (Kokoro) weights: present-check + a one-time download job (the desktop build doesn't bundle
+// them). Reuses the NarrationStatus job shape for progress polling.
+export async function getNarrateModel(): Promise<{ present: boolean }> {
+  return authedGet("/api/narrate/model")
+}
+
+export async function startNarrateModelDownload(): Promise<{ jobId: string }> {
+  return authedAction("/api/narrate/model/download", "POST")
+}
+
+export async function getNarrateModelDownload(jobId: string): Promise<NarrationStatus> {
+  return authedGet(`/api/narrate/model/download/${encodeURIComponent(jobId)}`)
 }
 
 // ---- Literature discovery graph (OpenAlex, selection-scoped) ----

@@ -4,8 +4,10 @@ InScien ships as a **Tauri desktop app**: a thin native window that spawns the I
 (frozen with PyInstaller) as a sidecar. The backend serves **both** the API and the static UI on a
 private loopback port, and the window points at it — so the web frontend is reused verbatim, no
 rebuild. The **Map needs no model** (deterministic); **narration** uses a model you connect (local
-Ollama or an OpenAI key). For v1 the ML weights are **bundled** (Kokoro TTS + the bge-small
-embedding model) → fully offline, ~1.5GB installer. Builds are **unsigned** for v1.
+Ollama or an OpenAI key). ML weights are **not bundled** — the installer stays small (~tens of MB):
+the **bge-small** embedding model auto-downloads on the first index, and the **Kokoro voice** (~1 GB)
+is downloaded on demand from the Narrate tab with a progress bar, into the app-data dir. Builds are
+**unsigned** for v1.
 
 Targets: **Linux (AppImage/.deb)**, **macOS (.dmg, Apple Silicon)**, **Windows (NSIS .exe)**.
 
@@ -15,13 +17,14 @@ Targets: **Linux (AppImage/.deb)**, **macOS (.dmg, Apple Silicon)**, **Windows (
 - `backend/core/paths.py` — `INSCIEN_DATA_DIR` redirects **all** durable state (SQLite, Qdrant,
   caches, job records, audio, Zotero snapshot, fastembed cache) to the OS app-data dir with one var.
 - `backend/inscien.spec` — PyInstaller one-file freeze → `dist/inscien-backend`.
-- `scripts/fetch-weights.sh` — pulls Kokoro + bge-small into `src-tauri/resources/{kokoro,fastembed}`.
-- `src-tauri/` — the Tauri shell: `main.rs` resolves app-data + bundled resources, seeds the
-  fastembed cache, picks the Zotero folder (first-run dialog), picks a free port, spawns the sidecar
-  with env, waits for `/health`, opens the window at `http://127.0.0.1:<port>`, kills the sidecar on
-  exit.
+- `backend/services/narration/model.py` — the on-demand Kokoro download (presence check + progress
+  job); the Narrate tab calls `/api/narrate/model[/download]`. Weights land in `INSCIEN_DATA_DIR/kokoro`.
+- `src-tauri/` — the Tauri shell: `main.rs` resolves app-data + the bundled frontend, picks the
+  Zotero folder, picks a free port, spawns the sidecar with env, waits for `/health`, opens the
+  window at `http://127.0.0.1:<port>`, kills the sidecar on exit. ML-weight paths are left to the
+  backend defaults (under `INSCIEN_DATA_DIR`) so the on-demand downloads land where it reads.
 - `.github/workflows/release.yml` — the cross-OS CI (freeze → rename sidecar to the target triple →
-  fetch weights → `tauri build` → draft GitHub Release).
+  `tauri build` → draft GitHub Release). No weight-fetch step — weights are runtime downloads.
 
 ## One-time setup
 - **Icons** (not in git): generate from a 1024×1024 PNG once — `cargo tauri icon path/to/icon.png`
@@ -47,16 +50,16 @@ INSCIEN_DATA_DIR=/tmp/inscien-data \
 FRONTEND_DIST="$PWD/frontend/out" \
 ZOTERO_DATA_DIR="$HOME/Zotero" \
 ENV_NAME=production PORT=8123 \
-KOKORO_MODEL_PATH=... KOKORO_VOICES_PATH=...  \   # from scripts/fetch-weights.sh
   ./backend/dist/inscien-backend
-# → open http://127.0.0.1:8123 : Map should render; indexing uses embeddings; narration uses Kokoro.
+# → open http://127.0.0.1:8123 : Map renders; the first index auto-downloads bge-small; the Narrate
+#   tab offers "Download narration voice" (~1 GB) before the first narration. All land under
+#   INSCIEN_DATA_DIR (no KOKORO_*/FASTEMBED_* env needed — the backend defaults there).
 ```
 Iterate `inscien.spec` until imports/data files resolve (typical fixes: add a `hiddenimport`, or a
 `collect_data_files(...)` for a package that ships non-Python files).
 
 ## Full app build (one OS)
 ```bash
-scripts/fetch-weights.sh                                  # bundle weights
 cd backend && pyinstaller inscien.spec && cd ..
 mkdir -p src-tauri/binaries
 cp backend/dist/inscien-backend src-tauri/binaries/inscien-backend-$(rustc -vV | sed -n 's/host: //p')

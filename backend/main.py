@@ -42,9 +42,11 @@ async def lifespan(app: FastAPI):
     ensure_app_settings_columns()
     # In-process jobs don't survive a restart — fail any that were mid-run.
     from services.narration.jobs import recover_stale as recover_narration
+    from services.narration.model import recover_stale as recover_narrate_model
     from services.zotero.jobs import recover_stale as recover_zotero
     from services.refs.fetch_jobs import recover_stale as recover_graph_fetch
     recover_narration()
+    recover_narrate_model()
     recover_zotero()
     recover_graph_fetch()
     yield

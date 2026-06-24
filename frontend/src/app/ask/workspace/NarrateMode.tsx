@@ -8,10 +8,13 @@ import {
   activeNarration,
   getModelOptions,
   getNarration,
+  getNarrateModel,
+  getNarrateModelDownload,
   getSettings,
   listNarrations,
   listPapers,
   startNarration,
+  startNarrateModelDownload,
   API_BASE,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
@@ -38,7 +41,12 @@ export default function NarrateMode() {
   const [jobId, setJobId] = useState("")
   // null = not yet checked; gates the Generate button on a configured/reachable narration model.
   const [modelReady, setModelReady] = useState<boolean | null>(null)
+  // Kokoro voice weights: null = not yet checked. The desktop build doesn't bundle them, so the
+  // user downloads them once (with progress) before the first narration; gates Generate too.
+  const [ttsReady, setTtsReady] = useState<boolean | null>(null)
+  const [dlPhase, setDlPhase] = useState<"idle" | "downloading" | "error">("idle")
   const { progress, setProgress, error, setError, newRun, isStale, track } = useSkillJob()
+  const dl = useSkillJob()
 
   const attach = useCallback((id: string, token: number) =>
     track(token, id, getNarration, {
@@ -107,6 +115,48 @@ export default function NarrateMode() {
       cancelled = true
     }
   }, [docId, loaded])
+
+  // Voice-weights presence check, gated like modelReady (only when about to generate, never when
+  // replaying a saved mp3). Independent of modelReady so each gate surfaces its own fix.
+  useEffect(() => {
+    if (loaded || !docId) {
+      setTtsReady(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const { present } = await getNarrateModel()
+        if (!cancelled) setTtsReady(present)
+      } catch {
+        if (!cancelled) setTtsReady(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [docId, loaded])
+
+  const downloadModel = useCallback(async () => {
+    const token = dl.newRun()
+    setDlPhase("downloading")
+    try {
+      const { jobId: id } = await startNarrateModelDownload()
+      if (dl.isStale(token)) return
+      await dl.track(token, id, getNarrateModelDownload, {
+        onDone: () => {
+          setTtsReady(true)
+          setDlPhase("idle")
+        },
+        onError: () => setDlPhase("error"),
+        fallbackError: "Voice-model download failed.",
+      })
+    } catch (e) {
+      if (dl.isStale(token)) return
+      dl.setError(String(e))
+      setDlPhase("error")
+    }
+  }, [dl])
 
   const run = useCallback(async () => {
     if (!docId) return
@@ -185,6 +235,26 @@ export default function NarrateMode() {
       <Link href="/settings" className={buttonVariants({ variant: "outline", size: "sm" })}>
         <Settings /> Open Settings
       </Link>
+    </div>
+  ) : dlPhase === "downloading" ? (
+    <JobProgress
+      progress={dl.progress}
+      fallback="Downloading voice model"
+      minPct={2}
+      defaultPct={0}
+      note="Downloading the narration voice (~1 GB, one time) — you can keep working."
+    />
+  ) : dlPhase === "error" ? (
+    <JobError error={dl.error} onRetry={downloadModel} retryLabel="Retry download" />
+  ) : ttsReady === false ? (
+    <div className="flex flex-col items-start gap-5">
+      <p className="text-sm text-muted-foreground">
+        Narration uses a local voice model (~1&nbsp;GB). Download it once to enable spoken audio — it
+        stays on your machine for every future narration.
+      </p>
+      <Button onClick={downloadModel}>
+        <Download /> Download narration voice
+      </Button>
     </div>
   ) : (
     <div className="flex flex-col items-start gap-5">

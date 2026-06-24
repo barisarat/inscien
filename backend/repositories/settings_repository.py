@@ -15,9 +15,12 @@ def get_settings(db):
     return row
 
 
-# Only these fields may be written from the API. The OpenAI key is NOT here — it's env-only
-# (OPENAI_API_KEY), never persisted.
-_UPDATABLE = {"display_name", "llm_provider", "llm_model", "ollama_base_url"}
+# Only these fields may be written from the API. `openai_api_key` is persisted (local SQLite,
+# single-user) so the desktop build can be configured in-app; the router never echoes it back.
+_UPDATABLE = {
+    "display_name", "llm_provider", "llm_model", "ollama_base_url",
+    "openai_api_key", "zotero_data_dir",
+}
 
 
 def update_settings(db, fields):

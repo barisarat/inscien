@@ -32,6 +32,8 @@ export default function SettingsPage() {
   const [cloudModel, setCloudModel] = useState("")
   const [cloudModelHint, setCloudModelHint] = useState("")
   const [openAiKeyPresent, setOpenAiKeyPresent] = useState(false)
+  const [openAiKey, setOpenAiKey] = useState("")
+  const [zoteroDataDir, setZoteroDataDir] = useState("")
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("")
   const [ollamaReachable, setOllamaReachable] = useState(true)
   const [status, setStatus] = useState<Status>({ kind: "idle" })
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         setDisplayName(s.displayName)
         setProvider(s.llmProvider || "local")
         setOllamaBaseUrl(s.ollamaBaseUrl)
+        setZoteroDataDir(s.zoteroDataDir)
         setOptions(m.options)
         setOllamaReachable(m.ollamaReachable)
         setCloudModelHint(m.cloudModelHint ?? "")
@@ -60,7 +63,20 @@ export default function SettingsPage() {
         provider === "openai"
           ? cloudModel.trim()
           : selected.includes("|") ? selected.slice(selected.indexOf("|") + 1) : selected
-      await updateSettings({ displayName, llmProvider: provider, llmModel: model, ollamaBaseUrl })
+      // Send the key only when the user typed one — a blank field leaves the stored key intact.
+      const key = openAiKey.trim()
+      await updateSettings({
+        displayName,
+        llmProvider: provider,
+        llmModel: model,
+        ollamaBaseUrl,
+        zoteroDataDir,
+        ...(key ? { openAiApiKey: key } : {}),
+      })
+      if (key) {
+        setOpenAiKeyPresent(true)
+        setOpenAiKey("")
+      }
       setStatus({ kind: "saved" })
     } catch (e) {
       setStatus({ kind: "error", message: String(e) })
@@ -91,6 +107,29 @@ export default function SettingsPage() {
             <div className="flex max-w-xl flex-col gap-2">
               <Label htmlFor="displayName">Your name</Label>
               <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Aratbaris" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-lg border bg-card py-0 shadow-sm ring-0">
+          <CardHeader className="border-b bg-muted/30 p-5">
+            <CardTitle>Library</CardTitle>
+            <CardDescription>The Zotero data folder InScien reads (read-only).</CardDescription>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="flex max-w-xl flex-col gap-2">
+              <Label htmlFor="zoteroDir">Zotero data folder</Label>
+              <Input
+                id="zoteroDir"
+                value={zoteroDataDir}
+                onChange={(e) => setZoteroDataDir(e.target.value)}
+                placeholder="e.g. /home/you/Zotero  or  C:\Users\you\Zotero"
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                The folder containing <code>zotero.sqlite</code> and <code>storage/</code>. InScien
+                reads it through a private snapshot and never modifies it. After changing this,
+                re-index your collections.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -144,15 +183,28 @@ export default function SettingsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex max-w-xl flex-col gap-2">
-                <Label htmlFor="cloudModel">Cloud model</Label>
-                <Input id="cloudModel" value={cloudModel} onChange={(e) => setCloudModel(e.target.value)} placeholder={cloudModelHint || "gpt-5.4-nano"} />
-                <p className={`text-xs leading-5 ${openAiKeyPresent ? "text-muted-foreground" : "text-destructive"}`}>
-                  {openAiKeyPresent
-                    ? "OPENAI_API_KEY detected — read from the environment, never stored."
-                    : "OPENAI_API_KEY is not set. Add it to your environment and restart, then save."}
-                </p>
-              </div>
+              <>
+                <div className="flex max-w-xl flex-col gap-2">
+                  <Label htmlFor="cloudModel">Cloud model</Label>
+                  <Input id="cloudModel" value={cloudModel} onChange={(e) => setCloudModel(e.target.value)} placeholder={cloudModelHint || "gpt-5.4-nano"} />
+                </div>
+                <div className="flex max-w-xl flex-col gap-2">
+                  <Label htmlFor="openAiKey">OpenAI API key</Label>
+                  <Input
+                    id="openAiKey"
+                    type="password"
+                    autoComplete="off"
+                    value={openAiKey}
+                    onChange={(e) => setOpenAiKey(e.target.value)}
+                    placeholder={openAiKeyPresent ? "•••••••••• (saved — type to replace)" : "sk-..."}
+                  />
+                  <p className={`text-xs leading-5 ${openAiKeyPresent ? "text-muted-foreground" : "text-destructive"}`}>
+                    {openAiKeyPresent
+                      ? "A key is saved. It's stored only on this machine and never shown again; type a new one to replace it."
+                      : "No key set. Paste your OpenAI API key here and save. It's stored only on this machine."}
+                  </p>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

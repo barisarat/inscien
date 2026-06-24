@@ -53,12 +53,13 @@ def _read_settings():
             "provider": (row.llm_provider or "").strip().lower() or "local",
             "model": (row.llm_model or "").strip() or None,
             "ollama_base_url": (row.ollama_base_url or "").strip() or None,
+            "openai_api_key": (row.openai_api_key or "").strip() or None,
         }
     except Exception:
         # Default to local on any read failure — a broken settings read must never silently
         # route generation to the cloud.
         logger.exception("failed to read settings; falling back to env defaults")
-        return {"provider": "local", "model": None, "ollama_base_url": None}
+        return {"provider": "local", "model": None, "ollama_base_url": None, "openai_api_key": None}
     finally:
         session.close()
 
@@ -105,7 +106,9 @@ def resolve_llm_config():
     """
     s = _read_settings()
     if s["provider"] == "openai":
-        api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+        # Stored key (desktop build, configured in-app) takes precedence; env is the fallback
+        # for the Docker/dev path.
+        api_key = s.get("openai_api_key") or (os.getenv("OPENAI_API_KEY") or "").strip()
         if api_key:
             return {
                 "provider": "openai",
@@ -142,8 +145,8 @@ def describe_llm_error(exc):
             "code": "provider_misconfigured",
             "retryable": False,
             "message": (
-                "Cloud (OpenAI) is selected but OPENAI_API_KEY isn't set. Add it to the "
-                "environment and restart, or switch back to a local model in Settings."
+                "Cloud (OpenAI) is selected but no API key is set. Add your key in Settings, "
+                "or switch back to a local model."
             ),
         }
 
@@ -153,7 +156,7 @@ def describe_llm_error(exc):
         return {
             "code": "openai_auth",
             "retryable": False,
-            "message": "Your OpenAI API key was rejected (401). Check or replace OPENAI_API_KEY, then restart.",
+            "message": "Your OpenAI API key was rejected (401). Check or replace it in Settings.",
         }
     if isinstance(exc, PermissionDeniedError):
         return {

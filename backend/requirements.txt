@@ -58,9 +58,13 @@ uvicorn==0.44.0
 pymupdf>=1.24,<2.0
 
 # Narration (/narrate): CPU text-to-speech via Kokoro on onnxruntime (already pinned above),
-# plus pydub for stitching chunks and mp3 export (uses the ffmpeg installed in the image).
+# plus pydub for stitching chunks and mp3 export.
 kokoro-onnx>=0.4
 pydub>=0.25
+# A self-contained ffmpeg binary for the final WAV->mp3 mux, so narration needs no *system*
+# ffmpeg. Docker still uses the image's ffmpeg; the frozen desktop builds (Windows/macOS, which
+# have no system ffmpeg) bundle this one. tts_engine prefers it and falls back to PATH.
+imageio-ffmpeg>=0.5
 # pydub imports the stdlib `audioop`, which was removed in Python 3.13. This backport restores it
 # on 3.13+ (no-op on 3.12 and earlier, where the stdlib module still exists).
 audioop-lts; python_version >= "3.13"

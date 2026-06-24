@@ -6,9 +6,12 @@ live DB; Zotero may hold a WAL lock). The data dir is bind-mounted read-only int
 backend at `/workspace/zotero`. No Zotero web API, no API key.
 """
 
+import logging
 import os
 
 from core.paths import data_path
+
+logger = logging.getLogger(__name__)
 
 
 # Item types treated as "heavy" and unselected by default in the navigator — they
@@ -16,8 +19,29 @@ from core.paths import data_path
 BOOK_ITEM_TYPES = {"book", "bookSection", "thesis"}
 
 
+def _db_zotero_dir():
+    """The Zotero folder configured in-app (Settings), read on an independent session so this
+    never disturbs a request's session. Returns None if unset or unreadable (e.g. before the
+    DB exists), so the caller falls back to the env/default."""
+    try:
+        from sqlalchemy.orm import Session
+
+        from core.db import engine
+        from repositories.settings_repository import get_settings
+
+        session = Session(engine)
+        try:
+            return (get_settings(session).zotero_data_dir or "").strip() or None
+        finally:
+            session.close()
+    except Exception:
+        logger.debug("could not read zotero_data_dir from settings; using env/default", exc_info=True)
+        return None
+
+
 def get_zotero_settings():
-    data_dir = os.getenv("ZOTERO_DATA_DIR", "/workspace/zotero")
+    # In-app setting (desktop build) wins; ZOTERO_DATA_DIR env is the Docker/dev fallback.
+    data_dir = _db_zotero_dir() or os.getenv("ZOTERO_DATA_DIR", "/workspace/zotero")
     return {
         "data_dir": data_dir,
         # Live DB + storage tree (read-only mount). Overridable for tests.

@@ -49,8 +49,9 @@ services:
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}
-      # Optional OpenAI (or OpenAI-compatible) cloud provider — opt-in per Settings. The key is
-      # read from the environment only, never stored in the DB. Leave unset to stay fully local.
+      # Optional OpenAI (or OpenAI-compatible) cloud provider — opt-in per Settings. In Docker the
+      # key is supplied here via env; the desktop build stores it in-app (local SQLite). A stored
+      # key wins; this env is the fallback. Leave unset to stay fully local.
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
     # Liveness probe (curl ships in the backend image). /health is dependency-free, so the

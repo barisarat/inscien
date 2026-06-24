@@ -80,6 +80,8 @@ def ensure_app_settings_columns() -> None:
     existing = {c["name"] for c in inspector.get_columns("app_settings")}
     additive = {
         "llm_provider": "ALTER TABLE app_settings ADD COLUMN llm_provider VARCHAR(20) NOT NULL DEFAULT 'local'",
+        "openai_api_key": "ALTER TABLE app_settings ADD COLUMN openai_api_key VARCHAR(200)",
+        "zotero_data_dir": "ALTER TABLE app_settings ADD COLUMN zotero_data_dir VARCHAR(500)",
     }
     for column, ddl in additive.items():
         if column in existing:

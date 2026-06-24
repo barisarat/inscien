@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
 import numpy as np
@@ -20,14 +21,32 @@ from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_
 
 logger = logging.getLogger(__name__)
 
-MODEL_PATH = os.getenv("KOKORO_MODEL_PATH", "/opt/kokoro/kokoro-v1.0.onnx")
-VOICES_PATH = os.getenv("KOKORO_VOICES_PATH", "/opt/kokoro/voices-v1.0.bin")
 VOICE = os.getenv("KOKORO_VOICE", "af_heart")
 LANG = os.getenv("KOKORO_LANG", "en-us")
 
 TTS_MAX_CHARS = 400  # Kokoro has no hard char cap; chunking just keeps progress granular.
 SILENCE_MS = 200
 BITRATE = "192k"
+
+
+def _ffmpeg_exe():
+    """Path to the ffmpeg to mux the mp3. Prefer the self-contained binary shipped by
+    imageio-ffmpeg (bundled into the frozen desktop builds — Windows/macOS have no system
+    ffmpeg), then an explicit override, then PATH (Docker's image ffmpeg)."""
+    override = (os.getenv("FFMPEG_BINARY") or "").strip()
+    if override:
+        return override
+    try:
+        import imageio_ffmpeg
+
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        # PyInstaller's data collection can drop the exec bit on the bundled binary; restore it
+        # so the subprocess call doesn't fail with Permission denied (no-op on Windows).
+        if os.name == "posix" and os.path.isfile(exe) and not os.access(exe, os.X_OK):
+            os.chmod(exe, os.stat(exe).st_mode | 0o111)
+        return exe
+    except Exception:
+        return "ffmpeg"
 
 # Lazily-loaded model, kept warm for the process (loading the ONNX graph isn't free).
 _kokoro = None
@@ -37,7 +56,9 @@ def _get_kokoro():
     global _kokoro
     if _kokoro is None:
         from kokoro_onnx import Kokoro
-        _kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
+        from services.narration import model as tts_model
+
+        _kokoro = Kokoro(str(tts_model.model_path()), str(tts_model.voices_path()))
     return _kokoro
 
 
@@ -112,6 +133,25 @@ def _to_segment(samples, sample_rate):
     return AudioSegment(pcm16.tobytes(), frame_rate=int(sample_rate), sample_width=2, channels=1)
 
 
+def _system_subprocess_env():
+    """Environment for spawning a *system* binary (ffmpeg) from a possibly-frozen process.
+
+    PyInstaller's bootloader points LD_LIBRARY_PATH (DYLD_* on macOS) at the app's bundled libs
+    in sys._MEIPASS and stashes the caller's original in `<VAR>_ORIG`. A system binary that
+    inherits the bundled path loads our incompatible libraries and fails — so restore the
+    original path (or drop the injected one if there was none) when frozen. A no-op when running
+    normally (not frozen)."""
+    env = dict(os.environ)
+    if getattr(sys, "frozen", False):
+        for var in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH"):
+            orig = env.get(f"{var}_ORIG")
+            if orig is not None:
+                env[var] = orig
+            else:
+                env.pop(var, None)
+    return env
+
+
 def _concat_to_mp3(part_paths, out_path, work_dir):
     """Concatenate WAV parts into a single mp3 via ffmpeg's concat demuxer — streams the parts
     sequentially so memory never holds the whole audio (unlike loading them all in pydub)."""
@@ -122,9 +162,10 @@ def _concat_to_mp3(part_paths, out_path, work_dir):
             f.write(f"file '{p.replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))}'\n")
     try:
         subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+            [_ffmpeg_exe(), "-y", "-f", "concat", "-safe", "0", "-i", list_path,
              "-b:a", BITRATE, out_path],
             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            env=_system_subprocess_env(),
         )
     except subprocess.CalledProcessError as exc:
         stderr = (exc.stderr or b"").decode("utf-8", "replace")[-2000:]
