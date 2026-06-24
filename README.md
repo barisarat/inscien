@@ -4,7 +4,7 @@ A local, private desktop app that turns your own [Zotero](https://www.zotero.org
 into a navigable map and audio narrations. It runs on your machine and reads your library
 read-only, so your data stays yours.
 
-Downloads and documentation: https://aratbaris.github.io/inscien/
+Downloads and documentation: https://inscien.com/
 
 ## What it does
 
@@ -31,7 +31,7 @@ Grab the installer for your operating system from the
 
 Builds are unsigned for now, so you click past a SmartScreen (Windows) or Gatekeeper (macOS)
 warning on first launch. Full per-OS steps are in the
-[installation guide](https://aratbaris.github.io/inscien/getting-started/installation/).
+[installation guide](https://inscien.com/getting-started/installation/).
 
 ## Prerequisite: a model for narration
 
@@ -51,7 +51,7 @@ page (no environment variables, no config files):
 4. Open the Map, or pick a paper and Narrate it. The first narration downloads the voice model
    once (about 1 GB), with a progress bar.
 
-See the [quick start](https://aratbaris.github.io/inscien/getting-started/quick-start/) for
+See the [quick start](https://inscien.com/getting-started/quick-start/) for
 the full walkthrough.
 
 ## Run from source (development)
