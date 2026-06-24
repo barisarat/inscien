@@ -315,7 +315,7 @@ def _authors(con, item_id):
 
 
 def item_metadata(item_key):
-    """{itemKey, title, authors[], year, itemType, isBookDefaultOff} or None if missing."""
+    """{itemKey, title, abstractNote, authors[], year, itemType, isBookDefaultOff} or None if missing."""
     con = _connect()
     try:
         item_id = _item_id(con, item_key)
@@ -331,6 +331,7 @@ def item_metadata(item_key):
         ).fetchone()
         item_type = type_row["typeName"] if type_row else None
         title = _field_value(con, item_id, "title")
+        abstract_note = _field_value(con, item_id, "abstractNote")
         date = _field_value(con, item_id, "date")
         doi = _normalize_doi(_field_value(con, item_id, "DOI"))
         authors = _authors(con, item_id)
@@ -341,6 +342,7 @@ def item_metadata(item_key):
     return {
         "itemKey": item_key,
         "title": title,
+        "abstractNote": abstract_note,
         "authors": authors,
         "year": year_match.group(1) if year_match else None,
         "itemType": item_type,

@@ -1,22 +1,20 @@
 """Incremental, item-keyed ingestion from the Zotero library.
 
-Reuses the shared PDF parser + page-windowing chunker (`lab.pdf_parser`,
-`lab.pdf_ingest`), but writes chunks keyed by Zotero **itemKey** (`sourceId = itemKey`)
-and enriched with real bibliographic metadata. This path is **additive**: it indexes a
-given set of items, upserting only their points and replacing only their chunks in the
-manifest. So selecting a new collection adds to the index without disturbing what's
-already there.
+Indexes one summary chunk per Zotero item, keyed by Zotero **itemKey**
+(`sourceId = itemKey`) and enriched with real bibliographic metadata. Abstract-bearing
+items index title + abstract; items without abstracts index title and lightweight
+metadata. This path is **additive**: it indexes a given set of items, upserting only
+their points and replacing only their chunks in the manifest. So selecting a new
+collection adds to the index without disturbing what's already there.
 
-Idempotent via a content hash recorded in the sync ledger: an unchanged file is skipped.
+Idempotent via an index-input hash recorded in the sync ledger: unchanged PDF +
+metadata inputs are skipped.
 """
 
 import hashlib
 import logging
-import os
 from collections import defaultdict
 from pathlib import Path
-
-import numpy as np
 
 from core.db import SessionLocal
 from repositories.zotero_repository import (
@@ -28,8 +26,7 @@ from repositories.zotero_repository import (
 )
 from services.lab.embedding_service import embed_texts
 from services.lab.manifest_loader import read_json_file
-from services.lab.pdf_ingest import _batched, _page_passages, _write_manifest
-from services.lab.pdf_parser import parse_pdf
+from services.lab.pdf_ingest import _write_manifest
 from services.lab.qdrant_store import (
     build_point,
     delete_lab_points_by_source,
@@ -55,16 +52,44 @@ from services.zotero.reader import item_metadata, live_item_keys, resolve_pdf_pa
 
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE = 32
-# Cap per-document parsing/embedding by page count so books / very-long items don't bloat the
-# index (and a whole collection can be fully indexed cheaply). The first pages carry a paper's
-# "aboutness" - which is all the Map (similarity) and Narration need. Cap by ACTUAL length, not
-# the (unreliable) Zotero item-type. Changing this requires a reset + re-index to take effect.
-MAX_INDEX_PAGES = int(os.getenv("MAX_INDEX_PAGES", "15"))
+INDEX_STRATEGY_VERSION = "zotero-summary-v1"
 
 
 def _file_hash(path):
     return hashlib.sha1(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def _index_hash(raw_pdf_hash, mode, text, meta):
+    parts = [
+        INDEX_STRATEGY_VERSION,
+        raw_pdf_hash or "",
+        mode or "",
+        text or "",
+        (meta or {}).get("title") or "",
+        (meta or {}).get("year") or "",
+        (meta or {}).get("itemType") or "",
+        (meta or {}).get("doi") or "",
+        "\n".join((meta or {}).get("authors") or []),
+    ]
+    return hashlib.sha1("\0".join(parts).encode("utf-8")).hexdigest()[:12]
+
+
+def _clean_text(value):
+    return " ".join((value or "").split())
+
+
+def _metadata_text(item_key, title, meta):
+    meta = meta or {}
+    authors = ", ".join(meta.get("authors") or [])
+    lines = [
+        ("Title", title),
+        ("Authors", authors),
+        ("Year", meta.get("year")),
+        ("Item type", meta.get("itemType")),
+        ("DOI", meta.get("doi")),
+    ]
+    text = "\n".join(f"{label}: {_clean_text(value)}" for label, value in lines if _clean_text(value))
+    return text or _clean_text(title) or item_key
 
 
 def _paper_payload(item_key, meta):
@@ -99,53 +124,51 @@ def _enrich_citations(item_key, meta, generation):
         refstore._save(cache)
 
 
-def build_chunks_for_item(item_key, pdf_path, meta):
-    """Schema-conformant chunks for one Zotero item, keyed by itemKey and carrying
-    Zotero metadata (real title/authors/year + a deep-link) alongside page/bbox."""
+def build_chunks_for_item(item_key, pdf_path, meta, raw_pdf_hash=None):
+    """One schema-conformant summary chunk for one Zotero item."""
     path = Path(pdf_path)
-    file_hash = _file_hash(path)
+    file_hash = raw_pdf_hash or _file_hash(path)
     title = (meta or {}).get("title") or path.stem.replace("_", " ").strip()
+    title = _clean_text(title) or item_key
+    abstract = _clean_text((meta or {}).get("abstractNote"))
 
-    blocks = parse_pdf(str(path))
-    by_page = defaultdict(list)
-    for block in blocks:
-        by_page[block["page"]].append(block)
+    if abstract:
+        content_mode = "abstract"
+        text = f"{title}\n\n{abstract}"
+    else:
+        content_mode = "metadata"
+        text = _metadata_text(item_key, title, meta)
 
-    chunks = []
-    for page in sorted(by_page):
-        if page > MAX_INDEX_PAGES:  # length cap - see MAX_INDEX_PAGES
-            break
-        for index, passage in enumerate(_page_passages(by_page[page])):
-            chunks.append({
-                "sourceType": "zotero",
-                "sourceId": item_key,
-                "chunkId": f"zotero::{item_key}::p{page}::{index}",
-                "title": title,
-                "url": f"/papers/{item_key}",
-                "contentMode": "full_text",
-                "text": passage["text"],
-                "metadata": {
-                    "page": page,
-                    "passageIndex": index,
-                    "bbox": passage["bbox"],
-                    "fileName": path.name,
-                    "itemKey": item_key,
-                    "authors": (meta or {}).get("authors", []),
-                    "year": (meta or {}).get("year"),
-                    "itemType": (meta or {}).get("itemType"),
-                    "zoteroLink": f"zotero://select/library/items/{item_key}",
-                    "fileHash": file_hash,
-                },
-            })
+    index_hash = _index_hash(file_hash, content_mode, text, meta)
+    chunk = {
+        "sourceType": "zotero",
+        "sourceId": item_key,
+        "chunkId": f"zotero::{item_key}::summary",
+        "title": title,
+        "url": f"/papers/{item_key}",
+        "contentMode": content_mode,
+        "text": text,
+        "metadata": {
+            "fileName": path.name,
+            "itemKey": item_key,
+            "authors": (meta or {}).get("authors", []),
+            "year": (meta or {}).get("year"),
+            "itemType": (meta or {}).get("itemType"),
+            "doi": (meta or {}).get("doi"),
+            "indexMode": content_mode,
+            "zoteroLink": f"zotero://select/library/items/{item_key}",
+            "fileHash": file_hash,
+        },
+    }
 
-    return chunks, file_hash
+    return [chunk], index_hash
 
 
 def index_items(item_keys, progress=None):
     """Index a set of Zotero item keys into the manifest + Qdrant, additively.
 
-    Skips items with no synced PDF and items whose file is unchanged since last index
-    (ledger hit). Returns a summary dict.
+    Skips items with no synced PDF and items whose indexed PDF + metadata inputs are
+    unchanged since last index (ledger hit). Returns a summary dict.
     """
     emit = progress or (lambda *_args, **_kwargs: None)
     item_keys = list(item_keys)
@@ -191,33 +214,26 @@ def index_items(item_keys, progress=None):
                     emit("indexing", pct, f"{key}: no PDF - skipped")
                     continue
 
-                file_hash = _file_hash(pdf)
+                meta = item_metadata(key) or {"itemKey": key}
+                raw_pdf_hash = _file_hash(pdf)
+                chunks, file_hash = build_chunks_for_item(key, pdf, meta, raw_pdf_hash)
+
                 prev = ledger.get(key)
                 if prev and prev.get("status") == "indexed" and prev.get("file_hash") == file_hash:
                     skipped += 1
                     emit("indexing", pct, f"{key}: up to date")
                     continue
 
-                meta = item_metadata(key) or {"itemKey": key}
-                chunks, _ = build_chunks_for_item(key, pdf, meta)
-
-                point_batches = []
-                all_vectors = []
-                for batch in _batched(chunks, BATCH_SIZE):
-                    vectors = embed_texts([c["text"] for c in batch])
-                    all_vectors.extend(vectors)
-                    point_batches.append([build_point(c, v) for c, v in zip(batch, vectors)])
+                vectors = embed_texts([c["text"] for c in chunks])
+                points = [build_point(c, v) for c, v in zip(chunks, vectors)]
 
                 with DERIVED_STATE_LOCK:
                     ensure_current_generation(generation)
                     delete_lab_points_by_source(key)  # clear stale points if re-indexing
-                    for points in point_batches:
-                        upsert_lab_points(points)
-                    # Paper-level vector = mean of the item's chunk vectors (reflects the capped
-                    # content) -> powers the Map's Similarity lens.
-                    if all_vectors:
-                        paper_vec = np.mean(np.asarray(all_vectors, dtype="float32"), axis=0).tolist()
-                        upsert_paper_vector(key, paper_vec, _paper_payload(key, meta))
+                    upsert_lab_points(points)
+                    # One summary chunk per item, so the paper vector is the summary vector.
+                    if vectors:
+                        upsert_paper_vector(key, vectors[0], _paper_payload(key, meta))
 
                     by_source[key] = chunks
                     upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
