@@ -297,7 +297,7 @@ export default function GraphMode() {
             <span className="text-xs font-medium text-muted-foreground">Layout</span>
             <Chips<GraphLayout>
               value={layout}
-              options={[{ v: "network", label: "Network" }, { v: "timeline", label: "Timeline" }]}
+              options={[{ v: "network", label: "Network" }, { v: "timeline", label: "Time Order" }]}
               onChange={setLayout}
             />
           </div>

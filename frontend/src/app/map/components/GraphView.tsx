@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 
 import styles from "./PdfViewerPanel.module.css"
@@ -118,13 +118,12 @@ function withAlpha(color: string, alpha: number): string {
 
 function nodeVal(n: AtlasNode): number {
   if (n.type === "owned") return 0.75 + Math.min(4.5, Math.log10((n.globalCitedBy ?? 0) + 1) * 0.9)
-  return 0.45 + Math.min(2.4, Math.max(0, (n.citedBy ?? 0) - 1) * 0.65)
+  if (n.globalCitedBy != null) return 0.75 + Math.min(4.5, Math.log10(n.globalCitedBy + 1) * 0.9)
+  return 0.55 + Math.min(2.4, Math.max(0, (n.citedBy ?? 0) - 1) * 0.65)
 }
 
-// --- timeline layout (kept for the citation satellite layer: year x citations) --------------
-const W = 900
-const H = 560
-const GUTTER = 110
+// --- time-order layout: keep the network, nudge x-position by effective date ----------------
+const TIME_ORDER_W = 880
 
 function yearValue(n: AtlasNode): number | null {
   const d = n.date
@@ -138,63 +137,66 @@ function yearValue(n: AtlasNode): number | null {
   return Number.isFinite(y) && y > 0 ? y : null
 }
 
-type Ticks = { xTicks: { x: number; label: string }[]; yTicks: { y: number; label: string }[]; undatedX: number | null }
+function timelineYears(nodes: AtlasNode[], edges: AtlasEdge[]): Map<string, number> {
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+  const base = new Map<string, number>()
+  nodes.forEach((n) => {
+    const year = yearValue(n)
+    if (year != null) base.set(n.id, year)
+  })
+  const years = new Map(base)
+  const invalidExternal = new Set<string>()
 
-function computeTimeline(nodes: AtlasNode[]): { pos: Map<string, { x: number; y: number }>; ticks: Ticks } {
-  const years = nodes.map(yearValue)
+  edges.forEach((edge) => {
+    const source = byId.get(edge.source)
+    const target = byId.get(edge.target)
+    if (!source || !target) return
+
+    const sourceYear = base.get(source.id)
+    const targetYear = base.get(target.id)
+
+    if (source.type === "owned" && target.type === "external" && sourceYear != null && targetYear != null) {
+      if (targetYear > sourceYear) invalidExternal.add(target.id)
+    }
+    if (source.type === "external" && target.type === "owned" && sourceYear != null && targetYear != null) {
+      if (sourceYear < targetYear) invalidExternal.add(source.id)
+    }
+  })
+
+  invalidExternal.forEach((id) => years.delete(id))
+  return years
+}
+
+function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>): Map<string, number> {
+  const years = nodes.map((n) => yearsById.get(n.id) ?? null)
   const dated = years.filter((v): v is number => v != null)
   const tMin = dated.length ? Math.min(...dated) : 0
   const tMax = dated.length ? Math.max(...dated) : 1
-  const tSpan = tMax - tMin || 1
-  const cMax = Math.max(1, ...nodes.map((n) => n.globalCitedBy ?? n.citedBy ?? 0))
-  const cLogMax = Math.log10(cMax + 1) || 1
+  const span = tMax - tMin || 1
 
-  const pos = new Map<string, { x: number; y: number }>()
+  const xById = new Map<string, number>()
   nodes.forEach((n, i) => {
     const t = years[i]
-    const cNorm = Math.log10((n.globalCitedBy ?? n.citedBy ?? 0) + 1) / cLogMax
-    const y = H / 2 - cNorm * H
-    const x = t == null ? -W / 2 - GUTTER : -W / 2 + ((t - tMin) / tSpan) * W
-    pos.set(n.id, { x, y })
+    if (t != null) xById.set(n.id, -TIME_ORDER_W / 2 + ((t - tMin) / span) * TIME_ORDER_W)
   })
-
-  const xTicks: { x: number; label: string }[] = []
-  if (dated.length) {
-    const lo = Math.floor(tMin)
-    const hi = Math.ceil(tMax)
-    const step = Math.max(1, Math.ceil((hi - lo) / 7))
-    for (let yr = lo; yr <= hi; yr += step) xTicks.push({ x: -W / 2 + ((yr - tMin) / tSpan) * W, label: String(yr) })
-  }
-  const yTicks = [0, 1, 10, 100, 1000, 10000]
-    .filter((v) => v <= Math.max(cMax, 1))
-    .map((v) => ({ y: H / 2 - (Math.log10(v + 1) / cLogMax) * H, label: v >= 1000 ? `${v / 1000}k` : String(v) }))
-  const undatedX = years.some((v) => v == null) ? -W / 2 - GUTTER : null
-  return { pos, ticks: { xTicks, yTicks, undatedX } }
+  return xById
 }
 
-function drawAxes(ctx: CanvasRenderingContext2D, globalScale: number, ticks: Ticks) {
-  ctx.save()
-  ctx.lineWidth = 1 / globalScale
-  ctx.strokeStyle = palette().edge
-  ctx.font = `${11 / globalScale}px sans-serif`
-  ctx.fillStyle = "rgba(0,0,0,0.4)"
-  ctx.textAlign = "center"
-  ctx.textBaseline = "top"
-  for (const t of ticks.xTicks) {
-    ctx.beginPath(); ctx.moveTo(t.x, -H / 2); ctx.lineTo(t.x, H / 2); ctx.stroke()
-    ctx.fillText(t.label, t.x, H / 2 + 6 / globalScale)
+function timeOrderForce(xById: Map<string, number>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let nodes: any[] = []
+  const strength = 0.22
+  const force = (alpha: number) => {
+    for (const node of nodes) {
+      const target = xById.get(node.id)
+      if (target == null || node.x == null) continue
+      node.vx += (target - node.x) * strength * alpha
+    }
   }
-  ctx.textAlign = "right"
-  ctx.textBaseline = "middle"
-  for (const yt of ticks.yTicks) {
-    ctx.beginPath(); ctx.moveTo(-W / 2, yt.y); ctx.lineTo(W / 2, yt.y); ctx.stroke()
-    ctx.fillText(yt.label, -W / 2 - 6 / globalScale, yt.y)
+  force.initialize = (next: unknown[]) => {
+    nodes = next
   }
-  if (ticks.undatedX != null) {
-    ctx.textAlign = "center"; ctx.textBaseline = "top"
-    ctx.fillText("no date", ticks.undatedX, H / 2 + 6 / globalScale)
-  }
-  ctx.restore()
+  return force
 }
 
 // --- convex hull (Andrew's monotone chain) for cluster blobs --------------------------------
@@ -299,6 +301,7 @@ export default function GraphView({
   const [size, setSize] = useState({ w: 0, h: 0 })
   // Persistent positions so emphasis/satellite toggles never relayout the ground.
   const posRef = useRef<Map<string, { x: number; y: number }>>(new Map())
+  const fitKeyRef = useRef("")
 
   // A fresh scope means a fresh layout - drop remembered positions.
   useEffect(() => {
@@ -326,12 +329,16 @@ export default function GraphView({
     }
   }, [])
 
+  const timelineYearMap = useMemo(() => timelineYears(data.nodes, data.edges), [data.edges, data.nodes])
   const visibleNodes = useMemo(
-    () => (layout === "timeline" ? data.nodes.filter((n) => yearValue(n) != null) : data.nodes),
-    [data, layout],
+    () => (layout === "timeline" ? data.nodes.filter((n) => timelineYearMap.has(n.id)) : data.nodes),
+    [data.nodes, layout, timelineYearMap],
   )
   const visibleIds = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes])
-  const timeline = useMemo(() => (layout === "timeline" ? computeTimeline(visibleNodes) : null), [layout, visibleNodes])
+  const timeOrder = useMemo(
+    () => (layout === "timeline" ? computeTimeOrder(visibleNodes, timelineYearMap) : null),
+    [layout, timelineYearMap, visibleNodes],
+  )
 
   // Centroid of a cluster's already-placed nodes - so a newly-added node starts near its kin.
   const clusterCentroid = (cluster: number | null | undefined) => {
@@ -350,19 +357,14 @@ export default function GraphView({
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
-      const p = timeline?.pos.get(n.id)
-      if (p) {
-        node.x = node.fx = p.x
-        node.y = node.fy = p.y
-      } else {
-        const remembered = posRef.current.get(n.id)
-        if (remembered) {
-          node.x = node.fx = remembered.x
-          node.y = node.fy = remembered.y // pin known network nodes so the ground stays put
-        }
-        const seed = clusterCentroid(n.cluster)
-        if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
+      const remembered = posRef.current.get(n.id)
+      if (remembered) {
+        node.x = node.fx = remembered.x
+        node.y = node.fy = remembered.y // pin known network nodes so the ground stays put
       }
+      const seed = clusterCentroid(n.cluster)
+      if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
+      if (timeOrder?.has(n.id)) node.fx = undefined
       return node
     })
     const links = data.edges
@@ -370,7 +372,7 @@ export default function GraphView({
       .map((e) => ({ source: e.source, target: e.target, __e: e }))
     return { nodes, links }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.edges, scaleByCitations, timeline, visibleIds, visibleNodes])
+  }, [data.edges, scaleByCitations, timeOrder, visibleIds, visibleNodes])
 
   // Capture settled positions so subsequent renders pin them.
   const capturePositions = () => {
@@ -398,6 +400,20 @@ export default function GraphView({
     graph.d3ReheatSimulation?.()
   }, [layout])
 
+  const applyLayoutForces = useCallback(() => {
+    const graph = fgRef.current
+    if (!graph) return
+    graph.d3Force?.("x", null)
+    if (layout === "timeline" && timeOrder) {
+      graph.d3Force?.("x", timeOrderForce(timeOrder))
+    }
+    graph.d3ReheatSimulation?.()
+  }, [layout, timeOrder])
+
+  useEffect(() => {
+    applyLayoutForces()
+  }, [applyLayoutForces, graphData])
+
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
 
   const fitToView = () => {
@@ -410,6 +426,8 @@ export default function GraphView({
       if (typeof zoom === "number" && zoom > 1.1) graph.zoom?.(1.1, 250)
     }, 450)
   }
+
+  const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${visibleIds.size}`
 
   return (
     <div className={styles.graphWrap} ref={containerRef}>
@@ -429,7 +447,10 @@ export default function GraphView({
           linkStrength={(l: any) => Math.min(1, Math.max(0.05, (l.__e?.weight ?? 0.3)))}
           onEngineStop={() => {
             capturePositions()
-            fitToView()
+            if (fitKeyRef.current !== fitKey) {
+              fitKeyRef.current = fitKey
+              fitToView()
+            }
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           nodeVal={(n: any) => n.val}
@@ -453,8 +474,7 @@ export default function GraphView({
           linkDirectionalArrowLength={(l: any) => (showConnections && l.__e?.direct ? 3 : 0)}
           linkDirectionalArrowRelPos={1}
           onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
-            if (layout === "timeline" && timeline) drawAxes(ctx, globalScale, timeline.ticks)
-            else if (showHulls && colorBy === "cluster") drawHulls(ctx, globalScale, graphData.nodes)
+            if (showHulls && colorBy === "cluster") drawHulls(ctx, globalScale, graphData.nodes)
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onNodeClick={(node: any) => onSelectNode(node.__src as AtlasNode)}
