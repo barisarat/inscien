@@ -15,16 +15,16 @@ Fusion is additive (`w = W_SEM*sem + W_DIRECT*direct + W_COUPLE*couple`) so sema
 a citation-linked pair the embeddings missed is still rescued above the keep threshold. Clusters
 come from the *same* fused graph via Louvain, so the floating groups you see ARE the clusters.
 
-Pure vector/graph math + ONE bounded LLM call per cluster for a short label — no agent loop.
+Pure vector/graph math — deterministic keyword cluster labels (no LLM, no agent loop).
 """
 
 import logging
+import re
 from collections import defaultdict
 
 import numpy as np
 
 from services.lab.qdrant_store import backfill_paper_vectors, get_paper_vectors
-from services.llm.client import chat_create, text_of
 from services.refs import refstore
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,18 @@ HUB_FRAC = 0.40       # skip an external ref shared by > this fraction of the co
 # --- clustering -----------------------------------------------------------------------------
 LOUVAIN_SEED = 1234   # determinism (seeded node-visit order)
 RESOLUTION = 1.0      # modularity resolution (lower → bigger communities)
-MAX_CLUSTERS_LABELED = 12
-MIN_LABEL_SIZE = 2
+MIN_LABEL_SIZE = 2    # smallest cluster that gets a keyword label
+LABEL_TERMS = 3       # max keywords per cluster label
+
+# Generic English + academic-boilerplate terms that make poor topic labels.
+_STOPWORDS = frozenset({
+    "the", "and", "for", "with", "from", "this", "that", "into", "over", "under", "via",
+    "are", "was", "were", "has", "have", "had", "not", "but", "its", "their", "these", "those",
+    "use", "uses", "using", "used", "based", "toward", "towards", "approach", "approaches",
+    "model", "models", "method", "methods", "analysis", "study", "studies", "novel", "results",
+    "paper", "learning", "framework", "frameworks", "system", "systems", "data", "problem",
+    "problems", "application", "applications", "case", "new", "review", "survey", "via", "across",
+})
 
 
 # --- small reused helpers (lifted from the retired similarity.py) ----------------------------
@@ -69,21 +79,43 @@ def _collections(item_keys):
         return {}
 
 
-def _label_cluster(titles):
-    """One short topic label for a cluster, from a sample of its paper titles. Bounded LLM
-    call; returns None on any failure (the graph renders without labels)."""
-    sample = "; ".join(titles[:8])
-    prompt = (
-        "Give a SHORT topic label (2-4 words) for a cluster of research papers with these "
-        "titles. Respond with ONLY the label, no quotes.\n\n" + sample
-    )
-    try:
-        out = text_of(chat_create(messages=[{"role": "user", "content": prompt}], max_tokens=200))
-        cleaned = out.strip().strip('"').strip()
-        return cleaned[:40] if cleaned else None
-    except Exception:
-        logger.exception("cluster label failed")
-        return None
+def _tokens(title):
+    """Lowercase content words from a title (≥3 chars, no stopwords, no bare numbers)."""
+    return [
+        t for t in re.split(r"[^a-z0-9]+", (title or "").lower())
+        if len(t) >= 3 and not t.isdigit() and t not in _STOPWORDS
+    ]
+
+
+def _keyword_labels(members, titles):
+    """Deterministic, corpus-aware cluster labels from paper titles — no LLM.
+
+    For each cluster (size ≥ MIN_LABEL_SIZE), score its title terms by
+    `tf_in_cluster / (1 + clusters_containing_term)` so the label is *distinctive* (not the same
+    generic words on every blob), take the top few terms Title-Cased. Returns {cluster_id: label}
+    (only clusters that earn one). Deterministic tie-breaks → identical labels run-to-run.
+    """
+    cluster_tokens = {
+        cid: [tok for k in ks for tok in _tokens(titles.get(k, ""))]
+        for cid, ks in members.items()
+        if len(ks) >= MIN_LABEL_SIZE
+    }
+    df = defaultdict(int)  # how many clusters contain each term
+    for toks in cluster_tokens.values():
+        for term in set(toks):
+            df[term] += 1
+
+    labels = {}
+    for cid, toks in cluster_tokens.items():
+        if not toks:
+            continue
+        tf = defaultdict(int)
+        for term in toks:
+            tf[term] += 1
+        ranked = sorted(tf, key=lambda t: (-(tf[t] / (1 + df[t])), -tf[t], t))[:LABEL_TERMS]
+        if ranked:
+            labels[cid] = " ".join(w.title() for w in ranked)
+    return labels
 
 
 # --- citation signal extraction --------------------------------------------------------------
@@ -375,11 +407,7 @@ def fused_map(item_keys, with_labels=True):
     for k in present:
         members[cluster_of[k]].append(k)
 
-    cluster_label = {}
-    if with_labels:
-        for cid, ks in members.items():
-            if len(ks) >= MIN_LABEL_SIZE and cid < MAX_CLUSTERS_LABELED:
-                cluster_label[cid] = _label_cluster([titles.get(x, x) for x in ks])
+    cluster_label = _keyword_labels(members, titles) if with_labels else {}
 
     nodes = []
     for k in present:

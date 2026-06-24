@@ -50,46 +50,6 @@ async function authedAction<T>(path: string, method: string, body?: unknown): Pr
   return res.json()
 }
 
-// --- Chat sessions -------------------------------------------------------------
-
-export interface ChatSessionSummary {
-  id: number
-  title: string
-  createdAt: string | null
-  updatedAt: string | null
-}
-
-export interface ChatMessageDTO {
-  role: "user" | "assistant"
-  content: string
-  widgets: unknown[]
-  citations: unknown[]
-  contextSummary: string
-  createdAt: string | null
-}
-
-export interface ChatSessionDetail {
-  id: number
-  title: string
-  messages: ChatMessageDTO[]
-}
-
-export async function listChatSessions(): Promise<{ sessions: ChatSessionSummary[] }> {
-  return authedGet("/api/chat/sessions")
-}
-
-export async function getChatSession(id: number): Promise<ChatSessionDetail> {
-  return authedGet(`/api/chat/sessions/${id}`)
-}
-
-export async function renameChatSession(id: number, title: string): Promise<ChatSessionSummary> {
-  return authedAction(`/api/chat/sessions/${id}`, "PATCH", { title })
-}
-
-export async function deleteChatSession(id: number): Promise<{ ok: boolean }> {
-  return authedAction(`/api/chat/sessions/${id}`, "DELETE")
-}
-
 // ---- Settings (provider/model + display name) ----
 
 // Local by default; "openai" is opt-in. The OpenAI key is env-only (OPENAI_API_KEY) — never

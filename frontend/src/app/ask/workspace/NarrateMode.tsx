@@ -1,9 +1,19 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { AudioLines, Download, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { AudioLines, Download, Loader2, Settings } from "lucide-react"
 
-import { activeNarration, getNarration, listNarrations, listPapers, startNarration, API_BASE } from "@/lib/api"
+import {
+  activeNarration,
+  getModelOptions,
+  getNarration,
+  getSettings,
+  listNarrations,
+  listPapers,
+  startNarration,
+  API_BASE,
+} from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import { useSkillJob, JobProgress, JobError } from "./skillJob"
@@ -26,6 +36,8 @@ export default function NarrateMode() {
   const [phase, setPhase] = useState<Phase>("idle")
   const [title, setTitle] = useState("")
   const [jobId, setJobId] = useState("")
+  // null = not yet checked; gates the Generate button on a configured/reachable narration model.
+  const [modelReady, setModelReady] = useState<boolean | null>(null)
   const { progress, setProgress, error, setError, newRun, isStale, track } = useSkillJob()
 
   const attach = useCallback((id: string, token: number) =>
@@ -67,6 +79,33 @@ export default function NarrateMode() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, loaded])
+
+  // Gate the Generate button on a configured/reachable narration model (narration is the only
+  // feature that needs a model). Independent of the resume logic above so a settings hiccup
+  // never blocks replaying an existing narration.
+  useEffect(() => {
+    if (loaded || !docId) {
+      setModelReady(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const [settings, models] = await Promise.all([getSettings(), getModelOptions()])
+        if (cancelled) return
+        setModelReady(
+          settings.llmProvider === "openai"
+            ? settings.openAiApiKeyPresent && !!settings.llmModel
+            : models.ollamaReachable && models.options.length > 0,
+        )
+      } catch {
+        if (!cancelled) setModelReady(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [docId, loaded])
 
   const run = useCallback(async () => {
@@ -138,6 +177,15 @@ export default function NarrateMode() {
     audioBlock(jobId)
   ) : phase === "error" ? (
     <JobError error={error} onRetry={run} />
+  ) : modelReady === false ? (
+    <div className="flex flex-col items-start gap-3">
+      <p className="text-sm text-muted-foreground">
+        Narration needs a language model. Connect a local Ollama model or an OpenAI key in Settings.
+      </p>
+      <Link href="/settings" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <Settings /> Open Settings
+      </Link>
+    </div>
   ) : (
     <div className="flex flex-col items-start gap-5">
       <p className="text-sm text-muted-foreground">

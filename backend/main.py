@@ -16,7 +16,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.db import engine, Base, ensure_app_settings_columns
-from routers.chat import router as chat_router
 from routers.settings import router as settings_router
 from routers.papers import router as papers_router
 from routers.graph import router as graph_router
@@ -75,7 +74,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat_router)
 app.include_router(settings_router)
 app.include_router(papers_router)
 app.include_router(graph_router)

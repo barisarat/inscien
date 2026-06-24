@@ -5,8 +5,8 @@ A working note to resume from in a new session. For the original product brief s
 and for how to run it [`RUNNING.md`](RUNNING.md). This file captures **where the product is
 now, why, what changed recently, what's legacy, and what's next.**
 
-_Last updated: 2026-06 (Atlas rebuild — fused graph + Louvain, citations-in-indexing, inspect
-panel; code-complete, backend awaiting in-container verification)._
+_Last updated: 2026-06 (Map is now LLM-free with deterministic keyword labels; narration is the sole
+bring-your-own LLM; legacy + chat backend deleted; full shadcn UI re-skin)._
 
 ---
 
@@ -22,10 +22,11 @@ has **pivoted** to two transformation-shaped modes, and away from chat/agent/que
 - **Narrate** — paper → explanatory script → Kokoro CPU TTS (unchanged, works well).
 
 **Guiding principle:** prefer features that *transform the library into a view/modality*
-(low input, robust, legible) over features that *answer queries* (commodity, fragile). Use the
-LLM as a **bounded function** (e.g. label a cluster, write a narration script), **never as an
-agent loop**. The Map's geometry is 100% deterministic vector/graph math; the only model call
-is one optional, fail-open cluster-label per cluster.
+(low input, robust, legible) over features that *answer queries* (commodity, fragile). The
+**Map is 100% LLM-free** — deterministic vector/graph math + deterministic keyword cluster labels
+(from paper titles). **Narration is the only feature that uses an LLM**, and it's
+**bring-your-own** (local Ollama or an OpenAI key, configured in Settings). So the app needs no
+model at all for the Map, and ships with nothing to bundle.
 
 Differentiation = **Zotero-native + page-precise + the integration of these views over your own
 library** — not the model, and not any single feature (each has competitors; the bundle native
@@ -57,7 +58,8 @@ to your library is the edge).
   coupling** (shared refs / shared citers, normalized, hub-skipped). Fusion is additive
   (`w = W_SEM·sem + W_DIRECT·direct + W_COUPLE·couple`; semantic leads, citation rescues). Clusters
   come from **numpy Louvain** (`_communities`, multilevel modularity, deterministic) over that same
-  graph — replacing the old connected-components blob/shatter. One bounded LLM label per cluster.
+  graph — replacing the old connected-components blob/shatter. Cluster labels are **deterministic
+  keyword terms** from titles (`_keyword_labels`, TF-IDF-ish, no LLM).
   Edges carry **decomposed** components (`semantic`/`coupling`/`citation`) so the frontend can do
   emphasis modes. (Old `services/map/similarity.py` + `/api/map/similarity` deleted.)
 - **Indexing foundation** — `services/zotero/ingest.py`: `MAX_INDEX_PAGES` (default 15) caps per-doc
@@ -79,9 +81,12 @@ to your library is the edge).
 ### Narrate
 Unchanged: `services/narration/` (Kokoro CPU TTS), `NarrateMode.tsx`. **Good, leave as-is.**
 
-### Kept-but-legacy tabs (NOT removed yet)
-`WorkspaceMode = ask | verify | compare | write | narrate | graph`. The **ask/verify/compare/
-write** tabs and their backends still exist and work, but are slated for **retirement** (see §5).
+### Legacy: REMOVED
+The agent/chat and the verify/compare/write skills (backends + frontend modes) and the chat
+persistence backend (`routers/chat.py`, `models/chat.py`, …) are **deleted**. `WorkspaceMode =
+narrate | graph`. The whole frontend was re-skinned on **shadcn/ui** (Tailwind v4): a `Sidebar`
+library navigator, the Map control rail, `NodeInspector`, Narrate, Settings, and a draggable
+`Resizable` map↔PDF split.
 
 ---
 
@@ -155,8 +160,9 @@ readable.
 - **No reset needed for the Map** on an existing index — paper vectors **backfill** from existing
   chunk vectors on first Similarity open. The **page cap** only applies on (re)index; do a reset +
   re-index (`POST /api/zotero/reset`, no UI button) to apply it to already-indexed long items.
-- Cluster labels + narration scripts use `chat_create` (local or OpenAI per Settings); the Map's
-  structure does **not** need a model and works with it off.
+- Only **narration** uses `chat_create` (the bring-your-own model, local or OpenAI per Settings);
+  the Map (structure + labels) needs **no model at all**. NarrateMode gates the Generate button on a
+  reachable/configured model and links to Settings otherwise.
 - Tunables (env): `MAX_INDEX_PAGES`, `OPENALEX_CITING_LIMIT`, `OPENALEX_GAP_MIN`,
   `QDRANT_PAPER_COLLECTION`, `OPENAI_API_KEY`/`OPENAI_BASE_URL`. Code constants:
   `SIM_K`/`SIM_CUTOFF`/`MAX_CLUSTERS_LABELED` in `services/map/similarity.py`.
