@@ -350,16 +350,19 @@ export default function GraphView({
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
-      const remembered = posRef.current.get(n.id)
-      if (remembered) {
-        node.x = node.fx = remembered.x
-        node.y = node.fy = remembered.y // pin known nodes so the ground stays put
-      } else {
-        const seed = clusterCentroid(n.cluster)
-        if (seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
-      }
       const p = timeline?.pos.get(n.id)
-      if (p) { node.x = node.fx = p.x; node.y = node.fy = p.y }
+      if (p) {
+        node.x = node.fx = p.x
+        node.y = node.fy = p.y
+      } else {
+        const remembered = posRef.current.get(n.id)
+        if (remembered) {
+          node.x = node.fx = remembered.x
+          node.y = node.fy = remembered.y // pin known network nodes so the ground stays put
+        }
+        const seed = clusterCentroid(n.cluster)
+        if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
+      }
       return node
     })
     const links = data.edges
@@ -371,6 +374,7 @@ export default function GraphView({
 
   // Capture settled positions so subsequent renders pin them.
   const capturePositions = () => {
+    if (layout !== "network") return
     for (const n of graphData.nodes) {
       if (n.x != null && n.y != null) posRef.current.set(n.id, { x: n.x, y: n.y })
     }
@@ -381,6 +385,18 @@ export default function GraphView({
     const raf = requestAnimationFrame(() => fgRef.current?.d3ReheatSimulation?.())
     return () => cancelAnimationFrame(raf)
   }, [graphData, layout, size.w, size.h])
+
+  useEffect(() => {
+    if (layout !== "network") return
+    const graph = fgRef.current
+    const nodes = graph?.graphData?.()?.nodes
+    if (!Array.isArray(nodes)) return
+    for (const node of nodes) {
+      node.fx = undefined
+      node.fy = undefined
+    }
+    graph.d3ReheatSimulation?.()
+  }, [layout])
 
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
 
