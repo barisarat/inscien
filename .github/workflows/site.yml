@@ -30,9 +30,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # withastro/action installs deps, builds, and uploads the Pages artifact in one step.
+      # It defaults to Node 20, but Astro 7 requires >=22.12, so pin Node 22 here.
       - uses: withastro/action@v3
         with:
           path: site
+          node-version: 22
 
   deploy:
     needs: build
