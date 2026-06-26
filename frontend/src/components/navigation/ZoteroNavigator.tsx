@@ -428,14 +428,15 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         )}
 
         {fetching ? (
-          <div className="flex flex-col gap-1.5 border-b py-2.5" style={SIDEBAR_GUTTER}>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="border-b" style={SIDEBAR_GUTTER}>
+            <div className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
               <Loader2 className="size-3 shrink-0 animate-spin" />
               <span className="truncate">{prefetchMsg || "Fetching citations..."}</span>
             </div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
               <div className="h-full bg-primary transition-[width]" style={{ width: `${Math.max(3, prefetchPct)}%` }} />
             </div>
+            <div className="h-3" aria-hidden />
           </div>
         ) : confirming ? (
           <div className="border-b text-xs" style={SIDEBAR_GUTTER}>
@@ -446,7 +447,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-brand-soft-border bg-brand-soft !px-4 text-[0.8rem] text-brand hover:bg-brand-soft hover:text-brand"
+                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
                 onClick={() => void runPrefetch()}
               >
                 Fetch
@@ -475,18 +476,18 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         ) : null}
 
         {!loading && !error && libraryMissing ? (
-          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
+          <div className="flex min-h-12 items-center text-xs leading-4 text-muted-foreground" style={SIDEBAR_GUTTER}>
             No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
             <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack - see the README.
           </div>
         ) : null}
         {!loading && !error && !liveConnected && !libraryMissing ? (
-          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
+          <div className="flex min-h-12 items-center text-xs leading-4 text-muted-foreground" style={SIDEBAR_GUTTER}>
             Live Zotero library not connected - showing the last snapshot.
           </div>
         ) : null}
         {persistError ? (
-          <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
+          <div className="flex min-h-12 items-center text-xs leading-4 text-muted-foreground" style={SIDEBAR_GUTTER}>
             Your selection will not be saved across reloads - browser storage is blocked.
           </div>
         ) : null}

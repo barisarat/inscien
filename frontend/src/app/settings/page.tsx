@@ -26,7 +26,7 @@ type Status = { kind: "idle" | "saving" | "saved" | "error"; message?: string }
 const PAGE_GUTTER = {
   paddingLeft: "clamp(1.5rem, 4vw, 3.5rem)",
   paddingRight: "clamp(1.5rem, 4vw, 3.5rem)",
-  paddingTop: "2rem",
+  paddingTop: "4rem",
 }
 
 function SettingsSection({
@@ -73,7 +73,6 @@ function Field({
 
 export default function SettingsPage() {
   const [options, setOptions] = useState<ModelOption[]>([])
-  const [displayName, setDisplayName] = useState("")
   const [provider, setProvider] = useState("local")
   const [selected, setSelected] = useState("")
   const [cloudModel, setCloudModel] = useState("")
@@ -88,7 +87,6 @@ export default function SettingsPage() {
   useEffect(() => {
     Promise.all([getSettings(), getModelOptions()])
       .then(([s, m]) => {
-        setDisplayName(s.displayName)
         setProvider(s.llmProvider || "local")
         setOllamaBaseUrl(s.ollamaBaseUrl)
         setZoteroDataDir(s.zoteroDataDir)
@@ -113,7 +111,6 @@ export default function SettingsPage() {
       // Send the key only when the user typed one - a blank field leaves the stored key intact.
       const key = openAiKey.trim()
       await updateSettings({
-        displayName,
         llmProvider: provider,
         llmModel: model,
         ollamaBaseUrl,
@@ -137,25 +134,13 @@ export default function SettingsPage() {
           <ArrowLeft className="size-4" /> Back to Map
         </Link>
 
-        <div className="max-w-3xl" style={{ marginTop: "1.25rem", marginBottom: "2.75rem" }}>
+        <div className="max-w-3xl" style={{ marginTop: "1.25rem", marginBottom: "1.75rem" }}>
           <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             InScien maps your library fully locally. Narration uses a model you choose: local
             Ollama for privacy, or OpenAI for higher-quality cloud narration.
           </p>
         </div>
-
-        <SettingsSection title="Profile" description="Used for local personalization only.">
-          <Field label="Your name" htmlFor="displayName">
-            <Input
-              id="displayName"
-              className="!px-4"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Aratbaris"
-            />
-          </Field>
-        </SettingsSection>
 
         <SettingsSection title="Library" description="The Zotero data folder InScien reads read-only.">
           <Field

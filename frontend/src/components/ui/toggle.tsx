@@ -12,10 +12,10 @@ const toggleVariants = cva(
       variant: {
         default: "bg-transparent",
         outline: "border border-input bg-transparent hover:bg-muted",
-        // Canonical segmented-control item: white surface, blue-soft active/selected state.
+        // Canonical segmented-control item: white surface, neutral active/selected state.
         // Used for every single-select chip (mode switch, scope, overlay/color/layout).
         segment:
-          "border border-border/70 bg-card hover:border-border hover:bg-muted hover:text-foreground aria-pressed:border-brand-soft-border aria-pressed:bg-brand-soft aria-pressed:text-brand aria-pressed:hover:bg-brand-soft data-[state=on]:border-brand-soft-border data-[state=on]:bg-brand-soft data-[state=on]:text-brand data-[state=on]:hover:bg-brand-soft",
+          "border border-border/70 bg-card hover:border-border hover:bg-muted hover:text-foreground aria-pressed:border-border aria-pressed:bg-muted aria-pressed:text-foreground aria-pressed:hover:bg-muted data-[state=on]:border-border data-[state=on]:bg-muted data-[state=on]:text-foreground data-[state=on]:hover:bg-muted",
       },
       size: {
         default:
