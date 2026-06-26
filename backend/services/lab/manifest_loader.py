@@ -2,7 +2,7 @@
 
 InScien ingests the user's Zotero PDFs into a single chunk manifest (a JSON list)
 written by `services.zotero.ingest` to `chunk_index_path`. This module reads +
-validates it for both the Qdrant index and the in-process BM25 keyword index. If the
+validates it - the manifest is the registry of indexed papers. If the
 manifest does not exist yet (nothing indexed), it returns an empty set rather than
 failing - the app still boots and answers "insufficient sources".
 """
@@ -22,7 +22,7 @@ class ManifestCorruptError(RuntimeError):
     """The chunk manifest exists but is unparseable/not a list - a damaged derived store.
 
     Carries a user-facing, actionable message: the recovery is a Reset + re-index (which
-    rebuilds the manifest, Qdrant, and the ledger together), not a silent partial rebuild.
+    rebuilds the manifest, the vector store, and the ledger together), not a silent partial rebuild.
     """
 
 

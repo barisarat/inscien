@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 import {
@@ -85,7 +85,7 @@ const externalNode = (n: GraphNode): AtlasNode => ({
 })
 
 export default function GraphMode() {
-  const { selectedKeys } = useZoteroSelection()
+  const { selectedKeys, indexedKeys } = useZoteroSelection()
   const { setMany, clear } = useZoteroSelection()
   const { openPdf, setMode } = useWorkspace()
 
@@ -110,20 +110,41 @@ export default function GraphMode() {
 
   const itemKeys = useMemo(() => Array.from(selectedKeys).sort(), [selectedKeys])
   const keysKey = itemKeys.join(",")
+  // Selected papers not yet indexed. When their indexing finishes they drop out of this set,
+  // which re-fetches the map below so it reflects the new vectors without a manual refresh.
+  const pendingIndexKey = useMemo(
+    () => itemKeys.filter((k) => !indexedKeys.has(k)).join(","),
+    [itemKeys, indexedKeys],
+  )
 
-  // Build the fused Atlas whenever the selected papers change. Pure read - no OpenAlex gate.
+  // Build the fused Atlas when the selection changes, and re-fetch it when a selected paper's
+  // index status changes (indexing finishes -> its vector appears). A selection change is a
+  // "hard" build (clear + show "building"); an index-status change is a "soft" refresh that keeps
+  // the current graph on screen and swaps in the new one - so it never churns back to a spinner
+  // while papers index one by one, and "index first" yields to the graph as nodes arrive. Pure
+  // read - no OpenAlex gate.
+  const builtKeysRef = useRef<string | null>(null)
   useEffect(() => {
     const t = newRun()
-    setFused(null)
-    setRefsLayer(null)
-    setCitedLayer(null)
-    setSelectedId(null)
-    setError(null)
+    const hard = builtKeysRef.current !== keysKey
+    builtKeysRef.current = keysKey
     if (itemKeys.length === 0) {
+      setFused(null)
+      setRefsLayer(null)
+      setCitedLayer(null)
+      setSelectedId(null)
+      setError(null)
       setPhase("empty")
       return
     }
-    setPhase("loading")
+    if (hard) {
+      setFused(null)
+      setRefsLayer(null)
+      setCitedLayer(null)
+      setSelectedId(null)
+      setError(null)
+      setPhase("loading")
+    }
     void (async () => {
       try {
         const map = await fetchFusedMap(itemKeys)
@@ -132,12 +153,15 @@ export default function GraphMode() {
         setPhase("ready")
       } catch (e) {
         if (isStale(t)) return
-        setError(String(e))
-        setPhase("error")
+        // A soft-refresh failure keeps the current graph; only a hard build surfaces the error.
+        if (hard) {
+          setError(String(e))
+          setPhase("error")
+        }
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysKey])
+  }, [keysKey, pendingIndexKey])
 
   // Lazily fetch (and resolve) the citation satellite layer the chosen Connections mode needs.
   const needRefs = connections === "cite" || connections === "both" || connections === "gaps"
@@ -358,11 +382,11 @@ export default function GraphMode() {
         </div>
       ) : phase === "error" ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="max-w-md text-sm text-muted-foreground">Couldn't build the map. {error}</p>
+          <p className="max-w-md text-sm text-muted-foreground">Could not build the map. {error}</p>
         </div>
       ) : ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="max-w-md text-sm text-muted-foreground">The selected papers aren't indexed yet - index them in the library first.</p>
+          <p className="max-w-md text-sm text-muted-foreground">The selected papers are not indexed yet - index them in the library first.</p>
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col">

@@ -3,8 +3,7 @@
 Windows a parsed PDF's per-page blocks into sub-page passages (each tagged with its
 page + bbox) and writes the chunk manifest. The Zotero ingest path
 (`services.zotero.ingest`) imports `_page_passages`, `_write_manifest`, and `_batched`
-and pairs them with the shared parser (`pdf_parser`), embedder (`embedding_service`),
-and Qdrant store (`qdrant_store`).
+and pairs them with the shared parser (`pdf_parser`) and embedder (`embedding_service`).
 """
 
 import json

@@ -13,7 +13,7 @@ import uvicorn
 
 from core.paths import data_dir
 
-# Ensure the durable data dir exists before anything opens the SQLite DB / Qdrant store there.
+# Ensure the durable data dir exists before anything opens the SQLite DB / vector store there.
 os.makedirs(data_dir(), exist_ok=True)
 
 from main import app  # noqa: E402 - main runs load_dotenv() + builds the app on import

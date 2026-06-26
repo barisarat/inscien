@@ -101,10 +101,10 @@ async def health():
 def health_ready():
     """Readiness/diagnostics: probe each dependency without ever failing the request. Ollama
     is informational (it lives on the host and may legitimately be down); readiness needs only
-    the API's own stores (SQLite + Qdrant)."""
+    the API's own stores (SQLite + the paper-vector store)."""
     from sqlalchemy import text
     from core.db import SessionLocal
-    from services.lab.qdrant_store import check_qdrant_connection
+    from services.lab.vector_store import health as vector_store_health
     from services.llm.client import list_ollama_models_status
 
     db_ok = False
@@ -118,18 +118,18 @@ def health_ready():
     except Exception:
         logging.getLogger("health").exception("readiness: DB probe failed")
 
-    qdrant_ok = False
+    vectors_ok = False
     try:
-        qdrant_ok = bool(check_qdrant_connection().get("ok"))
+        vectors_ok = bool(vector_store_health().get("ok"))
     except Exception:
-        logging.getLogger("health").warning("readiness: Qdrant unreachable", exc_info=True)
+        logging.getLogger("health").warning("readiness: vector store unreadable", exc_info=True)
 
     try:
         ollama_ok = bool(list_ollama_models_status().get("reachable"))
     except Exception:
         ollama_ok = False
 
-    return {"db": db_ok, "qdrant": qdrant_ok, "ollama": ollama_ok, "ready": db_ok and qdrant_ok}
+    return {"db": db_ok, "vectors": vectors_ok, "ollama": ollama_ok, "ready": db_ok and vectors_ok}
 
 
 # Serve the built frontend (Next static export) when present. The production image bakes the

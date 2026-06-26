@@ -8,7 +8,7 @@ name: inscien
 #   docker compose -f compose.prod.yaml up --build
 #
 # Like dev, the only external dependency is a native Ollama on the host. Durable state lives
-# in ./data (SQLite DB, the embedded Qdrant store, chunk manifest, narration audio).
+# in ./data (SQLite DB, the paper-vector store, chunk manifest, narration audio).
 
 services:
   app:
@@ -30,9 +30,6 @@ services:
       - APP_NAME=inscien
       - ENV_NAME=production
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
-      # Embedded vector store (qdrant-client local mode) under the ./data mount. Set QDRANT_URL
-      # to use a standalone Qdrant server instead.
-      - QDRANT_COLLECTION=inscien_lab_chunks
       - FASTEMBED_CACHE_PATH=/workspace/data/.fastembed
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}

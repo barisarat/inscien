@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from core.db import get_db
 from repositories import zotero_repository as ledger
+from services.lab import vector_store
 from services.zotero import reader
 from services.zotero.ingest import prune_orphans, reset_index
 from services.zotero.settings import get_zotero_settings
@@ -25,6 +26,15 @@ _tree_cache = {"mtime": None, "tree": None, "direct": None}
 
 class IndexIn(BaseModel):
     itemKeys: list[str]
+
+
+def _indexed_keys(db):
+    """Item keys that count as indexed for the Map: the ledger marks them indexed AND they
+    actually have a paper vector. The vector requirement guards against ledger/vector-store
+    drift (after the Qdrant -> file migration, or a lost vector file) - such items report as
+    not-indexed so the UI re-indexes them, which self-heals the vector store (no destructive
+    reset, no manual step)."""
+    return vector_store.present_keys(ledger.indexed_keys(db))
 
 
 def _cached_tree():
@@ -49,7 +59,7 @@ def collections(db: Session = Depends(get_db)):
             "libraryMissing": True,
             "mountPath": get_zotero_settings()["db_path"],
         }
-    indexed = ledger.indexed_keys(db)
+    indexed = _indexed_keys(db)
     tree, direct = _cached_tree()
 
     def annotate(node):
@@ -76,7 +86,7 @@ def collection_items(collection_id: int, db: Session = Depends(get_db)):
     """Direct (non-recursive) PDF-bearing items of a collection, with metadata + index
     state. Items with no synced PDF are omitted - that's Zotero's job, not ours."""
     ledger.ensure_table()
-    indexed = ledger.indexed_keys(db)
+    indexed = _indexed_keys(db)
     items = []
     for key in reader.resolve_collection_items(collection_id, recursive=False):
         meta = reader.item_metadata(key)
@@ -91,7 +101,7 @@ def collection_items(collection_id: int, db: Session = Depends(get_db)):
 def indexed_keys_all(db: Session = Depends(get_db)):
     """Every itemKey currently indexed - the Map's 'whole library' scope."""
     ledger.ensure_table()
-    return {"itemKeys": sorted(ledger.indexed_keys(db))}
+    return {"itemKeys": sorted(_indexed_keys(db))}
 
 
 @router.get("/collections/{collection_id}/indexable-keys")
@@ -130,7 +140,7 @@ def sync_state(db: Session = Depends(get_db)):
     ledger.ensure_table()
     led = ledger.get_ledger(db)
     return {
-        "indexedKeys": [k for k, v in led.items() if v.get("status") == "indexed"],
+        "indexedKeys": sorted(_indexed_keys(db)),
         "count": len(led),
         "items": led,
     }
@@ -138,7 +148,7 @@ def sync_state(db: Session = Depends(get_db)):
 
 @router.post("/reset")
 def reset():
-    """Drop the whole index (Qdrant + manifest + ledger). One-time use to clear the
+    """Drop the whole index (vector store + manifest + ledger). One-time use to clear the
     pre-Zotero corpus before the first Zotero index. Destructive."""
     return reset_index()
 

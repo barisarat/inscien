@@ -10,10 +10,9 @@ name: inscien
 # run yourself is a native Ollama on the host (see README). Override OLLAMA_BASE_URL /
 # KOKORO_VOICE via a local .env file if needed (see .env.example).
 #
-# Data model: all state lives in the host `./data/` folder, including the embedded vector
-# store at ./data/qdrant — Qdrant runs in-process (qdrant-client local mode), so there is
-# no separate vector-store container. The vector store is a rebuildable cache (re-index
-# from Zotero); to talk to a standalone Qdrant server instead, set QDRANT_URL.
+# Data model: all state lives in the host `./data/` folder, including the paper-vector store
+# at ./data/paper-vectors.json (a single JSON file - no vector-store container or process).
+# It is a rebuildable cache (re-index from Zotero).
 
 services:
   backend:
@@ -40,9 +39,6 @@ services:
       - ENV_NAME=development
       - CORS_ORIGINS=http://localhost:3200
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
-      # Embedded vector store (qdrant-client local mode) under the ./data mount. Set
-      # QDRANT_URL here to use a standalone Qdrant server instead.
-      - QDRANT_COLLECTION=inscien_lab_chunks
       # Persist the embedding model on the (host-owned, writable) data mount so it survives
       # restarts and is writable by the non-root runtime user. See backend/entrypoint.sh.
       - FASTEMBED_CACHE_PATH=/workspace/data/.fastembed

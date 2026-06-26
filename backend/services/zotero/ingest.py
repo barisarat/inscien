@@ -24,20 +24,10 @@ from repositories.zotero_repository import (
     get_ledger,
     upsert_item,
 )
+from services.lab import vector_store
 from services.lab.embedding_service import embed_texts
 from services.lab.manifest_loader import read_json_file
 from services.lab.pdf_ingest import _write_manifest
-from services.lab.qdrant_store import (
-    build_point,
-    delete_lab_points_by_source,
-    ensure_lab_collection,
-    ensure_paper_collection,
-    ensure_source_payload_index,
-    recreate_lab_collection,
-    recreate_paper_collection,
-    upsert_lab_points,
-    upsert_paper_vector,
-)
 from services.lab.settings import get_lab_settings
 from services.state_guard import (
     DERIVED_STATE_LOCK,
@@ -165,7 +155,7 @@ def build_chunks_for_item(item_key, pdf_path, meta, raw_pdf_hash=None):
 
 
 def index_items(item_keys, progress=None):
-    """Index a set of Zotero item keys into the manifest + Qdrant, additively.
+    """Index a set of Zotero item keys into the manifest + vector store, additively.
 
     Skips items with no synced PDF and items whose indexed PDF + metadata inputs are
     unchanged since last index (ledger hit). Returns a summary dict.
@@ -184,9 +174,6 @@ def index_items(item_keys, progress=None):
 
     with DERIVED_STATE_LOCK:
         ensure_current_generation(generation)
-        ensure_lab_collection()
-        ensure_source_payload_index()
-        ensure_paper_collection()
     db = SessionLocal()
     indexed = skipped = skipped_no_pdf = failed = 0
     total = max(len(item_keys), 1)
@@ -206,7 +193,7 @@ def index_items(item_keys, progress=None):
             file_hash = None
 
             # Per-item isolation: a single bad PDF (parse/embed/upsert failure) must not
-            # abort the whole job or leave the manifest out of sync with Qdrant + ledger.
+            # abort the whole job or leave the manifest out of sync with the vector store + ledger.
             try:
                 emit("indexing", pct, f"{key}: indexing", currentItemKey=key)
                 pdf = resolve_pdf_path(key)
@@ -220,26 +207,30 @@ def index_items(item_keys, progress=None):
                 chunks, file_hash = build_chunks_for_item(key, pdf, meta, raw_pdf_hash)
 
                 prev = ledger.get(key)
-                if prev and prev.get("status") == "indexed" and prev.get("file_hash") == file_hash:
+                # Skip only when the ledger says indexed, the PDF is unchanged, AND the vector
+                # actually exists in the store. The last clause self-heals installs migrating
+                # off Qdrant (empty store + "indexed" ledger): the item re-embeds once, then
+                # skips normally.
+                if (prev and prev.get("status") == "indexed"
+                        and prev.get("file_hash") == file_hash
+                        and vector_store.has_vector(key)):
                     skipped += 1
                     emit("indexing", pct, f"{key}: up to date", currentItemKey=key)
                     continue
 
                 vectors = embed_texts([c["text"] for c in chunks])
-                points = [build_point(c, v) for c, v in zip(chunks, vectors)]
 
                 with DERIVED_STATE_LOCK:
                     ensure_current_generation(generation)
-                    delete_lab_points_by_source(key)  # clear stale points if re-indexing
-                    upsert_lab_points(points)
                     # One summary chunk per item, so the paper vector is the summary vector.
+                    # upsert_vector overwrites by key - no stale-point cleanup needed.
                     if vectors:
-                        upsert_paper_vector(key, vectors[0], _paper_payload(key, meta))
+                        vector_store.upsert_vector(key, vectors[0], _paper_payload(key, meta))
 
                     by_source[key] = chunks
                     upsert_item(db, key, file_hash, meta.get("title"), len(chunks), "indexed")
                     # Persist after each item so a later crash leaves a manifest matching
-                    # exactly the items committed to Qdrant + the ledger (resumable).
+                    # exactly the items committed to the vector store + the ledger (resumable).
                     _flush_manifest()
                 indexed += 1
                 emit("indexing", pct, f"{(meta.get('title') or key)[:48]} - {len(chunks)} chunks", currentItemKey=key)
@@ -262,13 +253,13 @@ def index_items(item_keys, progress=None):
                 logger.exception("index_items: failed to index %s", key)
                 db.rollback()
                 # Leave the item in a consistent unindexed state: clear any (partial or
-                # stale) Qdrant points, drop its chunks from the manifest, and mark it
-                # failed so the next run retries it.
+                # stale) vector, drop its chunks from the manifest, and mark it failed so the
+                # next run retries it.
                 with DERIVED_STATE_LOCK:
                     ensure_current_generation(generation)
                     by_source.pop(key, None)
                     try:
-                        delete_lab_points_by_source(key)
+                        vector_store.delete_vector(key)
                     except Exception:
                         logger.exception("index_items: cleanup delete failed for %s", key)
                     try:
@@ -299,10 +290,10 @@ def index_items(item_keys, progress=None):
 
 
 def reset_index():
-    """Full reset to a clean slate: drop + recreate the Qdrant collection, empty the
-    manifest, clear the ledger, and clear derived artifacts (the OpenAlex cache, the Zotero
-    index-job files, and the narration + OpenAlex-fetch job files + narration mp3s).
-    Everything after this is additive via `index_items`.
+    """Full reset to a clean slate: wipe the paper-vector store, empty the manifest, clear the
+    ledger, and clear derived artifacts (the OpenAlex cache, the Zotero index-job files, and the
+    narration + OpenAlex-fetch job files + narration mp3s). Everything after this is additive
+    via `index_items`.
     """
     with DERIVED_STATE_LOCK:
         # Invalidate any running background writer before wiping stores. Writers that were
@@ -321,12 +312,11 @@ def reset_index():
                     logger.exception("reset_index: skill-artifact cleanup failed (non-fatal)")
 
             ensure_table()
-            recreate_lab_collection()
-            recreate_paper_collection()
-            ensure_source_payload_index()
+            vector_store.reset()
             _write_manifest([], Path(get_lab_settings()["chunk_index_path"]))
-            # Clear the ledger right after wiping Qdrant + the manifest so the three index-state
-            # stores stay consistent. (Done before the OpenAlex reset below, which is best-effort:
+            # Clear the ledger right after wiping the vectors + the manifest so the three
+            # index-state stores stay consistent. (Done before the OpenAlex reset below, which is
+            # best-effort:
             # a failure there must not leave the ledger claiming items are still indexed.)
             db = SessionLocal()
             try:
@@ -349,7 +339,7 @@ def prune_orphans(progress=None):
     """Remove index entries for items no longer in the live Zotero library (deleted papers).
 
     Diffs the indexed set (manifest sourceIds  or  ledger keys) against the live library and
-    drops each orphan's Qdrant points, manifest chunks, and ledger row. Explicit/user-driven.
+    drops each orphan's vector, manifest chunks, and ledger row. Explicit/user-driven.
 
     Safety: if the live library can't be read or comes back empty, prune NOTHING - an
     unmounted/empty library must never look like "everything was deleted".
@@ -387,9 +377,9 @@ def prune_orphans(progress=None):
             for i, key in enumerate(orphans, start=1):
                 title = (ledger.get(key) or {}).get("title") or key
                 try:
-                    delete_lab_points_by_source(key)
+                    vector_store.delete_vector(key)
                 except Exception:
-                    logger.exception("prune_orphans: Qdrant delete failed for %s", key)
+                    logger.exception("prune_orphans: vector delete failed for %s", key)
                 by_source.pop(key, None)
                 try:
                     delete_item(db, key)

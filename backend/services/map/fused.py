@@ -24,7 +24,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from services.lab.qdrant_store import backfill_paper_vectors, get_paper_vectors
+from services.lab.vector_store import get_vectors
 from services.refs import refstore
 
 logger = logging.getLogger(__name__)
@@ -372,13 +372,7 @@ def fused_map(item_keys, with_labels=True):
     if not item_keys:
         return {"nodes": [], "edges": [], "clusters": [], "missing": [], "unmapped": []}
 
-    # Build any missing paper vectors from already-indexed chunk vectors (no reparse).
-    try:
-        backfill_paper_vectors(item_keys)
-    except Exception:
-        logger.exception("paper-vector backfill failed; proceeding with whatever exists")
-
-    vectors = get_paper_vectors(item_keys)
+    vectors = get_vectors(item_keys)
     present = [k for k in item_keys if k in vectors]
     missing = [k for k in item_keys if k not in vectors]
     if not present:

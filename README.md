@@ -56,8 +56,8 @@ the full walkthrough.
 
 ## Run from source (development)
 
-InScien is a FastAPI backend plus a Next.js frontend plus an embedded Qdrant vector store. For
-development, run the stack with Docker:
+InScien is a FastAPI backend plus a Next.js frontend; paper vectors live in a single JSON file
+(no vector database). For development, run the stack with Docker:
 
 ```bash
 cp .env.example .env          # set ZOTERO_HOST_DIR to your Zotero data folder

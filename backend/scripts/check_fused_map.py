@@ -1,4 +1,4 @@
-"""Smoke test for the fused-map algorithm core (no Qdrant / OpenAlex / LLM needed).
+"""Smoke test for the fused-map algorithm core (no vector store / OpenAlex / LLM needed).
 
 Run inside the backend container:  python scripts/check_fused_map.py
 

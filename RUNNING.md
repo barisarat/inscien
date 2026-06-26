@@ -62,9 +62,9 @@ frontend server.
 3. **The API is same-origin.** The production build sets `NEXT_PUBLIC_API_URL=""`, so the
    browser calls **relative** `/api/...` paths. This means **no CORS**, and the bundle is
    **port-agnostic** — the same build works behind any host/port.
-4. **The vector store is embedded.** Qdrant runs in-process (`qdrant-client` local mode) and
-   persists to `./data/qdrant`; there is no vector-store container. (Set `QDRANT_URL` to use
-   a standalone Qdrant server instead.)
+4. **Paper vectors are a plain file.** One title+abstract embedding per item persists to a
+   single `./data/paper-vectors.json` (no vector database, no vector-store container); the Map's
+   cosine similarity runs in numpy.
 
 Net result: `app` on `:8200` serves the UI, the API, citations (PDF streaming), and
 narration audio — all from one container.
@@ -117,7 +117,6 @@ the Next dev server gives HMR. The frontend talks to the backend cross-origin
 Dev and prod **cannot run simultaneously**. They share:
 - the host port `8200`,
 - the `./data` directory, and
-- the embedded Qdrant store, which **locks `./data/qdrant` to a single process**,
 - the Compose project name `inscien`.
 
 Always `docker compose down` one before `up`-ing the other.
@@ -145,7 +144,7 @@ quirk, not the app.
 
 ### Health & diagnostics
 - `GET /health` — liveness (dependency-free; what the container healthcheck uses).
-- `GET /health/ready` — readiness: probes SQLite + Qdrant (+ Ollama, informational).
+- `GET /health/ready` — readiness: probes SQLite + the paper-vector store (+ Ollama, informational).
 
 ---
 
@@ -157,7 +156,7 @@ All durable state lives in **`./data`** (a host-owned bind mount), so it survive
 | Path | What |
 |---|---|
 | `data/inscien.db` | SQLite — chat history, settings, sync ledger |
-| `data/qdrant/` | Embedded vector store (dense embeddings) |
+| `data/paper-vectors.json` | Paper vectors (one title+abstract embedding per item) |
 | `data/pdf-index.json` | Chunk manifest (powers BM25 + carries page metadata) |
 | `data/zotero-snapshot.sqlite` | Private read-only copy of your Zotero DB |
 | `data/.fastembed/`, narration mp3s, job state | Caches / derived artifacts |
@@ -165,7 +164,7 @@ All durable state lives in **`./data`** (a host-owned bind mount), so it survive
 Your **Zotero library is the only irreplaceable input**; the index and vectors under
 `data/` are **derived** and rebuildable by re-indexing.
 
-**Reset the index** (drops Qdrant + manifest + ledger together, then re-index from the UI):
+**Reset the index** (drops the paper vectors + manifest + ledger together, then re-index from the UI):
 
 ```bash
 curl -X POST http://localhost:8200/api/zotero/reset
@@ -185,7 +184,7 @@ both files.
 | `ZOTERO_HOST_DIR` | `./zotero` | Host Zotero data dir (has `zotero.sqlite` + `storage/`), mounted read-only |
 | `OLLAMA_BASE_URL` | `http://host.docker.internal:11434/v1` | Where the backend reaches your native Ollama |
 | `KOKORO_VOICE` | `af_heart` | Narration voice |
-| `QDRANT_URL` | *(unset → embedded)* | Set only to use a standalone Qdrant server instead of the embedded store |
+| `INSCIEN_VECTORS_PATH` | `<data>/paper-vectors.json` | Override the paper-vector store file location |
 
 The generation **model** and Ollama URL are also editable at runtime via the Settings page
 (`/api/settings`), which override the env defaults.

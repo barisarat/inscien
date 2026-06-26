@@ -21,7 +21,6 @@ for _pkg in (
     "kokoro_onnx",       # TTS
     "fitz",              # PyMuPDF import name
     "pymupdf",
-    "qdrant_client",     # embedded local-mode vector store
     "tokenizers",
     "huggingface_hub",
     "py_rust_stemmers",

@@ -14,8 +14,9 @@ Targets: **Linux (AppImage/.deb)**, **macOS (.dmg, Apple Silicon)**, **Windows (
 ## How it fits together
 - `backend/run_server.py` — the frozen entrypoint (`uvicorn.run(app, …)`); reads `PORT` + the path
   env below.
-- `backend/core/paths.py` — `INSCIEN_DATA_DIR` redirects **all** durable state (SQLite, Qdrant,
-  caches, job records, audio, Zotero snapshot, fastembed cache) to the OS app-data dir with one var.
+- `backend/core/paths.py` — `INSCIEN_DATA_DIR` redirects **all** durable state (SQLite, the
+  paper-vector store, caches, job records, audio, Zotero snapshot, fastembed cache) to the OS
+  app-data dir with one var.
 - `backend/inscien.spec` — PyInstaller one-file freeze → `dist/inscien-backend`.
 - `backend/services/narration/model.py` — the on-demand Kokoro download (presence check + progress
   job); the Narrate tab calls `/api/narrate/model[/download]`. Weights land in `INSCIEN_DATA_DIR/kokoro`.
