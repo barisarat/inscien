@@ -31,10 +31,27 @@ const DISCLOSURE =
   "Citation data is from OpenAlex (open scholarly data) - each paper's DOI fetches its public " +
   "references and citers."
 
-function cachedKeysAreStillSelected(cachedKeys: string, selected: string[]): boolean {
-  if (!cachedKeys) return false
+function selectedKeysOverlapCache(cachedKeys: string, selected: string[]): boolean {
+  if (!cachedKeys || selected.length === 0) return false
+  const cachedSet = new Set(cachedKeys.split(","))
+  return selected.some((key) => cachedSet.has(key))
+}
+
+function filterCachedGraphToSelection(data: DiscoveryGraph, selected: string[]): DiscoveryGraph {
   const selectedSet = new Set(selected)
-  return cachedKeys.split(",").every((key) => selectedSet.has(key))
+  const ownedIds = new Set(data.nodes.filter((node) => node.type === "owned" && selectedSet.has(node.id)).map((node) => node.id))
+  const edges = data.edges.filter((edge) => ownedIds.has(edge.from) || ownedIds.has(edge.to))
+  const connected = new Set<string>()
+  for (const edge of edges) {
+    connected.add(edge.from)
+    connected.add(edge.to)
+  }
+  return {
+    nodes: data.nodes.filter((node) => connected.has(node.id)),
+    edges,
+    unmapped: data.unmapped.filter((key) => selectedSet.has(key)),
+    noDoi: data.noDoi.filter((key) => selectedSet.has(key)),
+  }
 }
 
 function Chips<T extends string>({ value, options, onChange }: {
@@ -94,8 +111,8 @@ export default function GraphMode() {
   const displayLayer = useMemo<DiscoveryGraph | null>(() => {
     if (activeLayer) return activeLayer
     const stale = lens === "cite" ? refsLayer : citedLayer
-    if (!stale || !cachedKeysAreStillSelected(stale.keys, itemKeys)) return null
-    return stale.data
+    if (!stale || !selectedKeysOverlapCache(stale.keys, itemKeys)) return null
+    return filterCachedGraphToSelection(stale.data, itemKeys)
   }, [activeLayer, citedLayer, itemKeys, lens, refsLayer])
 
   useEffect(() => setSelectedId(null), [keysKey])
