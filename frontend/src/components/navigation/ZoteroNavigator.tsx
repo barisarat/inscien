@@ -34,6 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 const SIDEBAR_GUTTER = { paddingLeft: "1.5rem", paddingRight: "1.5rem" }
+const SIDEBAR_TREE_INSET = 0
 
 type Props = {
   onResizeStart?: (event: PointerEvent<HTMLButtonElement>) => void
@@ -231,7 +232,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   const renderCollection = (col: ZoteroCollection, depth: number) => {
     const isOpen = expanded.has(col.collectionID)
     const rows = items[col.collectionID]
-    const pad = (n: number) => ({ paddingLeft: n + 8 + depth * 12 })
+    const pad = (n: number) => ({ paddingLeft: n + SIDEBAR_TREE_INSET + depth * 12 })
     return (
       <div key={col.collectionID}>
         <div className="flex items-center gap-0.5" style={pad(0)}>
@@ -437,21 +438,35 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
             </div>
           </div>
         ) : confirming ? (
-          <div className="flex flex-col gap-2 border-b py-2.5 text-xs" style={SIDEBAR_GUTTER}>
-            <span className="text-muted-foreground">
+          <div className="border-b text-xs" style={SIDEBAR_GUTTER}>
+            <div className="flex min-h-12 items-center leading-4 text-muted-foreground">
               Fetch citations for {pending} {pending === 1 ? "paper" : "papers"}? Each paper&apos;s DOI is sent to OpenAlex.
-            </span>
-            <div className="flex gap-2">
-              <Button size="xs" onClick={() => void runPrefetch()}>Fetch</Button>
-              <Button size="xs" variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
+            </div>
+            <div className="flex h-11 items-start gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-brand-soft-border bg-brand-soft !px-4 text-[0.8rem] text-brand hover:bg-brand-soft hover:text-brand"
+                onClick={() => void runPrefetch()}
+              >
+                Fetch
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
+                onClick={() => setConfirming(false)}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         ) : pending > 0 ? (
-          <div className="border-b py-2" style={SIDEBAR_GUTTER}>
+          <div className="flex h-13 items-center border-b" style={SIDEBAR_GUTTER}>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-8 w-full justify-start gap-1.5 px-2 text-xs"
+              className="h-7 w-fit justify-start gap-2 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
               onClick={() => setConfirming(true)}
             >
               <Download className="size-3.5 shrink-0" /> Fetch citations · {pending} {pending === 1 ? "paper" : "papers"}
