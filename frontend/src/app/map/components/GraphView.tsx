@@ -117,10 +117,26 @@ function withAlpha(color: string, alpha: number): string {
   return color
 }
 
-function nodeVal(n: AtlasNode): number {
-  if (n.type === "owned") return 0.75 + Math.min(4.5, Math.log10((n.globalCitedBy ?? 0) + 1) * 0.9)
-  if (n.globalCitedBy != null) return 0.75 + Math.min(4.5, Math.log10(n.globalCitedBy + 1) * 0.9)
-  return 0.55 + Math.min(2.4, Math.max(0, (n.citedBy ?? 0) - 1) * 0.65)
+function citationScore(n: AtlasNode): number {
+  if (n.globalCitedBy != null && n.globalCitedBy > 0) return n.globalCitedBy
+  return Math.max(0, n.citedBy ?? 0)
+}
+
+function citationScale(nodes: AtlasNode[]): Map<string, number> {
+  const scores = nodes.map((node) => Math.log10(citationScore(node) + 1))
+  const min = scores.length ? Math.min(...scores) : 0
+  const max = scores.length ? Math.max(...scores) : 0
+  const span = max - min
+  const values = new Map<string, number>()
+
+  nodes.forEach((node, index) => {
+    const normalized = span > 0 ? (scores[index] - min) / span : 0
+    const shaped = Math.max(0, Math.min(1, normalized)) ** 0.8
+    const minVal = node.type === "owned" ? 1.2 : 0.8
+    const maxVal = node.type === "owned" ? 9.5 : 6.25
+    values.set(node.id, minVal + (maxVal - minVal) * shaped)
+  })
+  return values
 }
 
 // --- time-order layout: keep the network, nudge x-position by effective date ----------------
@@ -294,7 +310,7 @@ function compactCenterForce(strength: number) {
 }
 
 function nodeCollisionRadius(node: RuntimeNode): number {
-  return Math.max(5, Math.sqrt(node.val ?? 1) * 3.4) + 3
+  return Math.max(4.5, Math.sqrt(node.val ?? 1) * 3.2) + 3
 }
 
 function collisionForce(strength: number) {
@@ -338,6 +354,31 @@ function collisionForce(strength: number) {
 
 function endpointId(endpoint: string | RuntimeNode): string {
   return typeof endpoint === "string" ? endpoint : endpoint.id
+}
+
+function endpointNode(endpoint: string | RuntimeNode): RuntimeNode | null {
+  return typeof endpoint === "string" ? null : endpoint
+}
+
+function linkDegreeById(links: RuntimeLink[]): Map<string, number> {
+  const degree = new Map<string, number>()
+  for (const link of links) {
+    const source = endpointId(link.source)
+    const target = endpointId(link.target)
+    degree.set(source, (degree.get(source) ?? 0) + 1)
+    degree.set(target, (degree.get(target) ?? 0) + 1)
+  }
+  return degree
+}
+
+function networkLinkDistance(link: RuntimeLink, degreeById: Map<string, number>): number {
+  const source = endpointNode(link.source)
+  const target = endpointNode(link.target)
+  const sourceRadius = source ? nodeCollisionRadius(source) : 8
+  const targetRadius = target ? nodeCollisionRadius(target) : 8
+  const hubDegree = Math.max(degreeById.get(endpointId(link.source)) ?? 1, degreeById.get(endpointId(link.target)) ?? 1)
+  const hubSpacing = Math.min(96, Math.sqrt(hubDegree) * 12)
+  return Math.max(42, sourceRadius + targetRadius + hubSpacing)
 }
 
 function connectedComponents(nodes: RuntimeNode[], links: RuntimeLink[]): RuntimeNode[][] {
@@ -775,9 +816,10 @@ export default function GraphView({
     const links = data.edges
       .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
       .map((e) => ({ source: e.source, target: e.target, __e: e }))
+    const citationValues = scaleByCitations ? citationScale(visibleNodes) : null
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
+      const node: any = { id: n.id, __src: n, type: n.type, val: citationValues?.get(n.id) ?? 1.05 }
       const remembered = posRef.current.get(n.id)
       if (remembered) {
         node.x = remembered.x
@@ -826,13 +868,14 @@ export default function GraphView({
       layout === "network" && Array.isArray(runtimeData?.nodes) && Array.isArray(runtimeData?.links)
         ? compactComponentTargetById(runtimeData.nodes, runtimeData.links)
         : null
+    const degreeById = Array.isArray(runtimeData?.links) ? linkDegreeById(runtimeData.links) : new Map<string, number>()
     graph.d3Force?.("componentPack", packTargets ? componentPackForce(packTargets, 0.55) : null)
     graph.d3Force?.("compactCenter", layout === "network" ? compactCenterForce(0.018) : null)
-    graph.d3Force?.("nodeCollision", layout === "network" ? collisionForce(0.16) : null)
+    graph.d3Force?.("nodeCollision", layout === "network" ? collisionForce(0.58) : null)
     if (layout === "network") {
-      linkForce?.distance?.(24)
-      linkForce?.strength?.(0.8)
-      chargeForce?.strength?.(-12)
+      linkForce?.distance?.((link: RuntimeLink) => networkLinkDistance(link, degreeById))
+      linkForce?.strength?.(0.55)
+      chargeForce?.strength?.(-22)
       centerForce?.strength?.(0.12)
     } else {
       linkForce?.distance?.(30)
@@ -859,9 +902,9 @@ export default function GraphView({
     const graph = fgRef.current
     if (size.w <= 0 || size.h <= 0 || !graph) return
     configureLayoutForces()
-    graph.d3AlphaTarget?.(layout === "network" ? 0.06 : 0.03)
+    graph.d3AlphaTarget?.(layout === "network" ? 0.08 : 0.03)
     graph.d3ReheatSimulation?.()
-    const timeout = window.setTimeout(() => graph.d3AlphaTarget?.(0), layout === "network" ? 700 : 450)
+    const timeout = window.setTimeout(() => graph.d3AlphaTarget?.(0), layout === "network" ? 1050 : 450)
     return () => {
       window.clearTimeout(timeout)
       graph.d3AlphaTarget?.(0)
@@ -916,14 +959,14 @@ export default function GraphView({
           nodeId="id"
           linkSource="source"
           linkTarget="target"
-          nodeRelSize={3}
+          nodeRelSize={2.65}
           warmupTicks={0}
           cooldownTicks={layout === "timeline" ? 100 : 120}
           autoPauseRedraw={false}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkStrength={(l: any) => (
             layout === "network"
-              ? 0.8
+              ? 0.55
               : Math.min(1, Math.max(0.05, (l.__e?.weight ?? 0.3)))
           )}
           onEngineTick={() => {
