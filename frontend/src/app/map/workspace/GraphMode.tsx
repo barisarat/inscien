@@ -31,6 +31,12 @@ const DISCLOSURE =
   "Citation data is from OpenAlex (open scholarly data) - each paper's DOI fetches its public " +
   "references and citers."
 
+function cachedKeysAreStillSelected(cachedKeys: string, selected: string[]): boolean {
+  if (!cachedKeys) return false
+  const selectedSet = new Set(selected)
+  return cachedKeys.split(",").every((key) => selectedSet.has(key))
+}
+
 function Chips<T extends string>({ value, options, onChange }: {
   value: T
   options: { v: T; label: string }[]
@@ -84,6 +90,13 @@ export default function GraphMode() {
     const l = lens === "cite" ? refsLayer : citedLayer
     return l && l.keys === keysKey ? l.data : null
   }, [lens, refsLayer, citedLayer, keysKey])
+
+  const displayLayer = useMemo<DiscoveryGraph | null>(() => {
+    if (activeLayer) return activeLayer
+    const stale = lens === "cite" ? refsLayer : citedLayer
+    if (!stale || !cachedKeysAreStillSelected(stale.keys, itemKeys)) return null
+    return stale.data
+  }, [activeLayer, citedLayer, itemKeys, lens, refsLayer])
 
   useEffect(() => setSelectedId(null), [keysKey])
 
@@ -160,9 +173,9 @@ export default function GraphMode() {
 
   // Map the OpenAlex graph (owned papers + external references/citers) into the renderer model.
   const composed = useMemo<{ nodes: AtlasNode[]; edges: AtlasEdge[] }>(() => {
-    if (!activeLayer) return { nodes: [], edges: [] }
+    if (!displayLayer) return { nodes: [], edges: [] }
     const overlay = lens === "cite" ? "references" : "cited"
-    const nodes: AtlasNode[] = activeLayer.nodes.map((n) => ({
+    const nodes: AtlasNode[] = displayLayer.nodes.map((n) => ({
       id: n.id,
       label: n.label,
       type: n.type,
@@ -173,7 +186,7 @@ export default function GraphMode() {
       doi: n.doi,
       collection: n.collection ?? null,
     }))
-    const edges: AtlasEdge[] = activeLayer.edges.map((e) => ({
+    const edges: AtlasEdge[] = displayLayer.edges.map((e) => ({
       source: e.from,
       target: e.to,
       direct: true,
@@ -185,7 +198,7 @@ export default function GraphMode() {
     const connected = new Set<string>()
     for (const e of edges) { connected.add(e.source); connected.add(e.target) }
     return { nodes: nodes.filter((n) => connected.has(n.id)), edges }
-  }, [activeLayer, lens])
+  }, [displayLayer, lens])
 
   const ownedCount = useMemo(() => composed.nodes.filter((n) => n.type === "owned").length, [composed.nodes])
   const selectedNode = useMemo(() => composed.nodes.find((n) => n.id === selectedId) ?? null, [composed.nodes, selectedId])
@@ -217,7 +230,7 @@ export default function GraphMode() {
         >
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <span className="font-medium">Map</span>
-            {phase === "ready" ? (
+            {ownedCount > 0 ? (
               <span className="shrink-0 text-muted-foreground">{composed.nodes.length} papers</span>
             ) : null}
           </div>
@@ -269,13 +282,13 @@ export default function GraphMode() {
         </div>
       </div>
 
-      {phase === "loading" ? (
+      {phase === "loading" && ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="flex max-w-md items-center justify-center gap-1.5 text-sm text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" /> {progress.detail || progress.stage || "Loading citations..."}
           </p>
         </div>
-      ) : phase === "error" ? (
+      ) : phase === "error" && ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="max-w-md text-sm text-muted-foreground">Couldn&apos;t load citations. {error}</p>
         </div>
@@ -298,7 +311,7 @@ export default function GraphMode() {
             scaleByCitations={scaleByCitations}
             emphasis={null}
             selectedId={selectedId}
-            layoutKey={keysKey}
+            layoutKey={lens}
             onSelectNode={(n) => setSelectedId(n.id)}
           />
           {selectedNode ? (

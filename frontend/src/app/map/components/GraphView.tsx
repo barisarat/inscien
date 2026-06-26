@@ -803,7 +803,7 @@ export default function GraphView({
           linkSource="source"
           linkTarget="target"
           nodeRelSize={3}
-          warmupTicks={layout === "network" ? 80 : 0}
+          warmupTicks={0}
           cooldownTicks={layout === "timeline" ? 100 : 120}
           autoPauseRedraw={false}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
