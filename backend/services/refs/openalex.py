@@ -1,10 +1,14 @@
 """Thin OpenAlex client - the one online dependency of the citation map.
 
 We send only a paper's public DOI to OpenAlex (free, no account/key, CC0 data) to get its
-canonical id + clean reference list, then resolve those reference ids to titles/years.
-Anonymous by design: no mailto/email, a generic User-Agent, the shared common pool. Calls
-are tolerant - any failure returns None / partial data so a build degrades gracefully
-rather than raising.
+canonical id + clean reference list, then resolve those reference ids to titles/years. Calls
+are tolerant - any failure returns None / partial data so a build degrades gracefully rather
+than raising.
+
+Requests join OpenAlex's "polite pool" via a `mailto` (a constant *app* identifier - it says
+nothing about the user). The polite pool is dramatically faster and far less rate-limited than
+the anonymous common pool, where a 429 burst can stall each paper for the full retry budget.
+Override or blank it with `OPENALEX_MAILTO`.
 """
 
 import logging
@@ -17,7 +21,9 @@ import requests
 logger = logging.getLogger(__name__)
 
 _BASE = "https://api.openalex.org"
-_HEADERS = {"User-Agent": "InScien/1.0"}
+_HEADERS = {"User-Agent": "InScien/1.0 (citation map)"}
+# Constant app-level contact for the polite pool - not the user's address. Blank to opt out.
+_MAILTO = os.getenv("OPENALEX_MAILTO", "inscien@users.noreply.github.com").strip()
 _TIMEOUT = 20
 _SELECT = "id,display_name,publication_year,publication_date,doi,cited_by_count"
 _TRANSIENT = {429, 500, 502, 503, 504}
@@ -57,7 +63,11 @@ def _strip_doi(doi_url):
 
 
 def _get(url, params=None):
-    """GET with bounded exponential-backoff retries on transient errors; None on hard failure."""
+    """GET with bounded exponential-backoff retries on transient errors; None on hard failure.
+    Joins the polite pool by attaching `mailto` to every request."""
+    params = dict(params or {})
+    if _MAILTO:
+        params.setdefault("mailto", _MAILTO)
     last = _MAX_ATTEMPTS - 1
     for attempt in range(_MAX_ATTEMPTS):
         try:
