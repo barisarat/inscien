@@ -98,8 +98,17 @@ def _as_ref(entry):
 
 
 def mapped_keys():
-    """itemKeys with a resolved OpenAlex record (drives the navigator 'mapped' dot)."""
+    """itemKeys with a resolved OpenAlex record (whether or not it has references). Used to track
+    what's been *attempted* - so the prefetch doesn't keep re-fetching them."""
     return [k for k, rec in _load().items() if _is_mapped(rec)]
+
+
+def ready_keys():
+    """itemKeys that will actually appear on the References map: a current OpenAlex record WITH a
+    non-empty reference list. A mapped record with no references (~1 in 5 - mostly arXiv preprints
+    and publishers OpenAlex lacks references for) renders as an isolated node, so it must not show
+    as 'ready'. Drives the navigator 'Citations ready' check + greying."""
+    return [k for k, rec in _load().items() if _is_mapped(rec) and rec.get("references")]
 
 
 def fetch_status(item_keys):

@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from services.refs.fetch_jobs import active_prefetch_id, cancel as cancel_job, get_job, start_citing_job, start_job, start_prefetch_job
-from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys
+from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys, ready_keys
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
 
@@ -82,8 +82,10 @@ def graph_prefetch():
 
 @router.get("/mapped-keys")
 def graph_mapped_keys():
-    """itemKeys that already have a cached OpenAlex map (navigator 'mapped' dot)."""
-    return {"keys": mapped_keys()}
+    """itemKeys that will actually show on the References map (have references) - drives the
+    navigator 'Citations ready' check. Note: this is references-bearing, NOT merely 'has a record'
+    (a record with no references renders isolated), so it's a subset of the prefetch's mapped set."""
+    return {"keys": ready_keys()}
 
 
 @router.post("")

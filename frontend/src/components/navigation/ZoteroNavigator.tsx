@@ -275,7 +275,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                   : spinning
                     ? "Fetching citations..."
                     : unmappable
-                      ? "No citation data found - not on the map"
+                      ? "No references in OpenAlex - not on the References map"
                       : (item.title ?? item.itemKey)
                 return (
                   <div
