@@ -80,10 +80,16 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Tauri updater signing (minisign, independent of OS code-signing). When present,
+          # tauri-action emits the updater bundles + .sig files and uploads latest.json.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: src-tauri
           tagName: ${{ github.ref_name }}
           releaseName: "InScien ${{ github.ref_name }}"
           releaseBody: "Unsigned v1 build. See PACKAGING.md for install notes (Gatekeeper/SmartScreen)."
-          releaseDraft: true
+          # Must be published (not draft): the updater reads latest.json from
+          # releases/latest/download, which 404s on a draft release.
+          releaseDraft: false
           args: --target ${{ matrix.triple }}

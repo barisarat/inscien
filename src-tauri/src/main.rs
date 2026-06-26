@@ -25,8 +25,10 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tauri::path::BaseDirectory;
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_updater::UpdaterExt;
 
 #[derive(Default, Serialize, Deserialize)]
 struct Config {
@@ -42,6 +44,37 @@ fn free_port() -> u16 {
         .local_addr()
         .unwrap()
         .port()
+}
+
+/// Check GitHub for a newer release and, if the user agrees, download + install + restart.
+/// Fail-soft: any error (offline, no published release, bad manifest) is returned to the caller
+/// and logged; the app keeps running on the current version. Driven natively (not from the
+/// frontend) because the window loads a remote 127.0.0.1 URL, which would otherwise require
+/// enabling remote-IPC access just to reach the updater JS API.
+async fn check_for_updates(handle: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    let Some(update) = handle.updater()?.check().await? else {
+        return Ok(()); // already up to date
+    };
+    let msg = format!(
+        "InScien {} is available (you have {}). Install it now? The app will restart.",
+        update.version, update.current_version
+    );
+    let accepted = handle
+        .dialog()
+        .message(msg)
+        .title("Update available")
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Install".to_string(),
+            "Later".to_string(),
+        ))
+        .blocking_show();
+    if accepted {
+        // The whole bundle (shell + frozen backend + frontend) is replaced atomically; user data
+        // under INSCIEN_DATA_DIR is outside the bundle and survives the update.
+        update.download_and_install(|_chunk, _total| {}, || {}).await?;
+        handle.restart();
+    }
+    Ok(())
 }
 
 fn wait_healthy(port: u16, timeout: Duration) -> bool {
@@ -96,6 +129,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Backend(Mutex::new(None)))
         .setup(|app| {
             let handle = app.handle().clone();
@@ -177,6 +211,15 @@ fn main() {
                     .build();
                 } else {
                     eprintln!("[inscien] backend did not become healthy within 60s - check the [backend] logs above");
+                }
+            });
+
+            // --- check for app updates (non-blocking, fail-soft) --------------------------
+            // Runs concurrently with launch; independent of backend health.
+            let upd_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = check_for_updates(upd_handle).await {
+                    eprintln!("[inscien] update check skipped: {e}");
                 }
             });
 

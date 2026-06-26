@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
 if ENV_NAME == "production":
     app = FastAPI(
         title="InScien Backend API",
-        version="0.1.0",
+        version="0.1.5",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -60,7 +60,7 @@ if ENV_NAME == "production":
 else:
     app = FastAPI(
         title="InScien Backend API",
-        version="0.1.0",
+        version="0.1.5",
         lifespan=lifespan,
     )
 
