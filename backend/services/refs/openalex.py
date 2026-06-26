@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 _BASE = "https://api.openalex.org"
 _HEADERS = {"User-Agent": "InScien/1.0 (citation map)"}
 # Constant app-level contact for the polite pool - not the user's address. Blank to opt out.
-_MAILTO = os.getenv("OPENALEX_MAILTO", "inscien@users.noreply.github.com").strip()
+_MAILTO = os.getenv("OPENALEX_MAILTO", "getinscien@gmail.com").strip()
 _TIMEOUT = 20
 _SELECT = "id,display_name,publication_year,publication_date,doi,cited_by_count"
 _TRANSIENT = {429, 500, 502, 503, 504}
