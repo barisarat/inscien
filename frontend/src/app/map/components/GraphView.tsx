@@ -433,9 +433,45 @@ function compactComponentTargetById(nodes: RuntimeNode[], links: RuntimeLink[]):
     .sort((a, b) => b.length - a.length)
   const targets = new Map<string, { x: number; y: number }>()
   for (const placement of compactComponentPlacements(components)) {
-    for (const node of placement.component) targets.set(node.id, { x: placement.x, y: placement.y })
+    let sx = 0
+    let sy = 0
+    let count = 0
+    for (const node of placement.component) {
+      if (node.x == null || node.y == null) continue
+      sx += node.x
+      sy += node.y
+      count += 1
+    }
+    const target = count > 0 ? { x: sx / count, y: sy / count } : { x: placement.x, y: placement.y }
+    for (const node of placement.component) targets.set(node.id, target)
   }
   return targets
+}
+
+function seedFromLinkedPositions(
+  id: string,
+  links: RuntimeLink[],
+  positions: Map<string, { x: number; y: number }>,
+): { x: number; y: number } | null {
+  let sx = 0
+  let sy = 0
+  let count = 0
+  for (const link of links) {
+    const source = endpointId(link.source)
+    const target = endpointId(link.target)
+    const otherId = source === id ? target : target === id ? source : null
+    if (!otherId) continue
+    const position = positions.get(otherId)
+    if (!position) continue
+    sx += position.x
+    sy += position.y
+    count += 1
+  }
+  if (count === 0) return null
+  return {
+    x: sx / count,
+    y: sy / count,
+  }
 }
 
 function seedCompactNetwork(nodes: RuntimeNode[], links: RuntimeLink[]) {
@@ -650,6 +686,9 @@ export default function GraphView({
   }
 
   const graphData = useMemo(() => {
+    const links = data.edges
+      .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
+      .map((e) => ({ source: e.source, target: e.target, __e: e }))
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
@@ -658,7 +697,8 @@ export default function GraphView({
         node.x = remembered.x
         node.y = remembered.y
       }
-      const seed = clusterCentroid(n.cluster)
+      const linkedSeed = remembered ? null : seedFromLinkedPositions(n.id, links, posRef.current)
+      const seed = linkedSeed ?? clusterCentroid(n.cluster)
       if (!remembered && seed) {
         const angle = stableUnit(n.id) * Math.PI * 2
         const distance = 8 + stableUnit(`${n.id}:distance`) * 18
@@ -674,9 +714,6 @@ export default function GraphView({
       }
       return node
     })
-    const links = data.edges
-      .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
-      .map((e) => ({ source: e.source, target: e.target, __e: e }))
     if (layout === "network") seedCompactNetwork(nodes, links)
     return { nodes, links }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -724,13 +761,26 @@ export default function GraphView({
 
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
   const forceConfigKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
-  const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
+  const fitKey = `${layoutKey}:${layout}:${size.w}x${size.h}`
 
   useLayoutEffect(() => {
     if (size.w <= 0 || size.h <= 0 || !fgRef.current) return
     configureLayoutForces()
     forceConfigKeyRef.current = forceConfigKey
   }, [configureLayoutForces, forceConfigKey, graphData, size.h, size.w])
+
+  useEffect(() => {
+    const graph = fgRef.current
+    if (size.w <= 0 || size.h <= 0 || !graph) return
+    configureLayoutForces()
+    graph.d3AlphaTarget?.(layout === "network" ? 0.06 : 0.03)
+    graph.d3ReheatSimulation?.()
+    const timeout = window.setTimeout(() => graph.d3AlphaTarget?.(0), layout === "network" ? 700 : 450)
+    return () => {
+      window.clearTimeout(timeout)
+      graph.d3AlphaTarget?.(0)
+    }
+  }, [configureLayoutForces, graphData, layout, size.h, size.w])
 
   const fitToView = useCallback(() => {
     const graph = fgRef.current
@@ -763,9 +813,12 @@ export default function GraphView({
               : Math.min(1, Math.max(0.05, (l.__e?.weight ?? 0.3)))
           )}
           onEngineTick={() => {
-            if (forceConfigKeyRef.current === forceConfigKey) return
-            forceConfigKeyRef.current = forceConfigKey
-            configureLayoutForces()
+            const runtimeData = fgRef.current?.graphData?.() as { nodes?: RuntimeNode[]; links?: RuntimeLink[] } | undefined
+            capturePositions(Array.isArray(runtimeData?.nodes) ? runtimeData.nodes : undefined)
+            if (forceConfigKeyRef.current !== forceConfigKey) {
+              forceConfigKeyRef.current = forceConfigKey
+              configureLayoutForces()
+            }
           }}
           onEngineStop={() => {
             const runtimeData = fgRef.current?.graphData?.() as { nodes?: RuntimeNode[]; links?: RuntimeLink[] } | undefined
