@@ -27,6 +27,13 @@ logger = logging.getLogger(__name__)
 
 _snapshot_lock = threading.Lock()
 
+# Force exactly one snapshot rebuild per process start. The mtime-based freshness check below
+# can't tell a *correct* snapshot from one left by an older build (e.g. before WAL-folding landed,
+# or any prior drift): such a stale snapshot can have a newer mtime than the last Zotero write and
+# so look "fresh" forever. Rebuilding once on the first read each start discards it and guarantees
+# the live state is reflected after an upgrade or restart. Cheap (one copy + checkpoint) and lazy.
+_forced_rebuild_done = False
+
 # Whether the live Zotero DB was reachable at the last snapshot refresh. When False we
 # are serving the existing read-only snapshot (live source unmounted/absent), so the
 # navigator may be stale - endpoints surface this to the UI via `live_connected()`.
@@ -75,8 +82,68 @@ def library_present():
     return os.path.exists(s["db_path"]) or os.path.exists(s["snapshot_path"])
 
 
+def _live_mtime(live):
+    """Newest mtime across the live DB and its WAL sidecars.
+
+    Zotero runs in SQLite WAL mode, so a change made while Zotero is open lands in `-wal`
+    and the main file's mtime does NOT advance until a checkpoint (often only on Zotero
+    close). Tracking the sidecars lets us notice those changes and refresh the snapshot.
+    """
+    m = os.path.getmtime(live)
+    for ext in ("-wal", "-shm"):
+        side = live + ext
+        if os.path.exists(side):
+            try:
+                m = max(m, os.path.getmtime(side))
+            except OSError:
+                pass
+    return m
+
+
+def _rebuild_snapshot(live, snap):
+    """Build a fresh snapshot from the live DB and atomically swap it into place.
+
+    Copy the live DB (+ WAL sidecars) to a temp file, fold any WAL-resident commits into it
+    (`wal_checkpoint(TRUNCATE)`), then drop WAL mode so the result is a single self-contained
+    file with no `-wal`/`-shm`. Folding the WAL is what makes recent changes from a running
+    Zotero visible to our `immutable=1` reads, which otherwise ignore the WAL. Building a new
+    file (rather than mutating `snap` in place) keeps any in-flight read connection on its old,
+    consistent copy until `os.replace` swaps the directory entry.
+    """
+    tmp = snap + ".building"
+    for ext in ("", "-wal", "-shm"):
+        try:
+            os.remove(tmp + ext)
+        except FileNotFoundError:
+            pass
+    shutil.copy2(live, tmp)
+    for ext in ("-wal", "-shm"):
+        side = live + ext
+        if os.path.exists(side):
+            shutil.copy2(side, tmp + ext)
+    try:
+        con = sqlite3.connect(tmp)
+        con.isolation_level = None  # autocommit - PRAGMA journal_mode can't run in a transaction
+        try:
+            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            con.execute("PRAGMA journal_mode=DELETE")
+        finally:
+            con.close()
+    except sqlite3.Error:
+        # Degrade to the last-checkpoint state (same as before this fix); next refresh retries.
+        logger.warning("snapshot checkpoint failed; reading last-checkpoint state", exc_info=True)
+    os.replace(tmp, snap)
+    # The folded snapshot needs no sidecars; drop any left from a prior (WAL-mode) snapshot or
+    # this build so SQLite doesn't read a stale WAL alongside the new file.
+    for p in (snap + "-wal", snap + "-shm", tmp + "-wal", tmp + "-shm"):
+        try:
+            os.remove(p)
+        except FileNotFoundError:
+            pass
+
+
 def _refresh_snapshot():
-    """Copy the live DB to our snapshot if missing or stale (live mtime advanced).
+    """Copy the live DB to our snapshot if missing or stale (live or WAL mtime advanced).
 
     If the live DB is absent, degrade to the existing snapshot (read-only, possibly
     stale) so reads keep working; only fail when there is genuinely nothing to read.
@@ -92,19 +159,20 @@ def _refresh_snapshot():
             f"Zotero data dir (set ZOTERO_DATA_DIR) so {live} exists."
         )
     _set_live_connected(True)
+    global _forced_rebuild_done
     with _snapshot_lock:
-        fresh = os.path.exists(snap) and os.path.getmtime(snap) >= os.path.getmtime(live)
+        # First read of the process always rebuilds (see _forced_rebuild_done) so a stale snapshot
+        # from a prior build can't survive on a misleadingly-fresh mtime; afterwards, trust mtime.
+        fresh = (
+            _forced_rebuild_done
+            and os.path.exists(snap)
+            and os.path.getmtime(snap) >= _live_mtime(live)
+        )
         if fresh:
             return snap
         os.makedirs(os.path.dirname(snap), exist_ok=True)
-        shutil.copy2(live, snap)
-        # WAL sidecars, if present, so a checkpoint-pending write isn't lost.
-        for ext in ("-wal", "-shm"):
-            side = live + ext
-            if os.path.exists(side):
-                shutil.copy2(side, snap + ext)
-            elif os.path.exists(snap + ext):
-                os.remove(snap + ext)
+        _rebuild_snapshot(live, snap)
+        _forced_rebuild_done = True
     return snap
 
 
@@ -124,7 +192,7 @@ def snapshot_mtime():
     s = get_zotero_settings()
     live, snap = s["db_path"], s["snapshot_path"]
     if os.path.exists(live):
-        return os.path.getmtime(live)
+        return _live_mtime(live)
     if os.path.exists(snap):
         return os.path.getmtime(snap)
     return 0.0
@@ -137,8 +205,14 @@ def list_collections():
     children:[...]}] with roots at the top (parentCollectionID is NULL)."""
     con = _connect()
     try:
+        # Exclude trashed collections. Zotero soft-deletes a collection into `deletedCollections`
+        # (its own trash, like `deletedItems` for papers) but leaves the row in `collections`;
+        # without this filter, deleted collections keep showing in the navigator.
         rows = con.execute(
-            "SELECT collectionID, collectionName, parentCollectionID, key FROM collections"
+            """
+            SELECT collectionID, collectionName, parentCollectionID, key FROM collections
+            WHERE collectionID NOT IN (SELECT collectionID FROM deletedCollections)
+            """
         ).fetchall()
     finally:
         con.close()
@@ -175,7 +249,12 @@ def _descendant_collection_ids(con, collection_id, recursive):
     while frontier:
         cur = frontier.pop()
         for r in con.execute(
-            "SELECT collectionID FROM collections WHERE parentCollectionID = ?", (cur,)
+            """
+            SELECT collectionID FROM collections
+            WHERE parentCollectionID = ?
+              AND collectionID NOT IN (SELECT collectionID FROM deletedCollections)
+            """,
+            (cur,),
         ):
             cid = r["collectionID"]
             if cid not in ids:
@@ -196,6 +275,7 @@ def resolve_collection_items(collection_id, recursive=True):
             FROM collectionItems ci
             JOIN items i ON i.itemID = ci.itemID
             WHERE ci.collectionID IN ({placeholders})
+              AND ci.collectionID NOT IN (SELECT collectionID FROM deletedCollections)
               AND i.itemID NOT IN (SELECT itemID FROM deletedItems)
             """,
             tuple(ids),
@@ -278,6 +358,7 @@ def collection_direct_items():
             FROM collectionItems ci
             JOIN items i ON i.itemID = ci.itemID
             WHERE i.itemID NOT IN (SELECT itemID FROM deletedItems)
+              AND ci.collectionID NOT IN (SELECT collectionID FROM deletedCollections)
             """
         ).fetchall()
     finally:

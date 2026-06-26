@@ -1,6 +1,6 @@
 [package]
 name = "inscien"
-version = "0.1.5"
+version = "0.1.6"
 description = "InScien — a local atlas of your Zotero library"
 edition = "2021"
 rust-version = "1.77"

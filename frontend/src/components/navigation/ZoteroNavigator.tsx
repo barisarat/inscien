@@ -133,6 +133,9 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    // Drop cached per-collection items so a removed paper/collection actually disappears
+    // (and new ones appear) on reload; expanded collections re-fetch via the effect below.
+    setItems({})
     try {
       const [cols, narr, corpus, maps, pstat] = await Promise.all([
         fetchZoteroCollections(),
@@ -176,8 +179,10 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         setReconcileMsg("Nothing to clean up.")
       } else {
         setReconcileMsg(`Removed ${r.pruned} ${r.pruned === 1 ? "paper" : "papers"} no longer in your library.`)
-        await load()
       }
+      // Always re-read the library so removed collections/papers disappear from the tree,
+      // not just when cached citation data happened to be pruned.
+      await load()
     } catch (e) {
       setReconcileMsg(e instanceof Error ? e.message : "Cleanup failed.")
     } finally {
@@ -201,6 +206,14 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
     },
     [items],
   )
+
+  // After a reload clears the items cache, re-fetch any still-expanded collections so their
+  // rows refresh in place (removed papers vanish, new ones appear) without re-expanding.
+  useEffect(() => {
+    for (const id of expanded) {
+      if (!items[id]) void loadItems(id)
+    }
+  }, [expanded, items, loadItems])
 
   const toggleExpand = useCallback(
     (col: ZoteroCollection) => {
