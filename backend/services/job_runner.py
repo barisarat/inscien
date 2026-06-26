@@ -95,6 +95,16 @@ class JobRunner:
         self._executor.submit(self._run, job_id, work)
         return job_id
 
+    def active_ids(self, kind=None):
+        """Ids of currently queued/running jobs (optionally filtered by a `kind` tag passed via
+        `extra`). Single worker, so this is at most one running plus any queued behind it. Lets
+        callers avoid duplicate work and resume a job's progress UI after a reload."""
+        with self._lock:
+            return [
+                jid for jid, j in self._jobs.items()
+                if j.get("status") in ("queued", "running") and (kind is None or j.get("kind") == kind)
+            ]
+
     def get(self, job_id):
         with self._lock:
             job = self._jobs.get(job_id)

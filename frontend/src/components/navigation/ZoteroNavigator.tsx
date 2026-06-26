@@ -1,9 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react"
-import { ChevronRight, Download, Loader2, Play, RefreshCw, X } from "lucide-react"
+import { Check, ChevronRight, Download, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
+  activeFetch,
   fetchZoteroCollections,
   fetchZoteroIndexableKeys,
   fetchZoteroItems,
@@ -68,29 +69,25 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   // instantly. Papers un-grey as they resolve; runs once per load (guarded), cheap on re-run
   // (the backend skips already-cached items).
   const prefetchRunning = useRef(false)
-  const runPrefetch = useCallback(async () => {
-    if (prefetchRunning.current) return
-    prefetchRunning.current = true
+
+  // Poll a (new or already-running) whole-library fetch to completion, un-greying papers as they
+  // resolve so the map can use them immediately.
+  const attachToJob = useCallback(async (jobId: string) => {
     setConfirming(false)
     setFetching(true)
     setPrefetchPct(0)
-    setPrefetchMsg("Starting...")
+    setPrefetchMsg("Fetching citations...")
     try {
-      const { jobId, count } = await startLibraryPrefetch()
-      if (count) {
-        await pollJob(jobId, getGraphFetch, {
-          intervalMs: 1200,
-          onProgress: (job) => {
-            setPrefetchPct(job.progress ?? 0)
-            setPrefetchMsg(job.detail || "Fetching citations...")
-            // Refresh the mappable set so papers un-grey + stop spinning as they resolve, and the
-            // map can use them right away - no need to wait for the whole library.
-            void mappedKeys().then((m) => setMapped(new Set(m.keys))).catch(() => {})
-          },
-          onDone: () => {},
-          onError: () => setPrefetchMsg(null),
-        })
-      }
+      await pollJob(jobId, getGraphFetch, {
+        intervalMs: 1200,
+        onProgress: (job) => {
+          setPrefetchPct(job.progress ?? 0)
+          setPrefetchMsg(job.detail || "Fetching citations...")
+          void mappedKeys().then((m) => setMapped(new Set(m.keys))).catch(() => {})
+        },
+        onDone: () => {},
+        onError: () => setPrefetchMsg(null),
+      })
       const [m, s] = await Promise.all([mappedKeys(), prefetchStatus().catch(() => ({ pending: 0, total: 0 }))])
       setMapped(new Set(m.keys))
       setPending(s.pending)
@@ -103,6 +100,34 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       prefetchRunning.current = false
     }
   }, [])
+
+  const runPrefetch = useCallback(async () => {
+    if (prefetchRunning.current) return
+    prefetchRunning.current = true
+    try {
+      const { jobId } = await startLibraryPrefetch() // idempotent - returns the running job if any
+      await attachToJob(jobId)
+    } catch {
+      prefetchRunning.current = false
+      setFetching(false)
+      setConfirming(false)
+    }
+  }, [attachToJob])
+
+  // If a whole-library fetch is already running (e.g. started before a reload, or still going from
+  // an earlier session), resume its progress instead of looking idle / queuing a duplicate.
+  const resumeIfFetching = useCallback(async () => {
+    if (prefetchRunning.current) return
+    try {
+      const { jobId } = await activeFetch()
+      if (jobId) {
+        prefetchRunning.current = true
+        void attachToJob(jobId)
+      }
+    } catch {
+      /* ignore - just won't resume */
+    }
+  }, [attachToJob])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -127,12 +152,13 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         corpus.papers.forEach((p) => next.set(p.docId, p.title))
         return next
       })
+      void resumeIfFetching()
     } catch {
       setError("Couldn't load your Zotero library. Is the mount set?")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [resumeIfFetching])
 
   useEffect(() => {
     void load()
@@ -267,10 +293,8 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                       {item.title ?? item.itemKey}
                       {item.year ? <span className="ml-1 text-muted-foreground">{item.year}</span> : null}
                     </button>
-                    <div className="flex w-7 shrink-0 items-center justify-center">
-                      {spinning ? (
-                        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
-                      ) : narration ? (
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      {narration ? (
                         <Tooltip>
                           <TooltipTrigger
                             render={
@@ -297,7 +321,31 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                           />
                           <TooltipContent>Play narration</TooltipContent>
                         </Tooltip>
-                      ) : null}
+                      ) : (
+                        <span className="h-6 w-7" aria-hidden />
+                      )}
+                      {spinning ? (
+                        <span className="flex h-6 w-7 items-center justify-center" title="Fetching citations...">
+                          <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                        </span>
+                      ) : isMapped ? (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <span
+                                aria-label="Citations ready"
+                                role="img"
+                                className="flex h-6 w-7 items-center justify-center text-muted-foreground"
+                              >
+                                <Check className="size-3.5" />
+                              </span>
+                            }
+                          />
+                          <TooltipContent>Citations ready - on the map</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="h-6 w-7" aria-hidden />
+                      )}
                     </div>
                   </div>
                 )

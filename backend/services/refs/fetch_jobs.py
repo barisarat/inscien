@@ -39,7 +39,14 @@ def start_prefetch_job(item_keys):
         citing = fetch_citing_items(item_keys, _phase(50, 100))
         return {"result": {"references": refs, "citing": citing}}
 
-    return _runner.start(_run)
+    return _runner.start(_run, extra={"kind": "prefetch"})
+
+
+def active_prefetch_id():
+    """The id of a currently queued/running whole-library prefetch, or None. Used to dedupe
+    repeat clicks and to resume the progress UI on reload."""
+    ids = _runner.active_ids("prefetch")
+    return ids[0] if ids else None
 
 
 def get_job(job_id):

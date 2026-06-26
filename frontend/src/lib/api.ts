@@ -251,8 +251,13 @@ export async function prefetchStatus(): Promise<{ pending: number; total: number
   return authedGet("/api/graph/prefetch-status")
 }
 
+// Id of an in-flight whole-library prefetch (or null) - lets the UI resume its progress on reload.
+export async function activeFetch(): Promise<{ jobId: string | null }> {
+  return authedGet("/api/graph/active")
+}
+
 // Whole-library citation prefetch (references + citers for DOI-bearing items) as one background
-// job. Poll via getGraphFetch. Makes any later selection's map render instantly from cache.
+// job. Idempotent (returns the running job if one exists). Poll via getGraphFetch.
 export async function startLibraryPrefetch(): Promise<{ jobId: string; count: number }> {
   return authedAction("/api/graph/prefetch", "POST")
 }

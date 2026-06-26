@@ -11,7 +11,7 @@ library content. See `services/refs/openalex.py`.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.refs.fetch_jobs import get_job, start_citing_job, start_job, start_prefetch_job
+from services.refs.fetch_jobs import active_prefetch_id, get_job, start_citing_job, start_job, start_prefetch_job
 from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
@@ -51,11 +51,22 @@ def graph_prefetch_status():
     return {"pending": len(doi_keys - done), "total": len(doi_keys)}
 
 
+@router.get("/active")
+def graph_active():
+    """The id of an in-flight whole-library prefetch (or null), so the UI can resume its progress
+    after a reload instead of looking idle while a previous run is still going."""
+    return {"jobId": active_prefetch_id()}
+
+
 @router.post("/prefetch")
 def graph_prefetch():
     """Fetch references + citers for the whole library (DOI-bearing items) as one background job,
     so any later selection's map renders from cache. Runs references first (papers become
-    References-mappable at ~50%), then citers. Polls via GET /fetch/{job_id}."""
+    References-mappable at ~50%), then citers. Idempotent: if a prefetch is already running it
+    returns that job instead of queuing a duplicate. Polls via GET /fetch/{job_id}."""
+    existing = active_prefetch_id()
+    if existing:
+        return {"jobId": existing, "count": 0, "already": True}
     from services.zotero.reader import library_items
     keys = [it["itemKey"] for it in library_items() if it.get("doi")]
     return {"jobId": start_prefetch_job(keys), "count": len(keys)}
