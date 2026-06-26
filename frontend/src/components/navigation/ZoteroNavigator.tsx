@@ -113,6 +113,18 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
     void load()
   }, [load])
 
+  // Quietly refresh the collection tree's indexed/total counts (no full-tree loading spinner),
+  // so the sidebar "X/Y" counts catch up live during/after indexing instead of needing a manual
+  // refresh. The backend recomputes the counts (vector-aware) on every /collections call.
+  const refreshCounts = useCallback(async () => {
+    try {
+      const cols = await fetchZoteroCollections()
+      setCollections(cols.collections)
+    } catch {
+      /* keep the current counts */
+    }
+  }, [])
+
   const handleReconcile = useCallback(async () => {
     setReconciling(true)
     setReconcileMsg(null)
@@ -151,6 +163,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
             const currentIndex = fresh.indexOf(currentItemKey)
             if (currentIndex > 0) markIndexed(fresh.slice(0, currentIndex))
             setActiveIndexingByJob((prev) => new Map(prev).set(runningJobId, currentItemKey))
+            void refreshCounts() // climb the sidebar "X/Y" counts as items land (throttled by the poll)
           },
           onDone: () => markIndexed(fresh),
           onError: (job) => setError(`Indexing failed: ${job.error ?? ""}`),
@@ -168,9 +181,10 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
           if (jobId) next.delete(jobId)
           return next
         })
+        void refreshCounts() // ensure the final counts are correct even if the last progress tick was missed
       }
     },
-    [indexedKeys, markIndexed],
+    [indexedKeys, markIndexed, refreshCounts],
   )
 
   const loadItems = useCallback(
@@ -194,7 +208,8 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
     (col: ZoteroCollection) => {
       setExpanded((prev) => {
         const next = new Set(prev)
-        next.has(col.collectionID) ? next.delete(col.collectionID) : next.add(col.collectionID)
+        if (next.has(col.collectionID)) next.delete(col.collectionID)
+        else next.add(col.collectionID)
         return next
       })
       void loadItems(col.collectionID)
@@ -414,7 +429,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         ) : null}
         {persistError ? (
           <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
-            Your selection won't be saved across reloads - browser storage is blocked.
+            Your selection will not be saved across reloads - browser storage is blocked.
           </div>
         ) : null}
 
