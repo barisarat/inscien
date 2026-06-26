@@ -374,11 +374,37 @@ function connectedComponents(nodes: RuntimeNode[], links: RuntimeLink[]): Runtim
   return components
 }
 
-function compactComponentPlacements(components: RuntimeNode[][]): ComponentPlacement[] {
-  const gap = 24
+function componentEstimatedRadius(component: RuntimeNode[]): number {
+  const nodeArea = component.reduce((sum, node) => sum + nodeCollisionRadius(node) * nodeCollisionRadius(node), 0)
+  return Math.max(28, Math.sqrt(nodeArea) * 1.12, Math.sqrt(component.length) * 8)
+}
+
+function componentPosition(component: RuntimeNode[]): { x: number; y: number; radius: number } | null {
+  let sx = 0
+  let sy = 0
+  let count = 0
+  for (const node of component) {
+    if (node.x == null || node.y == null) continue
+    sx += node.x
+    sy += node.y
+    count += 1
+  }
+  if (count === 0) return null
+
+  const x = sx / count
+  const y = sy / count
+  let radius = componentEstimatedRadius(component)
+  for (const node of component) {
+    if (node.x == null || node.y == null) continue
+    radius = Math.max(radius, Math.hypot(node.x - x, node.y - y) + nodeCollisionRadius(node))
+  }
+  return { x, y, radius }
+}
+
+function centeredCompactComponentPlacements(components: RuntimeNode[][]): ComponentPlacement[] {
+  const gap = 16
   const boxes = components.map((component) => {
-    const nodeArea = component.reduce((sum, node) => sum + nodeCollisionRadius(node) * nodeCollisionRadius(node), 0)
-    const radius = Math.max(28, Math.sqrt(nodeArea) * 1.12, Math.sqrt(component.length) * 8)
+    const radius = componentEstimatedRadius(component)
     return { component, radius, width: radius * 2, height: radius * 2 }
   })
   const placements: ComponentPlacement[] = []
@@ -425,6 +451,66 @@ function compactComponentPlacements(components: RuntimeNode[][]): ComponentPlace
     x: placement.x - centerX,
     y: placement.y - centerY,
   }))
+}
+
+function compactComponentPlacements(components: RuntimeNode[][]): ComponentPlacement[] {
+  const gap = 16
+  const anchored: ComponentPlacement[] = []
+  const unplaced: RuntimeNode[][] = []
+
+  for (const component of components) {
+    const position = componentPosition(component)
+    if (!position) {
+      unplaced.push(component)
+      continue
+    }
+    anchored.push({
+      component,
+      x: position.x,
+      y: position.y,
+      radius: position.radius,
+      width: position.radius * 2,
+      height: position.radius * 2,
+    })
+  }
+
+  if (anchored.length === 0) return centeredCompactComponentPlacements(components)
+
+  const placements = [...anchored]
+  const center = {
+    x: anchored.reduce((sum, placement) => sum + placement.x, 0) / anchored.length,
+    y: anchored.reduce((sum, placement) => sum + placement.y, 0) / anchored.length,
+  }
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+
+  for (const component of unplaced) {
+    const radius = componentEstimatedRadius(component)
+    const box = { component, radius, width: radius * 2, height: radius * 2 }
+    let placed: ComponentPlacement | null = null
+    const step = Math.max(10, radius * 0.36)
+    const maxAttempts = 1200
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const angle = attempt * goldenAngle + stableUnit(component[0]?.id ?? String(attempt)) * 0.5
+      const distance = step * Math.sqrt(attempt)
+      const x = center.x + Math.cos(angle) * distance
+      const y = center.y + Math.sin(angle) * distance
+      const overlaps = placements.some((placement) => {
+        const dx = x - placement.x
+        const dy = y - placement.y
+        const minDistance = radius + placement.radius + gap
+        return dx * dx + dy * dy < minDistance * minDistance
+      })
+      if (!overlaps) {
+        placed = { ...box, x, y }
+        break
+      }
+    }
+
+    placements.push(placed ?? { ...box, x: center.x + placements.length * (radius + gap), y: center.y })
+  }
+
+  return placements
 }
 
 function compactComponentTargetById(nodes: RuntimeNode[], links: RuntimeLink[]): Map<string, { x: number; y: number }> {
