@@ -761,7 +761,7 @@ export default function GraphView({
 
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
   const forceConfigKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
-  const fitKey = `${layoutKey}:${layout}:${size.w}x${size.h}`
+  const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${scaleByCitations}:${size.w}x${size.h}`
 
   useLayoutEffect(() => {
     if (size.w <= 0 || size.h <= 0 || !fgRef.current) return
@@ -782,14 +782,42 @@ export default function GraphView({
     }
   }, [configureLayoutForces, graphData, layout, size.h, size.w])
 
-  const fitToView = useCallback(() => {
+  const fitToView = useCallback((duration = 0) => {
     const graph = fgRef.current
     if (!graph) return
-    const padding = Math.max(52, Math.min(size.w, size.h) * 0.07)
-    graph.zoomToFit?.(0, padding)
-    const zoom = graph.zoom?.()
-    if (typeof zoom === "number" && zoom > 2.1) graph.zoom?.(2.1, 0)
-  }, [size.h, size.w])
+    const runtimeData = graph.graphData?.() as { nodes?: RuntimeNode[] } | undefined
+    const nodes = Array.isArray(runtimeData?.nodes) ? runtimeData.nodes : graphData.nodes
+    const placed = nodes.filter((node) => node.x != null && node.y != null)
+    if (placed.length === 0) return
+
+    const minX = Math.min(...placed.map((node) => node.x ?? 0))
+    const maxX = Math.max(...placed.map((node) => node.x ?? 0))
+    const minY = Math.min(...placed.map((node) => node.y ?? 0))
+    const maxY = Math.max(...placed.map((node) => node.y ?? 0))
+    const width = Math.max(1, maxX - minX)
+    const height = Math.max(1, maxY - minY)
+    const count = placed.length
+    const padding = count <= 4
+      ? Math.max(28, Math.min(size.w, size.h) * 0.08)
+      : Math.max(52, Math.min(size.w, size.h) * 0.07)
+    const maxZoom = count <= 1 ? 5.2 : count <= 2 ? 4.2 : count <= 4 ? 3.35 : count <= 12 ? 2.65 : 2.1
+    const availableW = Math.max(1, size.w - padding * 2)
+    const availableH = Math.max(1, size.h - padding * 2)
+    const targetZoom = Math.min(maxZoom, availableW / width, availableH / height)
+
+    graph.centerAt?.((minX + maxX) / 2, (minY + maxY) / 2, duration)
+    graph.zoom?.(targetZoom, duration)
+  }, [graphData.nodes, size.h, size.w])
+
+  useEffect(() => {
+    if (size.w <= 0 || size.h <= 0 || !fgRef.current || visibleNodes.length === 0) return
+    if (fitKeyRef.current === fitKey) return
+    const timeout = window.setTimeout(() => {
+      fitKeyRef.current = fitKey
+      fitToView(520)
+    }, 120)
+    return () => window.clearTimeout(timeout)
+  }, [fitKey, fitToView, size.h, size.w, visibleNodes.length])
 
   return (
     <div className={styles.graphWrap} ref={containerRef}>
