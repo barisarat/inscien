@@ -27,8 +27,8 @@ export default function MapError({
         <CardHeader>
           <CardTitle>Something broke unexpectedly</CardTitle>
           <CardDescription>
-            The workspace hit an error it couldn't recover from on its own. Your library and indexed
-            papers are safe - try reloading the view.
+            The workspace hit an error it could not recover from on its own. Your library and citation
+            data are safe - try reloading the view.
           </CardDescription>
         </CardHeader>
         <CardFooter className="gap-2">

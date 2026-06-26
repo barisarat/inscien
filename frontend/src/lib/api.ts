@@ -127,7 +127,6 @@ export interface ZoteroCollection {
   parentCollectionID: number | null
   children: ZoteroCollection[]
   itemCount?: number
-  indexedCount?: number
 }
 
 export interface ZoteroItem {
@@ -137,18 +136,7 @@ export interface ZoteroItem {
   year: string | null
   itemType: string | null
   isBookDefaultOff: boolean
-  indexed: boolean
-}
-
-export interface ZoteroIndexJob {
-  id: string
-  status: "queued" | "running" | "done" | "error"
-  stage: string
-  progress: number
-  detail?: string
-  currentItemKey?: string | null
-  error?: string
-  result?: { indexed: number; skipped: number; skippedNoPdf: number; totalChunks: number }
+  doi: string | null
 }
 
 export async function fetchZoteroCollections(): Promise<{
@@ -164,17 +152,8 @@ export async function fetchZoteroItems(collectionId: number): Promise<{ items: Z
   return authedGet(`/api/zotero/collections/${collectionId}/items`)
 }
 
-// Every indexed itemKey - the Map's "whole library" scope.
-export async function fetchIndexedKeys(): Promise<{ itemKeys: string[] }> {
-  return authedGet("/api/zotero/indexed-keys")
-}
-
 export async function fetchZoteroIndexableKeys(collectionId: number): Promise<{ itemKeys: string[] }> {
   return authedGet(`/api/zotero/collections/${collectionId}/indexable-keys`)
-}
-
-export async function startZoteroIndex(itemKeys: string[]): Promise<{ jobId: string }> {
-  return authedAction("/api/zotero/index", "POST", { itemKeys })
 }
 
 export async function reconcileZotero(): Promise<{
@@ -184,14 +163,6 @@ export async function reconcileZotero(): Promise<{
   reason?: string
 }> {
   return authedAction("/api/zotero/reconcile", "POST")
-}
-
-export async function getZoteroIndexJob(jobId: string): Promise<ZoteroIndexJob> {
-  return authedGet(`/api/zotero/index/${encodeURIComponent(jobId)}`)
-}
-
-export async function fetchZoteroSyncState(): Promise<{ indexedKeys: string[]; count: number }> {
-  return authedGet("/api/zotero/sync-state")
 }
 
 export async function startNarration(
@@ -256,57 +227,6 @@ export interface DiscoveryGraph {
   noDoi: string[]
 }
 
-// ---- Map - the Atlas (one fused graph over your own papers) ----
-// Blends semantic similarity + direct citation + bibliographic coupling, clustered via Louvain.
-
-export interface FusedNode {
-  id: string
-  label: string
-  type: "owned"
-  cluster: number
-  clusterLabel?: string | null
-  collection?: string | null
-  authors?: string[]
-  year?: string | number | null
-  date?: string | null
-  doi?: string | null
-  globalCitedBy?: number | null
-  mapped: boolean // false = has a vector but no OpenAlex record yet (semantic-only node)
-}
-
-export interface FusedEdge {
-  source: string
-  target: string
-  weight: number
-  semantic: number // rescaled cosine contribution (0 if below the floor)
-  coupling: number // bibliographic-coupling / co-citation contribution
-  citation: { direct: boolean; direction: "AtoB" | "BtoA" | "both" | null }
-}
-
-export interface FusedCluster {
-  id: number
-  label?: string | null
-  size: number
-}
-
-export interface FusedMap {
-  nodes: FusedNode[]
-  edges: FusedEdge[]
-  clusters: FusedCluster[]
-  missing: string[] // in-scope items with no paper vector yet (not indexed)
-  unmapped: string[] // mapped on the graph but lacking an OpenAlex record (semantic-only)
-}
-
-export async function fetchFusedMap(itemKeys: string[]): Promise<FusedMap> {
-  return authedAction("/api/map", "POST", { itemKeys })
-}
-
-export interface GraphFetchStatus {
-  mapped: string[]
-  unmapped: string[]
-  noDoi: string[]
-}
-
 export interface GraphFetchJob {
   id: string
   status: "queued" | "running" | "done" | "error"
@@ -314,12 +234,7 @@ export interface GraphFetchJob {
   progress?: number
   detail?: string
   error?: string
-  result?: { mapped: string[] } | null
-}
-
-// Pre-fetch coverage of a selection - how many papers already have a cached map.
-export async function graphFetchStatus(itemKeys: string[]): Promise<GraphFetchStatus> {
-  return authedAction("/api/graph/fetch-status", "POST", { itemKeys })
+  result?: Record<string, unknown> | null
 }
 
 // Kick off the OpenAlex reference fetch for the unmapped papers as a background job.
@@ -329,6 +244,12 @@ export async function startGraphFetch(itemKeys: string[]): Promise<{ jobId: stri
 
 export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
   return authedGet(`/api/graph/fetch/${encodeURIComponent(jobId)}`)
+}
+
+// Whole-library citation prefetch (references + citers for DOI-bearing items) as one background
+// job. Poll via getGraphFetch. Makes any later selection's map render instantly from cache.
+export async function startLibraryPrefetch(): Promise<{ jobId: string; count: number }> {
+  return authedAction("/api/graph/prefetch", "POST")
 }
 
 // Assemble the citation graph over the mapped subset of the selection.

@@ -16,8 +16,7 @@ datas, binaries, hiddenimports = [], [], []
 
 # Heavy third-party deps with native libs and/or bundled data files.
 for _pkg in (
-    "onnxruntime",       # ONNX runtime — powers fastembed embeddings + Kokoro TTS
-    "fastembed",         # embedding model loader
+    "onnxruntime",       # ONNX runtime — powers Kokoro TTS
     "kokoro_onnx",       # TTS
     "fitz",              # PyMuPDF import name
     "pymupdf",

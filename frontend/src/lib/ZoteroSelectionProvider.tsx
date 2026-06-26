@@ -10,9 +10,7 @@ import {
 } from "react"
 
 // The active "working set" - the Zotero items every skill is scoped to. A small client
-// context, sessionStorage-backed for in-tab continuity. `indexedKeys` tracks what the
-// backend has indexed so the navigator can
-// badge items and auto-index only the not-yet-indexed ones.
+// context, sessionStorage-backed for in-tab continuity.
 const STORAGE_KEY = "inscien-zotero-selection"
 
 interface ZoteroSelectionValue {
@@ -21,8 +19,6 @@ interface ZoteroSelectionValue {
   toggle: (key: string) => void
   setMany: (keys: string[], on: boolean) => void
   clear: () => void
-  indexedKeys: Set<string>
-  markIndexed: (keys: string[]) => void
   // True when persisting the selection to sessionStorage failed (private mode / quota /
   // blocked storage): the selection still works in-tab but won't survive a reload.
   persistError: boolean
@@ -34,14 +30,11 @@ const ZoteroSelectionContext = createContext<ZoteroSelectionValue>({
   toggle: () => {},
   setMany: () => {},
   clear: () => {},
-  indexedKeys: new Set(),
-  markIndexed: () => {},
   persistError: false,
 })
 
 export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
-  const [indexedKeys, setIndexedKeys] = useState<Set<string>>(new Set())
   const [settled, setSettled] = useState(false)
   const [persistError, setPersistError] = useState(false)
 
@@ -79,7 +72,8 @@ export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback((key: string) => {
     setSelectedKeys((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }, [])
@@ -94,19 +88,11 @@ export function ZoteroSelectionProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setSelectedKeys(new Set()), [])
 
-  const markIndexed = useCallback((keys: string[]) => {
-    setIndexedKeys((prev) => {
-      const next = new Set(prev)
-      keys.forEach((k) => next.add(k))
-      return next
-    })
-  }, [])
-
   const isSelected = useCallback((key: string) => selectedKeys.has(key), [selectedKeys])
 
   return (
     <ZoteroSelectionContext.Provider
-      value={{ selectedKeys, isSelected, toggle, setMany, clear, indexedKeys, markIndexed, persistError }}
+      value={{ selectedKeys, isSelected, toggle, setMany, clear, persistError }}
     >
       {children}
     </ZoteroSelectionContext.Provider>

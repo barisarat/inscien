@@ -1,40 +1,24 @@
-"""Zotero-native endpoints: browse the live library, index a selection, track sync state.
+"""Zotero-native endpoints: browse the live library (collections + items).
 
-Organization (collections/membership) is read *live* from the Zotero snapshot - never
-baked into the index - so reorganizing in Zotero needs no re-index. The index only owns
-content (chunks keyed by itemKey) and the sync ledger (what's indexed).
+Organization (collections/membership) is read *live* from the Zotero snapshot - the app stores no
+index. A paper's citation data lives in the OpenAlex cache (`services/refs/refstore.py`), fetched
+by the whole-library prefetch (`POST /api/graph/prefetch`). The client greys papers that have no
+DOI or no resolved citation data.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
+import logging
 
-from core.db import get_db
-from repositories import zotero_repository as ledger
-from services.lab import vector_store
+from fastapi import APIRouter
+
 from services.zotero import reader
-from services.zotero.ingest import prune_orphans, reset_index
 from services.zotero.settings import get_zotero_settings
-from services.zotero.jobs import get_job, start_job
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/zotero", tags=["zotero"])
 
-# Collections tree cache, keyed by the snapshot's mtime (cheap). Indexed counts are
-# computed live against the ledger on every call, so they never go stale after indexing.
+# Collections tree cache, keyed by the snapshot's mtime (cheap).
 _tree_cache = {"mtime": None, "tree": None, "direct": None}
-
-
-class IndexIn(BaseModel):
-    itemKeys: list[str]
-
-
-def _indexed_keys(db):
-    """Item keys that count as indexed for the Map: the ledger marks them indexed AND they
-    actually have a paper vector. The vector requirement guards against ledger/vector-store
-    drift (after the Qdrant -> file migration, or a lost vector file) - such items report as
-    not-indexed so the UI re-indexes them, which self-heals the vector store (no destructive
-    reset, no manual step)."""
-    return vector_store.present_keys(ledger.indexed_keys(db))
 
 
 def _cached_tree():
@@ -47,9 +31,8 @@ def _cached_tree():
 
 
 @router.get("/collections")
-def collections(db: Session = Depends(get_db)):
-    """The collection forest, each node annotated with recursive item + indexed counts."""
-    ledger.ensure_table()
+def collections():
+    """The collection forest, each node annotated with a recursive item count."""
     # Fresh install: nothing mounted yet. Return a clean, distinct status (not a 500) so the
     # UI can show actionable setup guidance instead of a generic load error.
     if not reader.library_present():
@@ -59,7 +42,6 @@ def collections(db: Session = Depends(get_db)):
             "libraryMissing": True,
             "mountPath": get_zotero_settings()["db_path"],
         }
-    indexed = _indexed_keys(db)
     tree, direct = _cached_tree()
 
     def annotate(node):
@@ -67,7 +49,6 @@ def collections(db: Session = Depends(get_db)):
         for child in node["children"]:
             keys |= annotate(child)
         node["itemCount"] = len(keys)
-        node["indexedCount"] = len(keys & indexed)
         return keys
 
     for root in tree:
@@ -82,32 +63,24 @@ def collections(db: Session = Depends(get_db)):
 
 
 @router.get("/collections/{collection_id}/items")
-def collection_items(collection_id: int, db: Session = Depends(get_db)):
-    """Direct (non-recursive) PDF-bearing items of a collection, with metadata + index
-    state. Items with no synced PDF are omitted - that's Zotero's job, not ours."""
-    ledger.ensure_table()
-    indexed = _indexed_keys(db)
+def collection_items(collection_id: int):
+    """Direct (non-recursive) PDF-bearing items of a collection, with metadata incl. `doi` (the
+    client greys items with no DOI / no resolved citation data). Items with no synced PDF are
+    omitted - that's Zotero's job, not ours."""
     items = []
     for key in reader.resolve_collection_items(collection_id, recursive=False):
         meta = reader.item_metadata(key)
         if not meta or reader.resolve_pdf_path(key) is None:
             continue
-        items.append({**meta, "indexed": key in indexed})
+        items.append(meta)
     items.sort(key=lambda x: ((x.get("year") or ""), (x.get("title") or "").lower()))
     return {"items": items}
 
 
-@router.get("/indexed-keys")
-def indexed_keys_all(db: Session = Depends(get_db)):
-    """Every itemKey currently indexed - the Map's 'whole library' scope."""
-    ledger.ensure_table()
-    return {"itemKeys": sorted(_indexed_keys(db))}
-
-
 @router.get("/collections/{collection_id}/indexable-keys")
 def indexable_keys(collection_id: int):
-    """Recursive item keys in a collection that are actually indexable - PDF-bearing and
-    not a default-off book. Powers 'select this whole collection' in the navigator."""
+    """Recursive item keys in a collection that are PDF-bearing and not a default-off book.
+    Powers 'select this whole collection' in the navigator."""
     out = []
     for key in reader.resolve_collection_items(collection_id, recursive=True):
         meta = reader.item_metadata(key)
@@ -119,42 +92,32 @@ def indexable_keys(collection_id: int):
     return {"itemKeys": out}
 
 
-@router.post("/index")
-def index(body: IndexIn):
-    """Start a background job that indexes the given item keys (additive, idempotent)."""
-    if not body.itemKeys:
-        raise HTTPException(status_code=400, detail="no itemKeys provided")
-    return {"jobId": start_job(body.itemKeys)}
-
-
-@router.get("/index/{job_id}")
-def index_status(job_id: str):
-    job = get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="job not found")
-    return job
-
-
-@router.get("/sync-state")
-def sync_state(db: Session = Depends(get_db)):
-    ledger.ensure_table()
-    led = ledger.get_ledger(db)
-    return {
-        "indexedKeys": sorted(_indexed_keys(db)),
-        "count": len(led),
-        "items": led,
-    }
-
-
 @router.post("/reset")
 def reset():
-    """Drop the whole index (vector store + manifest + ledger). One-time use to clear the
-    pre-Zotero corpus before the first Zotero index. Destructive."""
-    return reset_index()
+    """Clear derived citation data (the OpenAlex cache) and any in-flight narration / citation
+    fetch jobs. The Zotero library itself is never touched."""
+    from services.state_guard import begin_reset, end_reset
+    from services.narration.jobs import clear_jobs as clear_narration
+    from services.refs.fetch_jobs import clear_jobs as clear_graph_fetch
+    from services.refs import refstore
+
+    begin_reset()
+    try:
+        for clear in (clear_narration, clear_graph_fetch):
+            try:
+                clear()
+            except Exception:
+                logger.exception("reset: job cleanup failed (non-fatal)")
+        refstore.reset_cache()
+    finally:
+        end_reset()
+    return {"ok": True}
 
 
 @router.post("/reconcile")
 def reconcile():
-    """Remove index entries for papers no longer in the live Zotero library (deleted items).
-    Safe: prunes nothing if the live library is unreadable/empty. Returns a summary."""
-    return prune_orphans()
+    """Drop cached citation data for papers no longer in the live Zotero library. Safe: prunes
+    nothing if the library is unreadable/empty. Returns a summary."""
+    from services.refs import refstore
+
+    return refstore.prune_orphans()

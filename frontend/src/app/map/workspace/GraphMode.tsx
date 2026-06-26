@@ -1,37 +1,34 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 import {
   fetchCitingGraph,
   fetchDiscoveryGraph,
-  fetchFusedMap,
   getGraphFetch,
   startCitingFetch,
   startGraphFetch,
   type DiscoveryGraph,
-  type FusedMap,
-  type GraphNode,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
 import { useWorkspace } from "./WorkspaceProvider"
 import { useSkillJob } from "./skillJob"
-import GraphView, { type AtlasEdge, type AtlasNode, type ColorBy, type Emphasis, type GraphLayout } from "../components/GraphView"
+import GraphView, { type AtlasEdge, type AtlasNode, type GraphLayout } from "../components/GraphView"
 import NodeInspector from "../components/NodeInspector"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Toggle } from "@/components/ui/toggle"
 
-// Citation "emphasis" over the same stable map: highlight what your papers cite / what cites
-// them / both / the shared gaps. "none" is the pure fused Atlas.
-type Connections = "none" | "cite" | "cited" | "both" | "gaps"
+// The two citation lenses: what your papers cite (References) and what cites them (Cited by).
+type Lens = "cite" | "cited"
 
-const GAP_MIN = 2 // an external cited by >= this many of your papers is a "gap" worth surfacing
+// A cached layer, tagged with the selection it was fetched for so a selection change invalidates
+// it cleanly (no stale-graph flash) while a mode toggle keeps both layers warm.
+type Cached = { keys: string; data: DiscoveryGraph } | null
 
 const DISCLOSURE =
-  "Citation overlays use OpenAlex (open scholarly data) - each selected paper's DOI fetches its " +
-  "public references/citers."
+  "Citation data is from OpenAlex (open scholarly data) - each paper's DOI fetches its public " +
+  "references and citers."
 
 function Chips<T extends string>({ value, options, onChange }: {
   value: T
@@ -58,205 +55,107 @@ function Chips<T extends string>({ value, options, onChange }: {
   )
 }
 
-const ownedNode = (n: FusedMap["nodes"][number]): AtlasNode => ({
-  id: n.id,
-  label: n.label,
-  type: "owned",
-  cluster: n.cluster,
-  clusterLabel: n.clusterLabel,
-  collection: n.collection,
-  authors: n.authors,
-  year: n.year,
-  date: n.date,
-  doi: n.doi,
-  globalCitedBy: n.globalCitedBy,
-  mapped: n.mapped,
-})
-
-const externalNode = (n: GraphNode): AtlasNode => ({
-  id: n.id,
-  label: n.label,
-  type: "external",
-  year: n.year,
-  date: n.date,
-  citedBy: n.citedBy,
-  globalCitedBy: n.globalCitedBy,
-  doi: n.doi,
-})
-
 export default function GraphMode() {
-  const { selectedKeys, indexedKeys } = useZoteroSelection()
-  const { setMany, clear } = useZoteroSelection()
+  const { selectedKeys, setMany, clear } = useZoteroSelection()
   const { openPdf, setMode } = useWorkspace()
 
   // View controls.
-  const [connections, setConnections] = useState<Connections>("none")
-  const [colorBy, setColorBy] = useState<ColorBy>("cluster")
+  const [lens, setLens] = useState<Lens>("cite")
   const [layout, setLayout] = useState<GraphLayout>("network")
   const [showTitles, setShowTitles] = useState(false)
   const [showConnections, setShowConnections] = useState(true)
   const [scaleByCitations, setScaleByCitations] = useState(true)
 
-  // Data.
-  const [fused, setFused] = useState<FusedMap | null>(null)
-  const [phase, setPhase] = useState<"loading" | "ready" | "empty" | "error">("loading")
+  // Data: one cached layer per lens (References / Cited by), tagged with their selection.
+  const [refsLayer, setRefsLayer] = useState<Cached>(null)
+  const [citedLayer, setCitedLayer] = useState<Cached>(null)
+  const [phase, setPhase] = useState<"loading" | "ready" | "empty" | "error">("empty")
   const [error, setError] = useState<string | null>(null)
-  const [refsLayer, setRefsLayer] = useState<DiscoveryGraph | null>(null)
-  const [citedLayer, setCitedLayer] = useState<DiscoveryGraph | null>(null)
-  const [layerBusy, setLayerBusy] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const { newRun, isStale, track, progress } = useSkillJob()
 
   const itemKeys = useMemo(() => Array.from(selectedKeys).sort(), [selectedKeys])
   const keysKey = itemKeys.join(",")
-  // Selected papers not yet indexed. When their indexing finishes they drop out of this set,
-  // which re-fetches the map below so it reflects the new vectors without a manual refresh.
-  const pendingIndexKey = useMemo(
-    () => itemKeys.filter((k) => !indexedKeys.has(k)).join(","),
-    [itemKeys, indexedKeys],
-  )
 
-  // Build the fused Atlas when the selection changes, and re-fetch it when a selected paper's
-  // index status changes (indexing finishes -> its vector appears). A selection change is a
-  // "hard" build (clear + show "building"); an index-status change is a "soft" refresh that keeps
-  // the current graph on screen and swaps in the new one - so it never churns back to a spinner
-  // while papers index one by one, and "index first" yields to the graph as nodes arrive. Pure
-  // read - no OpenAlex gate.
-  // The base-map build uses its OWN run counter, NOT useSkillJob's token. They must not share:
-  // the citation-overlay effect below also calls newRun(), and when it runs in the same pass as a
-  // selection-change build (overlay active) it would otherwise invalidate the build's token and
-  // leave the map stuck on "building". This counter is only bumped here.
-  const builtKeysRef = useRef<string | null>(null)
-  const buildSeq = useRef(0)
+  // The active layer's data iff it was fetched for the current selection (else null -> fetch).
+  const activeLayer = useMemo<DiscoveryGraph | null>(() => {
+    const l = lens === "cite" ? refsLayer : citedLayer
+    return l && l.keys === keysKey ? l.data : null
+  }, [lens, refsLayer, citedLayer, keysKey])
+
+  useEffect(() => setSelectedId(null), [keysKey])
+
+  // Fetch + assemble the active citation layer. The whole-library prefetch usually means the
+  // assemble call returns from cache instantly; the fetch job covers anything not yet cached.
   useEffect(() => {
-    const seq = ++buildSeq.current
-    const hard = builtKeysRef.current !== keysKey
-    builtKeysRef.current = keysKey
     if (itemKeys.length === 0) {
-      setFused(null)
-      setRefsLayer(null)
-      setCitedLayer(null)
-      setSelectedId(null)
-      setError(null)
       setPhase("empty")
       return
     }
-    if (hard) {
-      setFused(null)
-      setRefsLayer(null)
-      setCitedLayer(null)
-      setSelectedId(null)
-      setError(null)
-      setPhase("loading")
+    if (activeLayer) {
+      setPhase("ready")
+      return
     }
-    void (async () => {
-      try {
-        const map = await fetchFusedMap(itemKeys)
-        if (seq !== buildSeq.current) return
-        setFused(map)
-        setPhase("ready")
-      } catch (e) {
-        if (seq !== buildSeq.current) return
-        // A soft-refresh failure keeps the current graph; only a hard build surfaces the error.
-        if (hard) {
-          setError(String(e))
-          setPhase("error")
-        }
-      }
-    })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysKey, pendingIndexKey])
-
-  // Lazily fetch (and resolve) the citation satellite layer the chosen Connections mode needs.
-  const needRefs = connections === "cite" || connections === "both" || connections === "gaps"
-  const needCited = connections === "cited" || connections === "both"
-  useEffect(() => {
-    if (phase !== "ready" || itemKeys.length === 0) return
     const t = newRun()
+    setError(null)
+    setPhase("loading")
     void (async () => {
       try {
-        if (needRefs && !refsLayer) {
-          setLayerBusy(true)
+        if (lens === "cite") {
           const { jobId } = await startGraphFetch(itemKeys)
           await track(t, jobId, getGraphFetch, {
             onDone: async () => {
               const g = await fetchDiscoveryGraph(itemKeys)
-              if (!isStale(t)) setRefsLayer(g)
+              if (!isStale(t)) { setRefsLayer({ keys: keysKey, data: g }); setPhase("ready") }
             },
-            fallbackError: "Citation fetch failed.",
+            onError: () => { if (!isStale(t)) setPhase("error") },
+            fallbackError: "Couldn't load citations.",
           })
-        }
-        if (needCited && !citedLayer) {
-          setLayerBusy(true)
+        } else {
           const { jobId } = await startCitingFetch(itemKeys)
           await track(t, jobId, getGraphFetch, {
             onDone: async () => {
               const g = await fetchCitingGraph(itemKeys)
-              if (!isStale(t)) setCitedLayer(g)
+              if (!isStale(t)) { setCitedLayer({ keys: keysKey, data: g }); setPhase("ready") }
             },
-            fallbackError: "Citation fetch failed.",
+            onError: () => { if (!isStale(t)) setPhase("error") },
+            fallbackError: "Couldn't load citations.",
           })
         }
       } catch {
-        /* the base map stays usable; overlay just won't show */
-      } finally {
-        if (!isStale(t)) setLayerBusy(false)
+        if (!isStale(t)) { setError("Couldn't load citations."); setPhase("error") }
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connections, phase, keysKey, refsLayer, citedLayer])
+  }, [keysKey, lens, activeLayer])
 
-  // Compose the rendered graph: the owned fused core, plus external satellites for the active mode.
+  // Map the OpenAlex graph (owned papers + external references/citers) into the renderer model.
   const composed = useMemo<{ nodes: AtlasNode[]; edges: AtlasEdge[] }>(() => {
-    if (!fused) return { nodes: [], edges: [] }
-    const nodes: AtlasNode[] = fused.nodes.map(ownedNode)
-    const edges: AtlasEdge[] = fused.edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      weight: e.weight,
-      direct: e.citation.direct,
-      direction: e.citation.direction,
+    if (!activeLayer) return { nodes: [], edges: [] }
+    const overlay = lens === "cite" ? "references" : "cited"
+    const nodes: AtlasNode[] = activeLayer.nodes.map((n) => ({
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      year: n.year,
+      date: n.date,
+      citedBy: n.citedBy,
+      globalCitedBy: n.globalCitedBy,
+      doi: n.doi,
+      collection: n.collection ?? null,
     }))
-    const seen = new Set(nodes.map((n) => n.id))
-
-    const addLayer = (
-      layer: DiscoveryGraph | null,
-      overlay: "references" | "cited",
-      keepExternal?: (n: GraphNode) => boolean,
-    ) => {
-      if (!layer) return
-      const keep = new Set<string>()
-      for (const n of layer.nodes) {
-        if (n.type !== "external") continue
-        if (keepExternal && !keepExternal(n)) continue
-        keep.add(n.id)
-        if (!seen.has(n.id)) { seen.add(n.id); nodes.push(externalNode(n)) }
-      }
-      for (const e of layer.edges) {
-        if (keep.has(e.from) || keep.has(e.to)) {
-          edges.push({ source: e.from, target: e.to, direct: true, external: true, overlay })
-        }
-      }
-    }
-
-    if (connections === "cite" || connections === "both") addLayer(refsLayer, "references")
-    if (connections === "gaps") addLayer(refsLayer, "references", (n) => (n.citedBy ?? 0) >= GAP_MIN)
-    if (connections === "cited" || connections === "both") addLayer(citedLayer, "cited")
+    const edges: AtlasEdge[] = activeLayer.edges.map((e) => ({
+      source: e.from,
+      target: e.to,
+      direct: true,
+      external: true,
+      overlay,
+    }))
     return { nodes, edges }
-  }, [fused, connections, refsLayer, citedLayer])
+  }, [activeLayer, lens])
 
-  // Emphasis: the citation modes highlight their satellite edges/nodes; the fused ground dims.
-  const emphasis = useMemo<Emphasis>(() => {
-    if (connections === "none") return null
-    const ids = new Set<string>()
-    for (const e of composed.edges) {
-      if (e.external) { ids.add(e.source); ids.add(e.target) }
-    }
-    if (ids.size === 0) return null
-    return { nodeIds: ids, isActiveEdge: (e) => !!e.external }
-  }, [connections, composed.edges])
-
+  const ownedCount = useMemo(() => composed.nodes.filter((n) => n.type === "owned").length, [composed.nodes])
   const selectedNode = useMemo(() => composed.nodes.find((n) => n.id === selectedId) ?? null, [composed.nodes, selectedId])
 
   const narrate = useCallback((n: AtlasNode) => {
@@ -266,22 +165,16 @@ export default function GraphMode() {
     setMode("narrate")
   }, [clear, setMany, setMode])
 
-  // --- empty / loading / error ---------------------------------------------
   if (phase === "empty") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <h2 className="text-sm font-medium">Map</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          Select papers in the library to map them. The map clusters your papers by content <em>and</em>
-          citations; overlay what they cite.
+          Select papers in the library to see what they cite and what cites them.
         </p>
       </div>
     )
   }
-
-  const clusters = fused?.clusters.filter((c) => c.label && c.size >= 2) ?? []
-  const ownedCount = fused?.nodes.length ?? 0
-  const visibleCount = fused?.nodes.length ?? itemKeys.length
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -292,16 +185,8 @@ export default function GraphMode() {
         >
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <span className="font-medium">Map</span>
-            <span className="shrink-0 text-muted-foreground">{visibleCount} papers</span>
-            {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
-            {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
-            {layerBusy ? (
-              <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-                <Loader2 className="size-3 shrink-0 animate-spin" />
-                {/* Surface the OpenAlex fetch step ("fetching (3/7) - <title>", "resolving N
-                    references", "cited-by (2/5) - ...") instead of a generic spinner. */}
-                <span className="truncate">{progress.detail || progress.stage || "Citations..."}</span>
-              </span>
+            {phase === "ready" ? (
+              <span className="shrink-0 text-muted-foreground">{composed.nodes.length} papers</span>
             ) : null}
           </div>
         </div>
@@ -310,24 +195,14 @@ export default function GraphMode() {
           style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
         >
           <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Overlay</span>
-            <Chips<Connections>
-              value={connections}
+            <span className="text-xs font-medium text-muted-foreground">Lens</span>
+            <Chips<Lens>
+              value={lens}
               options={[
-                { v: "none", label: "Map" },
                 { v: "cite", label: "References" },
                 { v: "cited", label: "Cited by" },
               ]}
-              onChange={setConnections}
-            />
-          </div>
-          <Separator orientation="vertical" className="h-6 shrink-0" />
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Color</span>
-            <Chips<ColorBy>
-              value={colorBy}
-              options={[{ v: "cluster", label: "Clusters" }, { v: "collection", label: "Collections" }]}
-              onChange={setColorBy}
+              onChange={setLens}
             />
           </div>
           <Separator orientation="vertical" className="h-6 shrink-0" />
@@ -342,71 +217,53 @@ export default function GraphMode() {
           <Separator orientation="vertical" className="h-6 shrink-0" />
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">View</span>
-            <Toggle
-              size="sm"
-              variant="segment"
-              className="!px-4"
-              pressed={showTitles}
-              onPressedChange={setShowTitles}
-            >
+            <Toggle size="sm" variant="segment" className="!px-4" pressed={showTitles} onPressedChange={setShowTitles}>
               Titles
             </Toggle>
-            <Toggle
-              size="sm"
-              variant="segment"
-              className="!px-4"
-              pressed={showConnections}
-              onPressedChange={setShowConnections}
-            >
+            <Toggle size="sm" variant="segment" className="!px-4" pressed={showConnections} onPressedChange={setShowConnections}>
               Connections
             </Toggle>
-            <Toggle
-              size="sm"
-              variant="segment"
-              className="!px-4"
-              pressed={scaleByCitations}
-              onPressedChange={setScaleByCitations}
-            >
+            <Toggle size="sm" variant="segment" className="!px-4" pressed={scaleByCitations} onPressedChange={setScaleByCitations}>
               Citation size
             </Toggle>
           </div>
         </div>
 
-        {connections !== "none" ? (
-          <div
-            className="border-t py-2 text-xs text-muted-foreground"
-            style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
-          >
-            {DISCLOSURE}
-          </div>
-        ) : null}
+        <div
+          className="border-t py-2 text-xs text-muted-foreground"
+          style={{ paddingLeft: "3.5rem", paddingRight: "2rem" }}
+        >
+          {DISCLOSURE}
+        </div>
       </div>
 
       {phase === "loading" ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="flex max-w-md items-center justify-center gap-1.5 text-sm text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" /> Building the map...
+            <Loader2 className="size-3.5 animate-spin" /> {progress.detail || progress.stage || "Loading citations..."}
           </p>
         </div>
       ) : phase === "error" ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="max-w-md text-sm text-muted-foreground">Could not build the map. {error}</p>
+          <p className="max-w-md text-sm text-muted-foreground">Couldn&apos;t load citations. {error}</p>
         </div>
       ) : ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="max-w-md text-sm text-muted-foreground">The selected papers are not indexed yet - index them in the library first.</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            None of the selected papers have citation data. Pick papers with a DOI (greyed papers in the library have none).
+          </p>
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col">
           <GraphView
             data={composed}
             layout={layout}
-            colorBy={colorBy}
-            showHulls
+            colorBy="collection"
+            showHulls={false}
             showLabels={showTitles}
             showConnections={showConnections}
             scaleByCitations={scaleByCitations}
-            emphasis={emphasis}
+            emphasis={null}
             selectedId={selectedId}
             layoutKey={keysKey}
             onSelectNode={(n) => setSelectedId(n.id)}

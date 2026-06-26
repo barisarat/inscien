@@ -148,7 +148,7 @@ export default function PdfDocument({
         file={fileUrl}
         onLoadSuccess={({ numPages: n }) => setNumPages(n)}
         loading={<div className={styles.docStatus}>Loading PDF...</div>}
-        error={<div className={styles.docStatus}>Couldn't load this PDF.</div>}
+        error={<div className={styles.docStatus}>Could not load this PDF.</div>}
       >
         {Array.from({ length: numPages }, (_, i) => {
           const page = i + 1
@@ -170,7 +170,7 @@ export default function PdfDocument({
               ) : null}
               {isTarget && showMiss ? (
                 <div className={styles.locateNote}>
-                  Couldn't pinpoint the exact passage on this page.
+                  Could not pinpoint the exact passage on this page.
                 </div>
               ) : null}
             </div>

@@ -55,6 +55,30 @@ def reset_cache():
     CACHE_PATH.unlink(missing_ok=True)
 
 
+def prune_orphans():
+    """Drop cached records for itemKeys no longer in the live Zotero library (deleted papers).
+    Safe: if the live library can't be read or is empty, prune nothing - an unmounted/empty
+    library must never look like 'everything was deleted'."""
+    from services.zotero.reader import live_item_keys
+
+    try:
+        live = live_item_keys()
+    except Exception:
+        return {"skipped": True, "pruned": 0,
+                "reason": "Couldn't read your Zotero library - nothing was removed."}
+    if not live:
+        return {"skipped": True, "pruned": 0,
+                "reason": "Your Zotero library looks empty or unavailable - nothing was removed."}
+    cache = _load()
+    orphans = [k for k in list(cache) if k not in live]
+    if not orphans:
+        return {"pruned": 0, "removed": []}
+    for k in orphans:
+        cache.pop(k, None)
+    _save(cache)
+    return {"pruned": len(orphans), "removed": orphans}
+
+
 def _is_mapped(rec):
     """Mapped *and* current-schema - a stale-schema record re-fetches like a miss."""
     return bool(rec) and rec.get("status") == "mapped" and rec.get("v") == SCHEMA_VERSION

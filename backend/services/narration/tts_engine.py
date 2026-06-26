@@ -1,7 +1,7 @@
 """Text-to-speech synthesis via Kokoro (ONNX, CPU).
 
-Kokoro is a small Apache-2.0 voice model that runs fast on CPU through onnxruntime - the
-same runtime fastembed already uses - so narration needs no GPU and no torch. The model
+Kokoro is a small Apache-2.0 voice model that runs fast on CPU through onnxruntime - so
+narration needs no GPU and no torch. The model
 weights (`kokoro-*.onnx` + `voices-*.bin`) are baked into the backend image, so synthesis
 works fully offline. This replaces the old XTTS (GPU + non-commercial license) engine.
 """

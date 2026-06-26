@@ -34,16 +34,15 @@ def _tokens(title):
 
 
 def _resolve_paper(doc_id=None, query=None):
-    """Exact docId when the picker provides it; else fuzzy-match the typed title against
-    the chunk-manifest (Zotero) title."""
+    """Exact docId when the picker provides it (resolved straight from the Zotero reader);
+    else fuzzy-match the typed title against the library titles."""
+    if doc_id:
+        from services.zotero.reader import item_metadata
+        meta = item_metadata(doc_id)
+        return {"docId": doc_id, "title": meta.get("title") or doc_id} if meta else None
+
     docs = corpus_papers()
     if not docs:
-        return None
-
-    if doc_id:
-        for d in docs:
-            if d["docId"] == doc_id:
-                return d
         return None
 
     ql = re.sub(r"\s+", " ", (query or "").strip().lower())
@@ -92,7 +91,8 @@ def registry():
     """Completed narrations, 1:1 by paper, so the library can show a > that replays the
     saved mp3 without regenerating. Filtered to papers still in the current library, so a
     reset or a Zotero-side removal doesn't leave a > for a paper that no longer exists."""
-    valid = {p["docId"] for p in corpus_papers()}
+    from services.zotero.reader import live_item_keys
+    valid = live_item_keys()
     items = [
         {**n, "audioUrl": f"/api/narrate/{n['jobId']}/audio"}
         for n in list_narrations()

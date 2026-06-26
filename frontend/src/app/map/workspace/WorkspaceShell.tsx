@@ -27,6 +27,7 @@ export default function WorkspaceShell() {
     const stored = window.localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY)
     const parsed = stored ? Number(stored) : null
     if (parsed && Number.isFinite(parsed)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, parsed)))
     }
   }, [])

@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from services.lab.manifest_loader import load_manifest_chunks
+from services.zotero.reader import library_items
 
 logger = logging.getLogger(__name__)
 
@@ -19,25 +19,12 @@ router = APIRouter(prefix="/api/papers", tags=["papers"])
 
 
 def corpus_papers():
-    """[{docId, title, fileName}] - one entry per chunk-manifest doc, using the Zotero
-    titles carried on the chunks (used by the picker and narration resolution)."""
-    manifest = load_manifest_chunks()
-    docs = {}
-    for chunk in manifest["chunks"]:
-        sid = chunk.get("sourceId")
-        if not sid or sid in docs:
-            continue
-        meta = chunk.get("metadata") or {}
-        docs[sid] = {"docId": sid, "title": chunk.get("title", ""), "fileName": meta.get("fileName", "")}
-
-    return list(docs.values())
-
-
-def resolve_titles(doc_ids):
-    """{docId: title} from the chunk manifest, falling back to the id when unknown.
-    Used by the Map to label papers and clusters."""
-    by_id = {d["docId"]: d["title"] for d in corpus_papers()}
-    return {doc_id: (by_id.get(doc_id) or doc_id) for doc_id in doc_ids}
+    """[{docId, title}] over the whole Zotero library (docId == itemKey). Sourced live from the
+    Zotero reader; the registry for the narration picker and narration paper-resolution."""
+    return [
+        {"docId": it["itemKey"], "title": it.get("title") or it["itemKey"]}
+        for it in library_items()
+    ]
 
 
 @router.get("")

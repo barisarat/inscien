@@ -226,6 +226,46 @@ def live_item_keys():
     return {r["key"] for r in rows}
 
 
+def library_items():
+    """One-query [{itemKey, title, doi, itemType, year, isBookDefaultOff}] over the whole live
+    library (top-level items, excluding trash/attachments/notes). Batch alternative to calling
+    `item_metadata()` per key - the registry for narration + the library list, and the source of
+    DOI-bearing keys for the citation prefetch."""
+    con = _connect()
+    try:
+        rows = con.execute(
+            """
+            SELECT i.key AS key,
+                   it.typeName AS itemType,
+                   MAX(CASE WHEN f.fieldName = 'title' THEN idv.value END) AS title,
+                   MAX(CASE WHEN f.fieldName = 'date'  THEN idv.value END) AS date,
+                   MAX(CASE WHEN f.fieldName = 'DOI'   THEN idv.value END) AS doi
+            FROM items i
+            JOIN itemTypes it ON it.itemTypeID = i.itemTypeID
+            LEFT JOIN itemData id ON id.itemID = i.itemID
+            LEFT JOIN itemDataValues idv ON idv.valueID = id.valueID
+            LEFT JOIN fields f ON f.fieldID = id.fieldID
+            WHERE i.itemID NOT IN (SELECT itemID FROM deletedItems)
+              AND it.typeName NOT IN ('attachment', 'note')
+            GROUP BY i.itemID
+            """
+        ).fetchall()
+    finally:
+        con.close()
+    out = []
+    for r in rows:
+        year_match = _YEAR_RE.search(r["date"] or "")
+        out.append({
+            "itemKey": r["key"],
+            "title": r["title"],
+            "doi": _normalize_doi(r["doi"]),
+            "itemType": r["itemType"],
+            "year": year_match.group(1) if year_match else None,
+            "isBookDefaultOff": r["itemType"] in BOOK_ITEM_TYPES,
+        })
+    return out
+
+
 def collection_direct_items():
     """One-query map {collectionID: set(itemKey)} of *direct* (non-recursive) membership,
     excluding trash. The collections endpoint folds this up the tree in Python instead of

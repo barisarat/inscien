@@ -11,7 +11,7 @@ library content. See `services/refs/openalex.py`.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.refs.fetch_jobs import get_job, start_citing_job, start_job
+from services.refs.fetch_jobs import get_job, start_citing_job, start_job, start_prefetch_job
 from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
@@ -39,6 +39,15 @@ def graph_fetch_job(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
     return job
+
+
+@router.post("/prefetch")
+def graph_prefetch():
+    """Fetch references + citers for the whole library (DOI-bearing items) as one background job,
+    so any later selection's map renders from cache. Polls via GET /fetch/{job_id}."""
+    from services.zotero.reader import library_items
+    keys = [it["itemKey"] for it in library_items() if it.get("doi")]
+    return {"jobId": start_prefetch_job(keys), "count": len(keys)}
 
 
 @router.get("/mapped-keys")

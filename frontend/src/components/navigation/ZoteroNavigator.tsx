@@ -1,19 +1,18 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type PointerEvent, type ReactNode } from "react"
-import { BookOpen, Check, ChevronRight, Loader2, Map as MapIcon, Play, RefreshCw, X } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react"
+import { ChevronRight, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
   fetchZoteroCollections,
   fetchZoteroIndexableKeys,
   fetchZoteroItems,
-  fetchZoteroSyncState,
-  getZoteroIndexJob,
+  getGraphFetch,
   listNarrations,
   listPapers,
   mappedKeys,
   reconcileZotero,
-  startZoteroIndex,
+  startLibraryPrefetch,
   type ZoteroCollection,
   type ZoteroItem,
 } from "@/lib/api"
@@ -38,27 +37,8 @@ type Props = {
   onResizeStart?: (event: PointerEvent<HTMLButtonElement>) => void
 }
 
-function PaperStatusIcon({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <span
-            aria-label={label}
-            role="img"
-            className="inline-flex h-6 w-7 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground"
-          >
-            {children}
-          </span>
-        }
-      />
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  )
-}
-
 export default function ZoteroNavigator({ onResizeStart }: Props) {
-  const { selectedKeys, toggle, setMany, clear, indexedKeys, markIndexed, persistError } = useZoteroSelection()
+  const { selectedKeys, toggle, setMany, clear, persistError } = useZoteroSelection()
   const { setMode, setActiveArtifact } = useWorkspace()
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
@@ -69,23 +49,55 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [indexing, setIndexing] = useState<Set<string>>(new Set())
-  const [activeIndexingByJob, setActiveIndexingByJob] = useState<Map<string, string>>(new Map())
   const [reconciling, setReconciling] = useState(false)
   const [reconcileMsg, setReconcileMsg] = useState<string | null>(null)
   const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
+  // Papers OpenAlex resolved citation data for -> "mappable". Filled by the prefetch.
   const [mapped, setMapped] = useState<Set<string>>(new Set())
+  const [prefetchDone, setPrefetchDone] = useState(false)
+  const [prefetchMsg, setPrefetchMsg] = useState<string | null>(null)
   const [selectedOpen, setSelectedOpen] = useState(false)
   const [titleByKey, setTitleByKey] = useState<Map<string, string>>(new Map())
-  const activeIndexingKeys = useMemo(() => new Set(activeIndexingByJob.values()), [activeIndexingByJob])
+
+  // Fetch references + citers for the whole (DOI-bearing) library so any selection maps
+  // instantly. Papers un-grey as they resolve; runs once per load (guarded), cheap on re-run
+  // (the backend skips already-cached items).
+  const prefetchRunning = useRef(false)
+  const runPrefetch = useCallback(async () => {
+    if (prefetchRunning.current) return
+    prefetchRunning.current = true
+    setPrefetchDone(false)
+    try {
+      const { jobId, count } = await startLibraryPrefetch()
+      if (count) {
+        await pollJob(jobId, getGraphFetch, {
+          intervalMs: 1200,
+          onProgress: (job) => {
+            setPrefetchMsg(job.detail || "Fetching citations...")
+            // Refresh the mappable set so papers un-grey as their citations land.
+            void mappedKeys().then((m) => setMapped(new Set(m.keys))).catch(() => {})
+          },
+          onDone: () => {},
+          onError: () => setPrefetchMsg(null),
+        })
+      }
+      const m = await mappedKeys()
+      setMapped(new Set(m.keys))
+    } catch {
+      /* keep whatever mapped set we already have */
+    } finally {
+      setPrefetchMsg(null)
+      setPrefetchDone(true)
+      prefetchRunning.current = false
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [cols, sync, narr, corpus, maps] = await Promise.all([
+      const [cols, narr, corpus, maps] = await Promise.all([
         fetchZoteroCollections(),
-        fetchZoteroSyncState(),
         listNarrations(),
         listPapers(),
         mappedKeys(),
@@ -94,7 +106,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       setLiveConnected(cols.liveConnected !== false)
       setLibraryMissing(cols.libraryMissing === true)
       setMountPath(cols.mountPath ?? null)
-      markIndexed(sync.indexedKeys)
       setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
       setMapped(new Set(maps.keys))
       setTitleByKey((prev) => {
@@ -102,28 +113,17 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         corpus.papers.forEach((p) => next.set(p.docId, p.title))
         return next
       })
+      if (cols.libraryMissing !== true && cols.liveConnected !== false) void runPrefetch()
     } catch {
       setError("Couldn't load your Zotero library. Is the mount set?")
     } finally {
       setLoading(false)
     }
-  }, [markIndexed])
+  }, [runPrefetch])
 
   useEffect(() => {
     void load()
   }, [load])
-
-  // Quietly refresh the collection tree's indexed/total counts (no full-tree loading spinner),
-  // so the sidebar "X/Y" counts catch up live during/after indexing instead of needing a manual
-  // refresh. The backend recomputes the counts (vector-aware) on every /collections call.
-  const refreshCounts = useCallback(async () => {
-    try {
-      const cols = await fetchZoteroCollections()
-      setCollections(cols.collections)
-    } catch {
-      /* keep the current counts */
-    }
-  }, [])
 
   const handleReconcile = useCallback(async () => {
     setReconciling(true)
@@ -135,7 +135,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       } else if (!r.pruned) {
         setReconcileMsg("Nothing to clean up.")
       } else {
-        setReconcileMsg(`Removed ${r.pruned} deleted ${r.pruned === 1 ? "paper" : "papers"} from the index.`)
+        setReconcileMsg(`Removed ${r.pruned} ${r.pruned === 1 ? "paper" : "papers"} no longer in your library.`)
         await load()
       }
     } catch (e) {
@@ -144,48 +144,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       setReconciling(false)
     }
   }, [load])
-
-  const autoIndex = useCallback(
-    async (keys: string[]) => {
-      const fresh = keys.filter((k) => !indexedKeys.has(k))
-      if (!fresh.length) return
-      setIndexing((prev) => new Set([...prev, ...fresh]))
-      let jobId: string | null = null
-      try {
-        const started = await startZoteroIndex(fresh)
-        const runningJobId = started.jobId
-        jobId = runningJobId
-        await pollJob(runningJobId, getZoteroIndexJob, {
-          intervalMs: 1200,
-          onProgress: (job) => {
-            const currentItemKey = job.currentItemKey
-            if (!currentItemKey) return
-            const currentIndex = fresh.indexOf(currentItemKey)
-            if (currentIndex > 0) markIndexed(fresh.slice(0, currentIndex))
-            setActiveIndexingByJob((prev) => new Map(prev).set(runningJobId, currentItemKey))
-            void refreshCounts() // climb the sidebar "X/Y" counts as items land (throttled by the poll)
-          },
-          onDone: () => markIndexed(fresh),
-          onError: (job) => setError(`Indexing failed: ${job.error ?? ""}`),
-        })
-      } catch {
-        setError("Indexing failed.")
-      } finally {
-        setIndexing((prev) => {
-          const next = new Set(prev)
-          fresh.forEach((k) => next.delete(k))
-          return next
-        })
-        setActiveIndexingByJob((prev) => {
-          const next = new Map(prev)
-          if (jobId) next.delete(jobId)
-          return next
-        })
-        void refreshCounts() // ensure the final counts are correct even if the last progress tick was missed
-      }
-    },
-    [indexedKeys, markIndexed, refreshCounts],
-  )
 
   const loadItems = useCallback(
     async (collectionId: number): Promise<ZoteroItem[]> => {
@@ -224,21 +182,11 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         if (!itemKeys.length) return
         const allSelected = itemKeys.every((k) => selectedKeys.has(k))
         setMany(itemKeys, !allSelected)
-        if (!allSelected) void autoIndex(itemKeys)
       } catch {
         setError("Couldn't resolve that collection.")
       }
     },
-    [selectedKeys, setMany, autoIndex],
-  )
-
-  const toggleItem = useCallback(
-    (item: ZoteroItem) => {
-      const willSelect = !selectedKeys.has(item.itemKey)
-      toggle(item.itemKey)
-      if (willSelect) void autoIndex([item.itemKey])
-    },
-    [selectedKeys, toggle, autoIndex],
+    [selectedKeys, setMany],
   )
 
   const renderCollection = (col: ZoteroCollection, depth: number) => {
@@ -257,12 +205,10 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
           >
             <ChevronRight className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
           </Button>
-          <SidebarMenuButton className="grid h-7 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_3.5rem] pr-4" onClick={() => selectCollection(col)} title="Select this collection">
+          <SidebarMenuButton className="grid h-7 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_2.5rem] pr-4" onClick={() => selectCollection(col)} title="Select this collection">
             <span className="truncate">{col.name}</span>
             {typeof col.itemCount === "number" && col.itemCount > 0 ? (
-              <span className="text-right text-xs tabular-nums text-muted-foreground">
-                {col.indexedCount ?? 0}/{col.itemCount}
-              </span>
+              <span className="text-right text-xs tabular-nums text-muted-foreground">{col.itemCount}</span>
             ) : null}
           </SidebarMenuButton>
         </div>
@@ -279,26 +225,33 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
             ) : (
               rows.map((item) => {
                 const isSel = selectedKeys.has(item.itemKey)
-                const isIdx = indexedKeys.has(item.itemKey)
-                const isBusy = activeIndexingKeys.has(item.itemKey)
+                // Mappable = has citation data. No DOI is unmappable immediately; a DOI'd paper
+                // is "pending" until the prefetch resolves it, then unmappable if still absent.
+                const unmappable = !item.doi || (prefetchDone && !mapped.has(item.itemKey))
+                const narration = narrations.get(item.itemKey)
+                const reason = !item.doi
+                  ? "No DOI - not on the map"
+                  : unmappable
+                    ? "No citation data found - not on the map"
+                    : (item.title ?? item.itemKey)
                 return (
                   <div
                     key={item.itemKey}
-                    className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-4 text-sm hover:bg-sidebar-accent ${item.isBookDefaultOff ? "opacity-60" : ""}`}
+                    className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-4 text-sm hover:bg-sidebar-accent ${unmappable ? "opacity-60" : ""}`}
                     style={pad(26)}
-                    title={item.isBookDefaultOff ? "Book - opt in to index" : item.title ?? item.itemKey}
+                    title={reason}
                   >
-                    <Checkbox checked={isSel} onCheckedChange={() => toggleItem(item)} />
+                    <Checkbox checked={isSel} onCheckedChange={() => toggle(item.itemKey)} />
                     <button
                       type="button"
                       className="min-w-0 flex-1 truncate rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                      onClick={() => toggleItem(item)}
+                      onClick={() => toggle(item.itemKey)}
                     >
                       {item.title ?? item.itemKey}
                       {item.year ? <span className="ml-1 text-muted-foreground">{item.year}</span> : null}
                     </button>
-                    <div className="grid w-[6.25rem] shrink-0 grid-cols-3 items-center justify-items-center gap-1">
-                      {narrations.has(item.itemKey) ? (
+                    <div className="flex w-7 shrink-0 items-center justify-center">
+                      {narration ? (
                         <Tooltip>
                           <TooltipTrigger
                             render={
@@ -310,13 +263,12 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  const n = narrations.get(item.itemKey)!
                                   setMode("narrate")
                                   setActiveArtifact({
                                     kind: "narration",
                                     docId: item.itemKey,
-                                    jobId: n.jobId,
-                                    title: n.title || item.title || "",
+                                    jobId: narration.jobId,
+                                    title: narration.title || item.title || "",
                                   })
                                 }}
                               >
@@ -326,29 +278,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                           />
                           <TooltipContent>Play narration</TooltipContent>
                         </Tooltip>
-                      ) : (
-                        <span className="h-6 w-7" aria-hidden />
-                      )}
-                      {mapped.has(item.itemKey) ? (
-                        <PaperStatusIcon label="Map data ready">
-                          <MapIcon className="size-3.5" />
-                        </PaperStatusIcon>
-                      ) : (
-                        <span className="h-6 w-7" aria-hidden />
-                      )}
-                      {isBusy ? (
-                        <Loader2 className="size-3.5 shrink-0 animate-spin" />
-                      ) : isIdx ? (
-                        <PaperStatusIcon label="Indexed locally">
-                          <Check className="size-3.5" />
-                        </PaperStatusIcon>
-                      ) : item.isBookDefaultOff ? (
-                        <PaperStatusIcon label="Book - opt in to index">
-                          <BookOpen className="size-3.5" />
-                        </PaperStatusIcon>
-                      ) : (
-                        <span className="h-6 w-7" aria-hidden />
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 )
@@ -392,7 +322,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
               >
                 <ChevronRight className={`size-3.5 transition-transform ${selectedOpen ? "rotate-90" : ""}`} />
                 <span>{selectedKeys.size} selected</span>
-                {indexing.size > 0 ? <span className="text-muted-foreground">Indexing {indexing.size}</span> : null}
               </Button>
               <Button variant="ghost" size="xs" onClick={clear}>Clear</Button>
             </div>
@@ -403,7 +332,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                     <span className="min-w-0 flex-1 truncate" title={titleByKey.get(key) || key}>
                       {titleByKey.get(key) || key}
                     </span>
-                    {activeIndexingKeys.has(key) ? <Loader2 className="size-3 animate-spin" /> : null}
                     <Button variant="ghost" size="icon-xs" aria-label="Remove from selection" onClick={() => setMany([key], false)}>
                       <X />
                     </Button>
@@ -415,6 +343,13 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         ) : (
           <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>Select papers to scope your map</div>
         )}
+
+        {prefetchMsg ? (
+          <div className="flex items-center gap-1.5 border-b py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>
+            <Loader2 className="size-3 shrink-0 animate-spin" />
+            <span className="truncate">{prefetchMsg}</span>
+          </div>
+        ) : null}
 
         {!loading && !error && libraryMissing ? (
           <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>

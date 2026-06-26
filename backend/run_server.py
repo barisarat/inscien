@@ -2,8 +2,8 @@
 
 PyInstaller freezes **this** script (the `uvicorn main:app` CLI doesn't freeze cleanly). The Tauri
 desktop shell spawns the frozen binary with the env it needs - `PORT`, `ENV_NAME=production`,
-`INSCIEN_DATA_DIR` (OS app-data dir), `FRONTEND_DIST` (bundled static UI), `KOKORO_*` /
-`FASTEMBED_CACHE_PATH` (bundled weights), `ZOTERO_DATA_DIR` (user-chosen folder). Host is pinned to
+`INSCIEN_DATA_DIR` (OS app-data dir), `FRONTEND_DIST` (bundled static UI), `KOKORO_*`
+(bundled weights), `ZOTERO_DATA_DIR` (user-chosen folder). Host is pinned to
 loopback - the backend is a private sidecar, never exposed.
 """
 

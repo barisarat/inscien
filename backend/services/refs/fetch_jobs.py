@@ -25,6 +25,23 @@ def start_citing_job(item_keys):
     return _runner.start(lambda _jid, progress: {"result": fetch_citing_items(item_keys, progress)})
 
 
+def start_prefetch_job(item_keys):
+    """Whole-library prefetch: references then citers under the single worker, so any later
+    selection's map renders instantly from cache. Both fetchers skip already-mapped items, so
+    re-running on each load is cheap. Progress runs 0-50% (references) then 50-100% (cited-by)."""
+    def _run(_jid, progress):
+        def _phase(lo, hi):
+            span = hi - lo
+            return lambda stage, pct, detail="", **extra: progress(
+                stage, lo + int(span * (pct or 0) / 100), detail, **extra
+            )
+        refs = fetch_items(item_keys, _phase(0, 50))
+        citing = fetch_citing_items(item_keys, _phase(50, 100))
+        return {"result": {"references": refs, "citing": citing}}
+
+    return _runner.start(_run)
+
+
 def get_job(job_id):
     return _runner.get(job_id)
 
