@@ -123,9 +123,14 @@ export default function GraphMode() {
   // the current graph on screen and swaps in the new one - so it never churns back to a spinner
   // while papers index one by one, and "index first" yields to the graph as nodes arrive. Pure
   // read - no OpenAlex gate.
+  // The base-map build uses its OWN run counter, NOT useSkillJob's token. They must not share:
+  // the citation-overlay effect below also calls newRun(), and when it runs in the same pass as a
+  // selection-change build (overlay active) it would otherwise invalidate the build's token and
+  // leave the map stuck on "building". This counter is only bumped here.
   const builtKeysRef = useRef<string | null>(null)
+  const buildSeq = useRef(0)
   useEffect(() => {
-    const t = newRun()
+    const seq = ++buildSeq.current
     const hard = builtKeysRef.current !== keysKey
     builtKeysRef.current = keysKey
     if (itemKeys.length === 0) {
@@ -148,11 +153,11 @@ export default function GraphMode() {
     void (async () => {
       try {
         const map = await fetchFusedMap(itemKeys)
-        if (isStale(t)) return
+        if (seq !== buildSeq.current) return
         setFused(map)
         setPhase("ready")
       } catch (e) {
-        if (isStale(t)) return
+        if (seq !== buildSeq.current) return
         // A soft-refresh failure keeps the current graph; only a hard build surfaces the error.
         if (hard) {
           setError(String(e))
