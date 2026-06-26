@@ -180,7 +180,11 @@ export default function GraphMode() {
       external: true,
       overlay,
     }))
-    return { nodes, edges }
+    // Drop no-connection nodes (an owned paper with no references in OpenAlex would otherwise sit
+    // as a lone dot, cluttering the map). The library greys + explains those instead.
+    const connected = new Set<string>()
+    for (const e of edges) { connected.add(e.source); connected.add(e.target) }
+    return { nodes: nodes.filter((n) => connected.has(n.id)), edges }
   }, [activeLayer, lens])
 
   const ownedCount = useMemo(() => composed.nodes.filter((n) => n.type === "owned").length, [composed.nodes])
@@ -278,7 +282,8 @@ export default function GraphMode() {
       ) : ownedCount === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="max-w-md text-sm text-muted-foreground">
-            None of the selected papers have citation data. Pick papers with a DOI (greyed papers in the library have none).
+            None of the selected papers have {lens === "cite" ? "references" : "citers"} in OpenAlex to map.
+            Greyed papers in the library have no citation data - hover them to see why.
           </p>
         </div>
       ) : (

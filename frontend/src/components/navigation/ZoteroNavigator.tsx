@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react"
-import { Check, ChevronRight, Download, Loader2, Play, RefreshCw, X } from "lucide-react"
+import { Check, ChevronRight, Download, Info, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
   activeFetch,
@@ -282,7 +282,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                     key={item.itemKey}
                     className={`flex min-w-0 items-center gap-2 rounded-md py-1.5 pr-4 text-sm hover:bg-sidebar-accent ${unmappable ? "opacity-60" : ""}`}
                     style={pad(26)}
-                    title={reason}
+                    title={item.title ?? item.itemKey}
                   >
                     <Checkbox checked={isSel} onCheckedChange={() => toggle(item.itemKey)} />
                     <button
@@ -342,6 +342,21 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                             }
                           />
                           <TooltipContent>Citations ready - on the map</TooltipContent>
+                        </Tooltip>
+                      ) : unmappable ? (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <span
+                                aria-label={reason}
+                                role="img"
+                                className="flex h-6 w-7 items-center justify-center text-muted-foreground/50"
+                              >
+                                <Info className="size-3.5" />
+                              </span>
+                            }
+                          />
+                          <TooltipContent>{reason}</TooltipContent>
                         </Tooltip>
                       ) : (
                         <span className="h-6 w-7" aria-hidden />
