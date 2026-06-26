@@ -1,8 +1,8 @@
 name: inscien
 
-# Local-first single-user stack: just the API, the web UI, and the vector store.
-# No MySQL / Redis / Celery — chat history lives in a file-based SQLite DB and
-# ingestion runs on-demand over the user's Zotero library, not a scheduled worker.
+# Local-first single-user stack: just the API and the web UI.
+# No MySQL / Redis / Celery - app settings live in a file-based SQLite DB and citations are
+# fetched on-demand from OpenAlex over the user's Zotero library, not a scheduled worker.
 # Narration (TTS) runs inside the backend on CPU (Kokoro), so there is no GPU service
 # and no GPU required.
 #
@@ -10,9 +10,9 @@ name: inscien
 # run yourself is a native Ollama on the host (see README). Override OLLAMA_BASE_URL /
 # KOKORO_VOICE via a local .env file if needed (see .env.example).
 #
-# Data model: all state lives in the host `./data/` folder, including the paper-vector store
-# at ./data/paper-vectors.json (a single JSON file - no vector-store container or process).
-# It is a rebuildable cache (re-index from Zotero).
+# Data model: all state lives in the host `./data/` folder, including the OpenAlex citation
+# cache at ./data/openalex.json (a single JSON file - no database or extra container).
+# It is a rebuildable cache (re-fetch from the UI).
 
 services:
   backend:
@@ -26,7 +26,7 @@ services:
       # ZOTERO_HOST_DIR at your host Zotero folder (e.g. ~/Zotero). InScien reads it via a
       # private snapshot under ./data, so the live library is never touched.
       - ${ZOTERO_HOST_DIR:-./zotero}:/workspace/zotero:ro
-      # Durable user data (SQLite DB, indexes, narration audio) on an explicit host
+      # Durable user data (SQLite DB, citation cache, narration audio) on an explicit host
       # folder — survives `down`/`down -v` and is independent of the source mount above.
       - ./data:/workspace/data
     ports:
@@ -39,9 +39,6 @@ services:
       - ENV_NAME=development
       - CORS_ORIGINS=http://localhost:3200
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
-      # Persist the embedding model on the (host-owned, writable) data mount so it survives
-      # restarts and is writable by the non-root runtime user. See backend/entrypoint.sh.
-      - FASTEMBED_CACHE_PATH=/workspace/data/.fastembed
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}

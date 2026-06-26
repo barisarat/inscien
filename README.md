@@ -8,9 +8,8 @@ Downloads and documentation: https://inscien.com/
 
 ## What it does
 
-- **Map.** A navigable atlas of your Zotero collection: papers clustered by similarity
-  (computed locally), with an optional citations lens (what they cite, what cites them, and
-  gaps) from public OpenAlex data. The Map needs no model.
+- **Map.** A citation graph of your Zotero collection from public OpenAlex data: select papers
+  and see what they cite (References) and what cites them (Cited by). The Map needs no model.
 - **Narrate.** Turn a paper into a spoken-audio narration. A model you connect writes the
   script; a local CPU voice ([Kokoro](https://github.com/thewh1teagle/kokoro-onnx), Apache-2.0)
   reads it aloud and saves an mp3 you can replay. No GPU required.
@@ -47,17 +46,18 @@ page (no environment variables, no config files):
 1. Open Settings and set your Zotero data folder (the folder containing `zotero.sqlite` and
    `storage/`).
 2. Connect a model (only needed for narration).
-3. Index a collection from the sidebar.
-4. Open the Map, or pick a paper and Narrate it. The first narration downloads the voice model
-   once (about 1 GB), with a progress bar.
+3. Select papers in the sidebar and open the Map - it fetches their citations from OpenAlex.
+   (Optionally hit "Fetch citations" to warm the whole library in the background.)
+4. Or pick a paper and Narrate it. The first narration downloads the voice model once
+   (about 1 GB), with a progress bar.
 
 See the [quick start](https://inscien.com/getting-started/quick-start/) for
 the full walkthrough.
 
 ## Run from source (development)
 
-InScien is a FastAPI backend plus a Next.js frontend; paper vectors live in a single JSON file
-(no vector database). For development, run the stack with Docker:
+InScien is a FastAPI backend plus a Next.js frontend; citation data is cached in a single JSON
+file (no database beyond SQLite for settings). For development, run the stack with Docker:
 
 ```bash
 cp .env.example .env          # set ZOTERO_HOST_DIR to your Zotero data folder
@@ -69,11 +69,11 @@ yourself, see [PACKAGING.md](PACKAGING.md).
 
 ## Privacy
 
-Your PDFs stay in your Zotero library, mounted read-only. InScien's own state (a SQLite DB,
-the search index, and narration audio) lives under a single app-data folder. The only times
-anything leaves your machine are if you choose an OpenAI model (the text you send it) or use the
-citations lens (public DOI lookups to [OpenAlex](https://openalex.org)). Everything else,
-including indexing, the similarity map, and the local voice, runs offline.
+Your PDFs stay in your Zotero library, mounted read-only. InScien's own state (a SQLite DB for
+settings, the OpenAlex citation cache, and narration audio) lives under a single app-data folder.
+The only times anything leaves your machine are if you choose an OpenAI model (the text you send
+it) or build the Map (public DOI lookups to [OpenAlex](https://openalex.org)). Everything else,
+including narration and the local voice, runs offline.
 
 ## License
 

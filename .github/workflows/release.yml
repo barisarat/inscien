@@ -60,9 +60,8 @@ jobs:
           cp "dist/inscien-backend${{ matrix.sidecar_ext }}" \
              "../src-tauri/binaries/inscien-backend-${{ matrix.triple }}${{ matrix.sidecar_ext }}"
 
-      # ML weights are NOT bundled — fastembed (bge-small) auto-downloads on first index and the
-      # Kokoro voice is downloaded on demand from the Narrate tab. So there's nothing to fetch here;
-      # this keeps the installer small (~tens of MB instead of ~1.5 GB).
+      # ML weights are NOT bundled - the Kokoro voice is downloaded on demand from the Narrate tab.
+      # So there's nothing to fetch here; this keeps the installer small (~tens of MB).
 
       # --- 2) Build the frontend static export explicitly --------------------------------------
       # We do NOT rely on tauri.conf.json's beforeBuildCommand: tauri-action runs it from the repo

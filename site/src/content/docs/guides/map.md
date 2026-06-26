@@ -1,24 +1,26 @@
 ---
 title: Map
-description: A navigable atlas of your Zotero library.
+description: A citation graph of your Zotero library.
 ---
 
-The **Map** turns your indexed Zotero papers into a navigable graph. The default view places
-papers by **similarity**, computed locally from their content, so you can see clusters,
-bridges, and outliers at a glance.
+The **Map** turns your selected Zotero papers into a citation graph, built from public data on
+[OpenAlex](https://openalex.org). It needs **no model** - just each paper's DOI.
 
-An optional **citations** lens overlays reference relationships - what your papers cite, what
-cites them, and frequently-cited "gaps" worth adding - using public data from
-[OpenAlex](https://openalex.org).
+Two lenses:
 
-The Map needs **no model**; the similarity layout and labels are computed deterministically on
-your machine.
+- **References** - what your selected papers cite.
+- **Cited by** - the works that cite them.
 
 ## Using it
 
-- **Scope it** by selecting papers (or whole collections) in the sidebar - the map redraws to
-  just that set.
+- **Select papers** (or whole collections) in the sidebar - the map draws the citation graph for
+  just that set, and fills in as the data resolves.
 - **Open a paper** from the map to read its original PDF in a side panel, without leaving the app.
+- **Warm the whole library**: the **Fetch citations** action in the sidebar fetches references for
+  every paper with a DOI in the background, so later selections render instantly.
 
-The more of your library you index, the richer the map. Indexing is additive, so you can grow
-it over time.
+## What can be mapped
+
+A paper is on the map only if it has a **DOI** and OpenAlex has its **references**. Papers without
+a DOI, or that OpenAlex has no reference list for (often arXiv preprints), are greyed in the
+library - hover one to see why. The citation data is cached locally and reused.

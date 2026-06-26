@@ -5,8 +5,8 @@ InScien ships as a **Tauri desktop app**: a thin native window that spawns the I
 private loopback port, and the window points at it — so the web frontend is reused verbatim, no
 rebuild. The **Map needs no model** (deterministic); **narration** uses a model you connect (local
 Ollama or an OpenAI key). ML weights are **not bundled** — the installer stays small (~tens of MB):
-the **bge-small** embedding model auto-downloads on the first index, and the **Kokoro voice** (~1 GB)
-is downloaded on demand from the Narrate tab with a progress bar, into the app-data dir. Builds are
+the **Kokoro voice** (~1 GB) is downloaded on demand from the Narrate tab with a progress bar, into
+the app-data dir. Builds are
 **unsigned** for v1.
 
 Targets: **Linux (AppImage/.deb)**, **macOS (.dmg, Apple Silicon)**, **Windows (NSIS .exe)**.
@@ -15,7 +15,7 @@ Targets: **Linux (AppImage/.deb)**, **macOS (.dmg, Apple Silicon)**, **Windows (
 - `backend/run_server.py` — the frozen entrypoint (`uvicorn.run(app, …)`); reads `PORT` + the path
   env below.
 - `backend/core/paths.py` — `INSCIEN_DATA_DIR` redirects **all** durable state (SQLite, the
-  paper-vector store, caches, job records, audio, Zotero snapshot, fastembed cache) to the OS
+  OpenAlex citation cache, job records, audio, Zotero snapshot) to the OS
   app-data dir with one var.
 - `backend/inscien.spec` — PyInstaller one-file freeze → `dist/inscien-backend`.
 - `backend/services/narration/model.py` — the on-demand Kokoro download (presence check + progress
@@ -52,9 +52,9 @@ FRONTEND_DIST="$PWD/frontend/out" \
 ZOTERO_DATA_DIR="$HOME/Zotero" \
 ENV_NAME=production PORT=8123 \
   ./backend/dist/inscien-backend
-# → open http://127.0.0.1:8123 : Map renders; the first index auto-downloads bge-small; the Narrate
-#   tab offers "Download narration voice" (~1 GB) before the first narration. All land under
-#   INSCIEN_DATA_DIR (no KOKORO_*/FASTEMBED_* env needed — the backend defaults there).
+# → open http://127.0.0.1:8123 : Map renders; the Narrate tab offers "Download narration voice"
+#   (~1 GB) before the first narration. All land under INSCIEN_DATA_DIR (no KOKORO_* env needed -
+#   the backend defaults there).
 ```
 Iterate `inscien.spec` until imports/data files resolve (typical fixes: add a `hiddenimport`, or a
 `collect_data_files(...)` for a package that ships non-Python files).
@@ -99,7 +99,7 @@ Review + publish. (Signing/notarization is a later cycle — v1 ships unsigned.)
 - Linux: `~/.local/share/io.inscien.app/`
 
 ## Known iterate points (expected during the first builds)
-- `inscien.spec` native-dep collection (onnxruntime / pymupdf / fastembed data files).
+- `inscien.spec` native-dep collection (onnxruntime / pymupdf data files).
 - Tauri 2 API drift in `main.rs` (shell-sidecar scope in `capabilities/default.json`, dialog
   `FilePath`→string, window builder) — fix against compiler/`tauri dev` errors.
 - onefile startup time: if the extract-on-launch delay is large, switch the spec to **onedir** and

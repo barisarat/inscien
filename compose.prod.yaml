@@ -8,7 +8,7 @@ name: inscien
 #   docker compose -f compose.prod.yaml up --build
 #
 # Like dev, the only external dependency is a native Ollama on the host. Durable state lives
-# in ./data (SQLite DB, the paper-vector store, chunk manifest, narration audio).
+# in ./data (SQLite DB, the OpenAlex citation cache, narration audio).
 
 services:
   app:
@@ -20,7 +20,7 @@ services:
       # Your local Zotero data dir (zotero.sqlite + storage/), read-only — read via a private
       # snapshot under ./data, so the live library is never touched.
       - ${ZOTERO_HOST_DIR:-./zotero}:/workspace/zotero:ro
-      # Durable user data (SQLite DB, embedded vector store, indexes, narration audio).
+      # Durable user data (SQLite DB, OpenAlex citation cache, narration audio).
       - ./data:/workspace/data
     ports:
       - "8200:8000"
@@ -30,7 +30,6 @@ services:
       - APP_NAME=inscien
       - ENV_NAME=production
       - DATABASE_URL=sqlite:////workspace/data/inscien.db
-      - FASTEMBED_CACHE_PATH=/workspace/data/.fastembed
       - ZOTERO_DATA_DIR=/workspace/zotero
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}

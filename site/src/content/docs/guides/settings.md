@@ -8,8 +8,8 @@ Everything is configured in the app's **Settings** - no environment variables or
 ## Zotero data folder
 
 Set the folder containing `zotero.sqlite` and `storage/`. InScien reads it read-only through a
-private snapshot, so your live library is never touched. After changing this folder, re-index
-your collections.
+private snapshot, so your live library is never touched. After changing this folder, refresh the
+library in the sidebar.
 
 ## Model
 

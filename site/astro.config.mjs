@@ -13,7 +13,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'InScien',
-			description: 'A local, private atlas of your Zotero library - map it, narrate it.',
+			description: 'A local, private companion for your Zotero library - map its citations, narrate its papers.',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/aratbaris/inscien' }],
 			sidebar: [
 				{

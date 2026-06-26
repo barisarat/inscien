@@ -41,7 +41,7 @@ with `docker compose down` → `up` the other.
 Both modes:
 - depend only on a **native Ollama** on the host (`OLLAMA_BASE_URL`),
 - mount your **Zotero library read-only** and read it via a private snapshot,
-- persist all durable state to **`./data`** (including the embedded vector store).
+- persist all durable state to **`./data`** (including the OpenAlex citation cache).
 
 ---
 
@@ -62,9 +62,9 @@ frontend server.
 3. **The API is same-origin.** The production build sets `NEXT_PUBLIC_API_URL=""`, so the
    browser calls **relative** `/api/...` paths. This means **no CORS**, and the bundle is
    **port-agnostic** — the same build works behind any host/port.
-4. **Paper vectors are a plain file.** One title+abstract embedding per item persists to a
-   single `./data/paper-vectors.json` (no vector database, no vector-store container); the Map's
-   cosine similarity runs in numpy.
+4. **Citation data is a plain file.** Each paper's OpenAlex record (references / citers) is cached
+   in a single `./data/openalex.json` (no database, no extra container). The Map is built from it;
+   there is no embedding or vector store.
 
 Net result: `app` on `:8200` serves the UI, the API, citations (PDF streaming), and
 narration audio — all from one container.
@@ -144,7 +144,7 @@ quirk, not the app.
 
 ### Health & diagnostics
 - `GET /health` — liveness (dependency-free; what the container healthcheck uses).
-- `GET /health/ready` — readiness: probes SQLite + the paper-vector store (+ Ollama, informational).
+- `GET /health/ready` — readiness: probes SQLite (+ Ollama, informational).
 
 ---
 
@@ -155,16 +155,15 @@ All durable state lives in **`./data`** (a host-owned bind mount), so it survive
 
 | Path | What |
 |---|---|
-| `data/inscien.db` | SQLite — chat history, settings, sync ledger |
-| `data/paper-vectors.json` | Paper vectors (one title+abstract embedding per item) |
-| `data/pdf-index.json` | Chunk manifest (powers BM25 + carries page metadata) |
+| `data/inscien.db` | SQLite — app settings |
+| `data/openalex.json` | OpenAlex citation cache (each paper's references / citers) |
 | `data/zotero-snapshot.sqlite` | Private read-only copy of your Zotero DB |
-| `data/.fastembed/`, narration mp3s, job state | Caches / derived artifacts |
+| narration mp3s, job state | Caches / derived artifacts |
 
-Your **Zotero library is the only irreplaceable input**; the index and vectors under
-`data/` are **derived** and rebuildable by re-indexing.
+Your **Zotero library is the only irreplaceable input**; the citation cache under
+`data/` is **derived** and rebuildable by re-fetching from the UI.
 
-**Reset the index** (drops the paper vectors + manifest + ledger together, then re-index from the UI):
+**Reset** (drops the OpenAlex citation cache + clears jobs, then re-fetch from the UI):
 
 ```bash
 curl -X POST http://localhost:8200/api/zotero/reset
@@ -184,7 +183,7 @@ both files.
 | `ZOTERO_HOST_DIR` | `./zotero` | Host Zotero data dir (has `zotero.sqlite` + `storage/`), mounted read-only |
 | `OLLAMA_BASE_URL` | `http://host.docker.internal:11434/v1` | Where the backend reaches your native Ollama |
 | `KOKORO_VOICE` | `af_heart` | Narration voice |
-| `INSCIEN_VECTORS_PATH` | `<data>/paper-vectors.json` | Override the paper-vector store file location |
+| `OPENALEX_MAILTO` | `getinscien@gmail.com` | Contact for OpenAlex's polite pool (faster, fewer 429s) |
 
 The generation **model** and Ollama URL are also editable at runtime via the Settings page
 (`/api/settings`), which override the env defaults.

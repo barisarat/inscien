@@ -1,6 +1,6 @@
 ---
 title: Quick start
-description: First run - point InScien at Zotero, index a collection, then map and narrate.
+description: First run - point InScien at Zotero, select papers, then map and narrate.
 ---
 
 Once InScien is [installed](/getting-started/installation/), here's the path from a
@@ -21,16 +21,16 @@ InScien reads it read-only through a private snapshot and never modifies your li
 Still in Settings, choose **Local (Ollama)** and pick a model, or choose **OpenAI** and paste
 your API key. The Map doesn't need this - only narration does.
 
-## 3. Index a collection
+## 3. Select papers
 
-In the sidebar, browse your Zotero collections and index the items you want searchable.
-Indexing is additive and idempotent - you can add more items any time. The first index
-downloads a small embedding model automatically.
+In the sidebar, browse your Zotero collections and select the papers you want to map. The Map
+fetches their citations from OpenAlex on demand. Optionally, hit **Fetch citations** to warm the
+whole library's references in the background, so any selection then renders instantly.
 
 ## 4. Open the Map
 
-Select papers in the sidebar and open the **Map** to see them placed by similarity and linked
-by shared citations.
+Open the **Map** to see your selected papers as a citation graph - what they cite (**References**)
+and what cites them (**Cited by**).
 
 ## 5. Narrate a paper
 
