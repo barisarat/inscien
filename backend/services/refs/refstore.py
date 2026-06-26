@@ -18,7 +18,7 @@ from pathlib import Path
 from core.paths import data_path
 from services.refs.openalex import fetch_citing_works, fetch_work, resolve_works
 from services.state_guard import DERIVED_STATE_LOCK, current_generation, ensure_current_generation
-from services.zotero.reader import item_metadata
+from services.zotero.reader import item_metadata, item_primary_collection
 
 CACHE_PATH = Path(os.getenv("OPENALEX_CACHE_PATH") or data_path("openalex.json"))
 
@@ -272,6 +272,7 @@ def citing_graph(item_keys):
     unmapped, no_doi = [], []
     within = defaultdict(int)
     ext_meta = {}
+    collections = item_primary_collection(item_keys)
 
     for key in item_keys:
         rec = cache.get(key)
@@ -285,6 +286,7 @@ def citing_graph(item_keys):
             "id": key, "label": meta.get("title") or key, "type": "owned",
             "year": meta.get("year"), "date": rec.get("date"),
             "globalCitedBy": rec.get("citedBy"), "doi": rec.get("doi"),
+            "collection": collections.get(key),
         })
         for raw in rec.get("citingWorks", []):
             c = _as_ref(raw)
@@ -317,6 +319,7 @@ def discovery_graph(item_keys):
     mapped, unmapped, no_doi = [], [], []
     within_cited = defaultdict(int)
     ext_meta = {}
+    collections = item_primary_collection(item_keys)
 
     for key in item_keys:
         rec = cache.get(key)
@@ -335,6 +338,7 @@ def discovery_graph(item_keys):
             "date": rec.get("date"),
             "globalCitedBy": rec.get("citedBy"),
             "doi": rec.get("doi"),
+            "collection": collections.get(key),
         })
         for raw in rec.get("references", []):
             ref = _as_ref(raw)

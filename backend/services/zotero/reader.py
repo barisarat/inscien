@@ -289,17 +289,19 @@ def collection_direct_items():
 
 
 def item_primary_collection(item_keys):
-    """{itemKey: collectionName} - one collection per item (lowest collectionID) for grouping
-    nodes on the Map. Items in no collection are omitted."""
+    """{itemKey: collectionPath} - one direct collection per item for grouping nodes on the Map.
+    The path includes subcollections so sibling folders can receive distinct colors."""
     wanted = set(item_keys)
     direct = collection_direct_items()  # {collectionID: set(itemKey)}
 
-    names = {}
+    paths = {}
 
-    def _walk(nodes):
+    def _walk(nodes, prefix=""):
         for n in nodes:
-            names[n["collectionID"]] = n["name"]
-            _walk(n.get("children") or [])
+            name = n["name"] or ""
+            path = f"{prefix} / {name}" if prefix else name
+            paths[n["collectionID"]] = path
+            _walk(n.get("children") or [], path)
 
     _walk(list_collections())
 
@@ -307,7 +309,7 @@ def item_primary_collection(item_keys):
     for cid, keys in direct.items():
         for k in keys & wanted:
             key_cids[k].append(cid)
-    return {k: names.get(min(cids), "") for k, cids in key_cids.items() if cids}
+    return {k: paths.get(min(cids), "") for k, cids in key_cids.items() if cids}
 
 
 # --- per-item metadata -----------------------------------------------------

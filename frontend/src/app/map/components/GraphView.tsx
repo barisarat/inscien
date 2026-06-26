@@ -10,7 +10,7 @@ import styles from "./PdfViewerPanel.module.css"
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false }) as any
 
 export type GraphLayout = "network" | "timeline"
-export type ColorBy = "cluster" | "collection"
+export type ColorBy = "type" | "cluster" | "collection"
 
 // The renderer's unified node/edge model. The Atlas (fused map) supplies owned nodes; the
 // citation satellite layer (OpenAlex discovery/citing) supplies external nodes - both flow in here.
@@ -96,6 +96,7 @@ function clusterColor(cluster?: number | null): string {
 
 function nodeColorFor(n: AtlasNode, colorBy: ColorBy): string {
   if (n.type === "external") return palette().external
+  if (colorBy === "type") return palette().owned
   return colorBy === "cluster" ? clusterColor(n.cluster) : collectionColor(n.collection)
 }
 

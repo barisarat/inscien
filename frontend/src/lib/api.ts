@@ -217,7 +217,7 @@ export interface GraphNode {
   citedBy?: number | null // external: within-selection degree (shared anchors render bigger)
   globalCitedBy?: number | null // global OpenAlex cited-by count
   doi?: string | null
-  collection?: string | null // owned: Zotero collection, for grouping/color
+  collection?: string | null // owned: Zotero collection path, for grouping/color
 }
 
 export interface DiscoveryGraph {

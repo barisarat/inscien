@@ -86,6 +86,7 @@ export default function GraphMode() {
   // View controls.
   const [lens, setLens] = useState<Lens>("cite")
   const [layout, setLayout] = useState<GraphLayout>("network")
+  const [colorCollections, setColorCollections] = useState(false)
   const [showTitles, setShowTitles] = useState(false)
   const [showConnections, setShowConnections] = useState(true)
   const [scaleByCitations, setScaleByCitations] = useState(true)
@@ -279,6 +280,9 @@ export default function GraphMode() {
           <Separator orientation="vertical" className="h-6 shrink-0" />
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">View</span>
+            <Toggle size="sm" variant="segment" className="!px-4" pressed={colorCollections} onPressedChange={setColorCollections}>
+              Collections
+            </Toggle>
             <Toggle size="sm" variant="segment" className="!px-4" pressed={showTitles} onPressedChange={setShowTitles}>
               Titles
             </Toggle>
@@ -321,7 +325,7 @@ export default function GraphMode() {
           <GraphView
             data={composed}
             layout={layout}
-            colorBy="collection"
+            colorBy={colorCollections ? "collection" : "type"}
             showHulls={false}
             showLabels={showTitles}
             showConnections={showConnections}
