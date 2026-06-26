@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* GOTCHA: this reset is intentionally UNLAYERED. In CSS, unlayered rules beat any rule in an
+   @layer regardless of specificity, and Tailwind v4 puts every utility in `@layer utilities`.
+   So `* { margin:0; padding:0 }` overrides plain `px-*`/`pl-*`/`m-*` utilities -> they appear in
+   the markup but compute to 0. To make a padding/margin utility actually apply, use the `!`
+   important prefix (`!pl-4`, `!px-4`); see the `!px-*` usages across the app. (Only margin and
+   padding are affected - bg/text/border/gap/flex utilities are untouched by this reset.) Do not
+   "fix" by moving this into @layer base without a full UI spacing pass: it would un-break every
+   currently-dead utility at once and shift spacing app-wide. */
 *,
 *::before,
 *::after {

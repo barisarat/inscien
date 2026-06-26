@@ -42,9 +42,9 @@ export default function PdfViewerPanel({
             return (
               <div
                 key={tab.id}
-                className={`flex h-8 min-w-0 max-w-[14rem] shrink-0 items-center gap-2 rounded-lg border px-2.5 text-xs transition-colors ${
+                className={`flex h-8 min-w-0 max-w-[14rem] shrink-0 items-center gap-2 rounded-lg border !pl-4 !pr-2 text-xs transition-colors ${
                   active
-                    ? "border-brand-soft-border bg-brand-soft text-brand"
+                    ? "border-border bg-muted text-foreground"
                     : "border-border/70 bg-card text-foreground hover:border-border hover:bg-muted"
                 }`}
                 role="tab"
