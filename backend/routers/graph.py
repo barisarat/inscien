@@ -41,10 +41,21 @@ def graph_fetch_job(job_id: str):
     return job
 
 
+@router.get("/prefetch-status")
+def graph_prefetch_status():
+    """How many DOI-bearing papers still need a citation fetch - drives the 'Fetch citations (N)'
+    action so the user opts in rather than auto-running a long whole-library fetch."""
+    from services.zotero.reader import library_items
+    doi_keys = {it["itemKey"] for it in library_items() if it.get("doi")}
+    done = set(mapped_keys())
+    return {"pending": len(doi_keys - done), "total": len(doi_keys)}
+
+
 @router.post("/prefetch")
 def graph_prefetch():
     """Fetch references + citers for the whole library (DOI-bearing items) as one background job,
-    so any later selection's map renders from cache. Polls via GET /fetch/{job_id}."""
+    so any later selection's map renders from cache. Runs references first (papers become
+    References-mappable at ~50%), then citers. Polls via GET /fetch/{job_id}."""
     from services.zotero.reader import library_items
     keys = [it["itemKey"] for it in library_items() if it.get("doi")]
     return {"jobId": start_prefetch_job(keys), "count": len(keys)}

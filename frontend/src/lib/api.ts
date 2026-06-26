@@ -246,6 +246,11 @@ export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
   return authedGet(`/api/graph/fetch/${encodeURIComponent(jobId)}`)
 }
 
+// How many DOI-bearing papers still need a citation fetch (drives the opt-in "Fetch citations (N)").
+export async function prefetchStatus(): Promise<{ pending: number; total: number }> {
+  return authedGet("/api/graph/prefetch-status")
+}
+
 // Whole-library citation prefetch (references + citers for DOI-bearing items) as one background
 // job. Poll via getGraphFetch. Makes any later selection's map render instantly from cache.
 export async function startLibraryPrefetch(): Promise<{ jobId: string; count: number }> {
