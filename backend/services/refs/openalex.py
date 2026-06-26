@@ -32,10 +32,18 @@ _TRANSIENT = {429, 500, 502, 503, 504}
 _MAX_ATTEMPTS = int(os.getenv("OPENALEX_RETRIES", "4"))
 _BACKOFF_BASE = 0.5
 _BACKOFF_CAP = 10.0
+# Cap how long we'll honor a 429 Retry-After, so a throttled IP can't block a single paper for
+# minutes (4 retries x a 60s Retry-After is the "0/N for minutes" stall). We retry within this
+# bound, then give up on that paper and move on.
+_RETRY_AFTER_CAP = float(os.getenv("OPENALEX_RETRY_AFTER_CAP", "8"))
+# Self-throttle: keep our own request rate comfortably under OpenAlex's ~10/s so we never trip
+# 429s in the first place (the original anonymous retry bursts are what got the IP throttled).
+_MIN_INTERVAL = float(os.getenv("OPENALEX_MIN_INTERVAL", "0.12"))
+_last_request = [0.0]
 
 
 def _sleep_backoff(attempt, resp):
-    """Exponential backoff with jitter; honor a 429 Retry-After header when present."""
+    """Exponential backoff with jitter; honor a 429 Retry-After header, bounded by the cap."""
     delay = min(_BACKOFF_BASE * (2 ** attempt), _BACKOFF_CAP)
     if resp is not None and resp.status_code == 429:
         retry_after = resp.headers.get("Retry-After")
@@ -44,6 +52,7 @@ def _sleep_backoff(attempt, resp):
                 delay = max(delay, float(retry_after))
             except ValueError:
                 pass
+    delay = min(delay, _RETRY_AFTER_CAP)
     time.sleep(delay + random.uniform(0, 0.3))
 
 
@@ -68,9 +77,15 @@ def _get(url, params=None):
     params = dict(params or {})
     if _MAILTO:
         params.setdefault("mailto", _MAILTO)
+    # Space requests out so we stay under OpenAlex's rate limit (serial worker, so a module-level
+    # gate is enough).
+    gap = _MIN_INTERVAL - (time.monotonic() - _last_request[0])
+    if gap > 0:
+        time.sleep(gap)
     last = _MAX_ATTEMPTS - 1
     for attempt in range(_MAX_ATTEMPTS):
         try:
+            _last_request[0] = time.monotonic()
             resp = requests.get(url, params=params, headers=_HEADERS, timeout=_TIMEOUT)
             if resp.status_code == 404:
                 return None

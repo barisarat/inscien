@@ -26,20 +26,13 @@ def start_citing_job(item_keys):
 
 
 def start_prefetch_job(item_keys):
-    """Whole-library prefetch: references then citers under the single worker, so any later
-    selection's map renders instantly from cache. Both fetchers skip already-mapped items, so
-    re-running on each load is cheap. Progress runs 0-50% (references) then 50-100% (cited-by)."""
-    def _run(_jid, progress):
-        def _phase(lo, hi):
-            span = hi - lo
-            return lambda stage, pct, detail="", **extra: progress(
-                stage, lo + int(span * (pct or 0) / 100), detail, **extra
-            )
-        refs = fetch_items(item_keys, _phase(0, 50))
-        citing = fetch_citing_items(item_keys, _phase(50, 100))
-        return {"result": {"references": refs, "citing": citing}}
-
-    return _runner.start(_run, extra={"kind": "prefetch"})
+    """Whole-library prefetch of paper REFERENCES, so any later selection's References map renders
+    instantly from cache. Cited-by is heavier (paginated per paper) and stays lazy - fetched on
+    demand when that lens is opened. fetch_items skips already-mapped items, so re-running is cheap."""
+    return _runner.start(
+        lambda _jid, progress: {"result": fetch_items(item_keys, progress)},
+        extra={"kind": "prefetch"},
+    )
 
 
 def active_prefetch_id():
