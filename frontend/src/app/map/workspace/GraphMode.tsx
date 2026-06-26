@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 import {
+  cancelGraphFetch,
   fetchCitingGraph,
   fetchDiscoveryGraph,
   getGraphFetch,
@@ -22,9 +23,9 @@ import { Toggle } from "@/components/ui/toggle"
 // The two citation lenses: what your papers cite (References) and what cites them (Cited by).
 type Lens = "cite" | "cited"
 
-// A cached layer, tagged with the selection it was fetched for so a selection change invalidates
-// it cleanly (no stale-graph flash) while a mode toggle keeps both layers warm.
-type Cached = { keys: string; data: DiscoveryGraph } | null
+// A cached layer, tagged with the selection it was fetched for (so a selection change invalidates
+// it cleanly) and whether every selected paper is in it (`complete` -> no more fetching needed).
+type Cached = { keys: string; data: DiscoveryGraph; complete: boolean } | null
 
 const DISCLOSURE =
   "Citation data is from OpenAlex (open scholarly data) - each paper's DOI fetches its public " +
@@ -86,49 +87,76 @@ export default function GraphMode() {
 
   useEffect(() => setSelectedId(null), [keysKey])
 
-  // Fetch + assemble the active citation layer. The whole-library prefetch usually means the
-  // assemble call returns from cache instantly; the fetch job covers anything not yet cached.
+  const jobRef = useRef<string | null>(null)
+
+  // Render the active lens from cache immediately (whatever's already fetched), then stream the
+  // rest in: fetch only the uncached papers and re-assemble as they land. Re-assembling on each
+  // poll also picks up papers the background prefetch caches, so the graph keeps filling even
+  // while our own fetch is queued behind it. On selection/lens change we cancel the abandoned
+  // fetch so it stops hogging the single worker.
   useEffect(() => {
     if (itemKeys.length === 0) {
       setPhase("empty")
       return
     }
-    if (activeLayer) {
+    const have = lens === "cite" ? refsLayer : citedLayer
+    if (have && have.keys === keysKey && have.complete) {
       setPhase("ready")
       return
     }
     const t = newRun()
+    const assemble = lens === "cite" ? fetchDiscoveryGraph : fetchCitingGraph
+    const startFetch = lens === "cite" ? startGraphFetch : startCitingFetch
+    const setLayer = lens === "cite" ? setRefsLayer : setCitedLayer
+    const store = (data: DiscoveryGraph) =>
+      setLayer({ keys: keysKey, data, complete: data.unmapped.length === 0 })
     setError(null)
-    setPhase("loading")
     void (async () => {
       try {
-        if (lens === "cite") {
-          const { jobId } = await startGraphFetch(itemKeys)
-          await track(t, jobId, getGraphFetch, {
-            onDone: async () => {
-              const g = await fetchDiscoveryGraph(itemKeys)
-              if (!isStale(t)) { setRefsLayer({ keys: keysKey, data: g }); setPhase("ready") }
-            },
-            onError: () => { if (!isStale(t)) setPhase("error") },
-            fallbackError: "Couldn't load citations.",
-          })
-        } else {
-          const { jobId } = await startCitingFetch(itemKeys)
-          await track(t, jobId, getGraphFetch, {
-            onDone: async () => {
-              const g = await fetchCitingGraph(itemKeys)
-              if (!isStale(t)) { setCitedLayer({ keys: keysKey, data: g }); setPhase("ready") }
-            },
-            onError: () => { if (!isStale(t)) setPhase("error") },
-            fallbackError: "Couldn't load citations.",
-          })
+        // 1. Instant render from the cache (cached/prefetched papers show right away).
+        const g = await assemble(itemKeys)
+        if (isStale(t)) return
+        store(g)
+        setPhase(g.nodes.length > 0 ? "ready" : "loading")
+        if (g.unmapped.length === 0) return // fully cached - done
+
+        // 2. Fetch only the uncached papers (small job; queues behind any prefetch).
+        let jobId: string | null = null
+        try {
+          jobId = (await startFetch(g.unmapped)).jobId
+          jobRef.current = jobId
+        } catch {
+          /* couldn't queue a fetch; a running prefetch may still fill the cache */
         }
+        if (!jobId) return
+
+        // 3. Stream: re-assemble on each poll as papers (ours or the prefetch's) land.
+        const refresh = () => {
+          void assemble(itemKeys)
+            .then((ng) => { if (!isStale(t)) { store(ng); setPhase("ready") } })
+            .catch(() => {})
+        }
+        await track(t, jobId, getGraphFetch, { onProgress: refresh, onDone: refresh, onError: () => {} })
+        jobRef.current = null
       } catch {
-        if (!isStale(t)) { setError("Couldn't load citations."); setPhase("error") }
+        if (!isStale(t)) {
+          const cur = lens === "cite" ? refsLayer : citedLayer
+          if (!cur || cur.keys !== keysKey || cur.data.nodes.length === 0) {
+            setError("Couldn't load citations.")
+            setPhase("error")
+          }
+        }
       }
     })()
+
+    return () => {
+      if (jobRef.current) {
+        void cancelGraphFetch(jobRef.current).catch(() => {})
+        jobRef.current = null
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysKey, lens, activeLayer])
+  }, [keysKey, lens])
 
   // Map the OpenAlex graph (owned papers + external references/citers) into the renderer model.
   const composed = useMemo<{ nodes: AtlasNode[]; edges: AtlasEdge[] }>(() => {

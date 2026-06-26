@@ -246,6 +246,11 @@ export async function getGraphFetch(jobId: string): Promise<GraphFetchJob> {
   return authedGet(`/api/graph/fetch/${encodeURIComponent(jobId)}`)
 }
 
+// Cancel a selection fetch whose papers are no longer shown (frees the single worker).
+export async function cancelGraphFetch(jobId: string): Promise<{ ok: boolean }> {
+  return authedAction(`/api/graph/cancel/${encodeURIComponent(jobId)}`, "POST")
+}
+
 // How many DOI-bearing papers still need a citation fetch (drives the opt-in "Fetch citations (N)").
 export async function prefetchStatus(): Promise<{ pending: number; total: number }> {
   return authedGet("/api/graph/prefetch-status")

@@ -11,7 +11,7 @@ library content. See `services/refs/openalex.py`.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.refs.fetch_jobs import active_prefetch_id, get_job, start_citing_job, start_job, start_prefetch_job
+from services.refs.fetch_jobs import active_prefetch_id, cancel as cancel_job, get_job, start_citing_job, start_job, start_prefetch_job
 from services.refs.refstore import citing_graph, discovery_graph, fetch_status, mapped_keys
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
@@ -39,6 +39,14 @@ def graph_fetch_job(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
     return job
+
+
+@router.post("/cancel/{job_id}")
+def graph_cancel(job_id: str):
+    """Cancel a selection fetch when its papers are no longer shown (selection changed), so it
+    stops hogging the single worker. Already-fetched papers stay cached."""
+    cancel_job(job_id)
+    return {"ok": True}
 
 
 @router.get("/prefetch-status")

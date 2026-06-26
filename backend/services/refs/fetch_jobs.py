@@ -42,6 +42,11 @@ def active_prefetch_id():
     return ids[0] if ids else None
 
 
+def cancel(job_id):
+    """Cancel a selection fetch whose papers are no longer shown, freeing the worker."""
+    _runner.cancel(job_id)
+
+
 def get_job(job_id):
     return _runner.get(job_id)
 

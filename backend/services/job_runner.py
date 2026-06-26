@@ -19,6 +19,10 @@ from pathlib import Path
 
 from services.state_guard import DerivedStateReset, claim_generation, ensure_current_generation
 
+
+class _JobCancelled(Exception):
+    """Raised inside a job when it's been cancelled (e.g. its selection is no longer shown)."""
+
 # Cap completed (done/error) job files kept per jobs dir, newest-first. Bounds disk growth and
 # the narration registry's per-request dir scan; queued/running jobs are never pruned.
 JOB_RETENTION_MAX = int(os.getenv("JOB_RETENTION_MAX", "200"))
@@ -32,6 +36,7 @@ class JobRunner:
         self._dir.mkdir(parents=True, exist_ok=True)
         self._executor = ThreadPoolExecutor(max_workers=1)  # one job at a time
         self._jobs = {}
+        self._cancelled = set()  # job ids requested to cancel (cooperative, at progress boundaries)
         self._lock = threading.Lock()
         self._log = logging.getLogger(f"jobs.{name}")
 
@@ -54,6 +59,8 @@ class JobRunner:
         # before the result dict has been merged into the job.
         def cb(stage, percent, detail="", **extra):
             ensure_current_generation(generation)
+            if job_id in self._cancelled:
+                raise _JobCancelled()
             self._set(job_id, stage=stage, progress=percent, detail=detail, status="running", **extra)
         return cb
 
@@ -62,6 +69,13 @@ class JobRunner:
         with self._lock:
             if job_id not in self._jobs:
                 return
+        # Cancelled while still queued: drop it before doing any work (frees the worker fast).
+        if job_id in self._cancelled:
+            self._set(job_id, status="error", error="cancelled")
+            with self._lock:
+                self._jobs.pop(job_id, None)
+                self._cancelled.discard(job_id)
+            return
         try:
             generation = claim_generation()
             self._set(job_id, status="running", stage="queued", progress=0)
@@ -71,6 +85,9 @@ class JobRunner:
         except DerivedStateReset as exc:
             self._log.info("%s job %s cancelled by reset", self.name, job_id)
             self._set(job_id, status="error", error=str(exc))
+        except _JobCancelled:
+            self._log.info("%s job %s cancelled", self.name, job_id)
+            self._set(job_id, status="error", error="cancelled")
         except Exception:
             last = (traceback.format_exc().strip().splitlines() or ["error"])[-1]
             self._log.exception("%s job %s failed", self.name, job_id)
@@ -81,6 +98,7 @@ class JobRunner:
             # narration registry (which globs disk) are unaffected.
             with self._lock:
                 self._jobs.pop(job_id, None)
+                self._cancelled.discard(job_id)
                 # Bound the dir as jobs complete, not only on restart.
                 self._prune_completed()
 
@@ -94,6 +112,12 @@ class JobRunner:
             self._persist(job)
         self._executor.submit(self._run, job_id, work)
         return job_id
+
+    def cancel(self, job_id):
+        """Request cooperative cancellation: a running job stops at its next progress boundary; a
+        still-queued job is dropped before it starts. No-op if the job is already finished."""
+        with self._lock:
+            self._cancelled.add(job_id)
 
     def active_ids(self, kind=None):
         """Ids of currently queued/running jobs (optionally filtered by a `kind` tag passed via
