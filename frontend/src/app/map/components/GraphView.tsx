@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 
 import styles from "./PdfViewerPanel.module.css"
@@ -129,6 +129,31 @@ const TIME_ORDER_LANE_H = 34
 const TIME_ORDER_LANES = 12
 
 type TimeOrderPosition = { x: number; y: number }
+type RuntimeNode = {
+  id: string
+  type?: AtlasNode["type"]
+  __src?: AtlasNode
+  val?: number
+  x?: number
+  y?: number
+  vx?: number
+  vy?: number
+  fx?: number
+  fy?: number
+}
+type RuntimeLink = {
+  source: string | RuntimeNode
+  target: string | RuntimeNode
+  __e?: AtlasEdge
+}
+type ComponentPlacement = {
+  component: RuntimeNode[]
+  x: number
+  y: number
+  width: number
+  height: number
+  radius: number
+}
 
 function yearValue(n: AtlasNode): number | null {
   if (n.type === "owned" && n.year != null && n.year !== "") {
@@ -225,18 +250,244 @@ function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>): M
 }
 
 function timeOrderForce(positionById: Map<string, TimeOrderPosition>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let nodes: any[] = []
+  let nodes: RuntimeNode[] = []
   const yStrength = 0.16
   const force = (alpha: number) => {
     for (const node of nodes) {
       const target = positionById.get(node.id)
       if (target == null || node.y == null) continue
-      node.vy += (target.y - node.y) * yStrength * alpha
+      node.vy = (node.vy ?? 0) + (target.y - node.y) * yStrength * alpha
     }
   }
   force.initialize = (next: unknown[]) => {
-    nodes = next
+    nodes = next as RuntimeNode[]
+  }
+  return force
+}
+
+function stableHash(value: string): number {
+  let hash = 2166136261
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+function stableUnit(value: string): number {
+  return stableHash(value) / 0xffffffff
+}
+
+function compactCenterForce(strength: number) {
+  let nodes: RuntimeNode[] = []
+  const force = (alpha: number) => {
+    for (const node of nodes) {
+      if (node.x == null || node.y == null) continue
+      node.vx = (node.vx ?? 0) - node.x * strength * alpha
+      node.vy = (node.vy ?? 0) - node.y * strength * alpha
+    }
+  }
+  force.initialize = (next: unknown[]) => {
+    nodes = next as RuntimeNode[]
+  }
+  return force
+}
+
+function nodeCollisionRadius(node: RuntimeNode): number {
+  return Math.max(5, Math.sqrt(node.val ?? 1) * 3.4) + 3
+}
+
+function collisionForce(strength: number) {
+  let nodes: RuntimeNode[] = []
+  const force = (alpha: number) => {
+    const pull = strength * alpha
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i]
+      if (a.x == null || a.y == null) continue
+      const ar = nodeCollisionRadius(a)
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j]
+        if (b.x == null || b.y == null) continue
+        const br = nodeCollisionRadius(b)
+        const minDistance = ar + br
+        let dx = b.x - a.x
+        let dy = b.y - a.y
+        let distance = Math.sqrt(dx * dx + dy * dy)
+        if (distance >= minDistance) continue
+        if (distance === 0) {
+          const angle = stableUnit(`${a.id}:${b.id}`) * Math.PI * 2
+          dx = Math.cos(angle)
+          dy = Math.sin(angle)
+          distance = 1
+        }
+        const push = ((minDistance - distance) / distance) * pull
+        const offsetX = dx * push
+        const offsetY = dy * push
+        a.vx = (a.vx ?? 0) - offsetX
+        a.vy = (a.vy ?? 0) - offsetY
+        b.vx = (b.vx ?? 0) + offsetX
+        b.vy = (b.vy ?? 0) + offsetY
+      }
+    }
+  }
+  force.initialize = (next: unknown[]) => {
+    nodes = next as RuntimeNode[]
+  }
+  return force
+}
+
+function endpointId(endpoint: string | RuntimeNode): string {
+  return typeof endpoint === "string" ? endpoint : endpoint.id
+}
+
+function connectedComponents(nodes: RuntimeNode[], links: RuntimeLink[]): RuntimeNode[][] {
+  const byId = new Map(nodes.map((node) => [node.id, node]))
+  const adjacent = new Map(nodes.map((node) => [node.id, new Set<string>()]))
+  for (const link of links) {
+    const source = endpointId(link.source)
+    const target = endpointId(link.target)
+    if (!byId.has(source) || !byId.has(target)) continue
+    adjacent.get(source)?.add(target)
+    adjacent.get(target)?.add(source)
+  }
+
+  const seen = new Set<string>()
+  const components: RuntimeNode[][] = []
+  for (const node of nodes) {
+    if (seen.has(node.id)) continue
+    const component: RuntimeNode[] = []
+    const queue = [node.id]
+    seen.add(node.id)
+    for (let i = 0; i < queue.length; i++) {
+      const id = queue[i]
+      const current = byId.get(id)
+      if (!current) continue
+      component.push(current)
+      for (const next of adjacent.get(id) ?? []) {
+        if (seen.has(next)) continue
+        seen.add(next)
+        queue.push(next)
+      }
+    }
+    components.push(component)
+  }
+  return components
+}
+
+function compactComponentPlacements(components: RuntimeNode[][]): ComponentPlacement[] {
+  const gap = 24
+  const boxes = components.map((component) => {
+    const nodeArea = component.reduce((sum, node) => sum + nodeCollisionRadius(node) * nodeCollisionRadius(node), 0)
+    const radius = Math.max(28, Math.sqrt(nodeArea) * 1.12, Math.sqrt(component.length) * 8)
+    return { component, radius, width: radius * 2, height: radius * 2 }
+  })
+  const placements: ComponentPlacement[] = []
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+
+  for (const box of boxes) {
+    if (placements.length === 0) {
+      placements.push({ ...box, x: 0, y: 0 })
+      continue
+    }
+
+    let placed: ComponentPlacement | null = null
+    const step = Math.max(12, box.radius * 0.4)
+    const maxAttempts = 900
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const angle = attempt * goldenAngle
+      const distance = step * Math.sqrt(attempt)
+      const x = Math.cos(angle) * distance
+      const y = Math.sin(angle) * distance
+      const overlaps = placements.some((placement) => {
+        const dx = x - placement.x
+        const dy = y - placement.y
+        const minDistance = box.radius + placement.radius + gap
+        return dx * dx + dy * dy < minDistance * minDistance
+      })
+      if (!overlaps) {
+        placed = { ...box, x, y }
+        break
+      }
+    }
+
+    placements.push(placed ?? { ...box, x: placements.length * (box.radius + gap), y: 0 })
+  }
+
+  const minX = Math.min(...placements.map((p) => p.x - p.radius))
+  const maxX = Math.max(...placements.map((p) => p.x + p.radius))
+  const minY = Math.min(...placements.map((p) => p.y - p.radius))
+  const maxY = Math.max(...placements.map((p) => p.y + p.radius))
+  const centerX = (minX + maxX) / 2
+  const centerY = (minY + maxY) / 2
+
+  return placements.map((placement) => ({
+    ...placement,
+    x: placement.x - centerX,
+    y: placement.y - centerY,
+  }))
+}
+
+function compactComponentTargetById(nodes: RuntimeNode[], links: RuntimeLink[]): Map<string, { x: number; y: number }> {
+  const components = connectedComponents(nodes, links)
+    .filter((component) => component.length > 0)
+    .sort((a, b) => b.length - a.length)
+  const targets = new Map<string, { x: number; y: number }>()
+  for (const placement of compactComponentPlacements(components)) {
+    for (const node of placement.component) targets.set(node.id, { x: placement.x, y: placement.y })
+  }
+  return targets
+}
+
+function seedCompactNetwork(nodes: RuntimeNode[], links: RuntimeLink[]) {
+  const components = connectedComponents(nodes, links)
+    .filter((component) => component.length > 0)
+    .sort((a, b) => b.length - a.length)
+  if (components.length === 0) return
+
+  for (const { component, x, y } of compactComponentPlacements(components)) {
+    const seeded = component.filter((node) => node.x == null || node.y == null)
+    seeded.forEach((node, index) => {
+      if (seeded.length === 1) {
+        node.x = x
+        node.y = y
+        return
+      }
+      const angle = (index / seeded.length) * Math.PI * 2 + stableUnit(node.id) * 0.18
+      const radius = Math.max(12, Math.sqrt(seeded.length) * 3.1)
+      node.x = x + Math.cos(angle) * radius
+      node.y = y + Math.sin(angle) * radius
+    })
+  }
+}
+
+function componentPackForce(targetById: Map<string, { x: number; y: number }>, strength: number) {
+  let nodes: RuntimeNode[] = []
+  const force = (alpha: number) => {
+    const groups = new Map<string, { target: { x: number; y: number }; sx: number; sy: number; count: number }>()
+    for (const node of nodes) {
+      const target = targetById.get(node.id)
+      if (!target || node.x == null || node.y == null) continue
+      const key = `${target.x}:${target.y}`
+      const group = groups.get(key) ?? { target, sx: 0, sy: 0, count: 0 }
+      group.sx += node.x
+      group.sy += node.y
+      group.count += 1
+      groups.set(key, group)
+    }
+
+    for (const node of nodes) {
+      const target = targetById.get(node.id)
+      if (!target) continue
+      const group = groups.get(`${target.x}:${target.y}`)
+      if (!group || group.count === 0) continue
+      const cx = group.sx / group.count
+      const cy = group.sy / group.count
+      node.vx = (node.vx ?? 0) + (target.x - cx) * strength * alpha
+      node.vy = (node.vy ?? 0) + (target.y - cy) * strength * alpha
+    }
+  }
+  force.initialize = (next: unknown[]) => {
+    nodes = next as RuntimeNode[]
   }
   return force
 }
@@ -343,11 +594,14 @@ export default function GraphView({
   const [size, setSize] = useState({ w: 0, h: 0 })
   // Persistent positions so emphasis/satellite toggles never relayout the ground.
   const posRef = useRef<Map<string, { x: number; y: number }>>(new Map())
+  const forceConfigKeyRef = useRef("")
   const fitKeyRef = useRef("")
 
   // A fresh scope means a fresh layout - drop remembered positions.
   useEffect(() => {
     posRef.current = new Map()
+    forceConfigKeyRef.current = ""
+    fitKeyRef.current = ""
   }, [layoutKey])
 
   useEffect(() => {
@@ -401,11 +655,16 @@ export default function GraphView({
       const node: any = { id: n.id, __src: n, type: n.type, val: scaleByCitations ? nodeVal(n) : 1.05 }
       const remembered = posRef.current.get(n.id)
       if (remembered) {
-        node.x = node.fx = remembered.x
-        node.y = node.fy = remembered.y // pin known network nodes so the ground stays put
+        node.x = remembered.x
+        node.y = remembered.y
       }
       const seed = clusterCentroid(n.cluster)
-      if (!remembered && seed) { node.x = seed.x + (Math.random() - 0.5) * 30; node.y = seed.y + (Math.random() - 0.5) * 30 }
+      if (!remembered && seed) {
+        const angle = stableUnit(n.id) * Math.PI * 2
+        const distance = 8 + stableUnit(`${n.id}:distance`) * 18
+        node.x = seed.x + Math.cos(angle) * distance
+        node.y = seed.y + Math.sin(angle) * distance
+      }
       const timePosition = timeOrder?.get(n.id)
       if (timePosition != null) {
         node.x = timePosition.x
@@ -418,62 +677,69 @@ export default function GraphView({
     const links = data.edges
       .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
       .map((e) => ({ source: e.source, target: e.target, __e: e }))
+    if (layout === "network") seedCompactNetwork(nodes, links)
     return { nodes, links }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.edges, scaleByCitations, timeOrder, visibleIds, visibleNodes])
+  }, [data.edges, layout, scaleByCitations, timeOrder, visibleIds, visibleNodes])
 
   // Capture settled positions so subsequent renders pin them.
-  const capturePositions = () => {
+  const capturePositions = (nodes = graphData.nodes) => {
     if (layout !== "network") return
-    for (const n of graphData.nodes) {
+    for (const n of nodes) {
       if (n.x != null && n.y != null) posRef.current.set(n.id, { x: n.x, y: n.y })
     }
   }
 
-  useEffect(() => {
-    if (size.w <= 0 || size.h <= 0) return
-    const raf = requestAnimationFrame(() => fgRef.current?.d3ReheatSimulation?.())
-    return () => cancelAnimationFrame(raf)
-  }, [graphData, layout, size.w, size.h])
-
-  useEffect(() => {
-    if (layout !== "network") return
-    const graph = fgRef.current
-    const nodes = graph?.graphData?.()?.nodes
-    if (!Array.isArray(nodes)) return
-    for (const node of nodes) {
-      node.fx = undefined
-      node.fy = undefined
-    }
-    graph.d3ReheatSimulation?.()
-  }, [layout])
-
-  const applyLayoutForces = useCallback(() => {
+  const configureLayoutForces = useCallback(() => {
     const graph = fgRef.current
     if (!graph) return
     graph.d3Force?.("timeOrderSpread", null)
+    graph.d3Force?.("nodeCollision", null)
+    const linkForce = graph.d3Force?.("link")
+    const chargeForce = graph.d3Force?.("charge")
+    const centerForce = graph.d3Force?.("center")
+    const runtimeData = graph.graphData?.() as { nodes?: RuntimeNode[]; links?: RuntimeLink[] } | undefined
+    const packTargets =
+      layout === "network" && Array.isArray(runtimeData?.nodes) && Array.isArray(runtimeData?.links)
+        ? compactComponentTargetById(runtimeData.nodes, runtimeData.links)
+        : null
+    graph.d3Force?.("componentPack", packTargets ? componentPackForce(packTargets, 0.55) : null)
+    graph.d3Force?.("compactCenter", layout === "network" ? compactCenterForce(0.018) : null)
+    graph.d3Force?.("nodeCollision", layout === "network" ? collisionForce(0.16) : null)
+    if (layout === "network") {
+      linkForce?.distance?.(24)
+      linkForce?.strength?.(0.8)
+      chargeForce?.strength?.(-12)
+      centerForce?.strength?.(0.12)
+    } else {
+      linkForce?.distance?.(30)
+      linkForce?.strength?.(0.5)
+      chargeForce?.strength?.(-30)
+      centerForce?.strength?.(0.05)
+    }
     if (layout === "timeline" && timeOrder) {
       graph.d3Force?.("timeOrderSpread", timeOrderForce(timeOrder))
     }
-    graph.d3ReheatSimulation?.()
   }, [layout, timeOrder])
 
-  useEffect(() => {
-    applyLayoutForces()
-  }, [applyLayoutForces, graphData])
-
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
+  const forceConfigKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
+  const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
 
-  const fitToView = () => {
+  useLayoutEffect(() => {
+    if (size.w <= 0 || size.h <= 0 || !fgRef.current) return
+    configureLayoutForces()
+    forceConfigKeyRef.current = forceConfigKey
+  }, [configureLayoutForces, forceConfigKey, graphData, size.h, size.w])
+
+  const fitToView = useCallback(() => {
     const graph = fgRef.current
     if (!graph) return
-    const padding = Math.max(120, Math.min(size.w, size.h) * 0.18)
+    const padding = Math.max(52, Math.min(size.w, size.h) * 0.07)
     graph.zoomToFit?.(0, padding)
     const zoom = graph.zoom?.()
-    if (typeof zoom === "number" && zoom > 1.1) graph.zoom?.(1.1, 0)
-  }
-
-  const fitKey = `${layoutKey}:${layout}:${visibleNodes.length}:${visibleIds.size}`
+    if (typeof zoom === "number" && zoom > 2.1) graph.zoom?.(2.1, 0)
+  }, [size.h, size.w])
 
   return (
     <div className={styles.graphWrap} ref={containerRef}>
@@ -486,13 +752,24 @@ export default function GraphView({
           nodeId="id"
           linkSource="source"
           linkTarget="target"
-          nodeRelSize={2.35}
+          nodeRelSize={3}
+          warmupTicks={layout === "network" ? 80 : 0}
           cooldownTicks={layout === "timeline" ? 100 : 120}
           autoPauseRedraw={false}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          linkStrength={(l: any) => Math.min(1, Math.max(0.05, (l.__e?.weight ?? 0.3)))}
+          linkStrength={(l: any) => (
+            layout === "network"
+              ? 0.8
+              : Math.min(1, Math.max(0.05, (l.__e?.weight ?? 0.3)))
+          )}
+          onEngineTick={() => {
+            if (forceConfigKeyRef.current === forceConfigKey) return
+            forceConfigKeyRef.current = forceConfigKey
+            configureLayoutForces()
+          }}
           onEngineStop={() => {
-            capturePositions()
+            const runtimeData = fgRef.current?.graphData?.() as { nodes?: RuntimeNode[]; links?: RuntimeLink[] } | undefined
+            capturePositions(Array.isArray(runtimeData?.nodes) ? runtimeData.nodes : undefined)
             if (fitKeyRef.current !== fitKey) {
               fitKeyRef.current = fitKey
               fitToView()
