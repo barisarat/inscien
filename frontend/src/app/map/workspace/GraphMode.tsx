@@ -106,7 +106,7 @@ export default function GraphMode() {
   const [layerBusy, setLayerBusy] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const { newRun, isStale, track } = useSkillJob()
+  const { newRun, isStale, track, progress } = useSkillJob()
 
   const itemKeys = useMemo(() => Array.from(selectedKeys).sort(), [selectedKeys])
   const keysKey = itemKeys.join(",")
@@ -296,8 +296,11 @@ export default function GraphMode() {
             {clusters.length > 0 ? <Badge variant="secondary">{clusters.length} clusters</Badge> : null}
             {fused && fused.missing.length > 0 ? <Badge variant="outline">{fused.missing.length} not indexed</Badge> : null}
             {layerBusy ? (
-              <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-                <Loader2 className="size-3 animate-spin" /> Citations...
+              <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="size-3 shrink-0 animate-spin" />
+                {/* Surface the OpenAlex fetch step ("fetching (3/7) - <title>", "resolving N
+                    references", "cited-by (2/5) - ...") instead of a generic spinner. */}
+                <span className="truncate">{progress.detail || progress.stage || "Citations..."}</span>
               </span>
             ) : null}
           </div>
