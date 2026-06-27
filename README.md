@@ -61,14 +61,22 @@ file (no database beyond SQLite for settings). Dev runs natively on the host - n
 `.env` (config lives in the in-app Settings page).
 
 Host prereqs: [`uv`](https://docs.astral.sh/uv/), Node, and `espeak-ng` (Kokoro TTS
-phonemization; `apt install espeak-ng` / `brew install espeak-ng`). The backend pins to Python
-3.12; `uv` fetches it automatically, so no system Python 3.12 is needed.
+phonemization). Install them with your package manager:
+`apt install espeak-ng` / `brew install espeak-ng` /
+`sudo pacman -S --needed uv espeak-ng` (on Arch, Node comes from `nodejs-lts-jod` - keep
+it; do not let pacman swap in the bleeding-edge `nodejs` package). The backend pins to
+Python 3.12; `uv` fetches it automatically, so no system Python 3.12 is needed.
+
+Run `make setup` **first** (once), then start the two servers:
 
 ```bash
-make setup        # one-time: backend venv + deps, frontend deps
+make setup        # one-time: backend venv + deps, frontend deps - RUN THIS FIRST
 make backend      # terminal 1: FastAPI on http://localhost:8000
 make frontend     # terminal 2: Next dev server on http://localhost:3000
 ```
+
+If `make backend` says `.venv/bin/uvicorn: No such file` or `make frontend` says
+`Cannot find module 'pdfjs-dist'`, you skipped `make setup` (or deps changed) - run it.
 
 Then open http://localhost:3000 and set your Zotero data folder (and, for narration, a model)
 in Settings. A local Ollama running on the host (`http://localhost:11434`) covers narration for

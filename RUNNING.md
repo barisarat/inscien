@@ -17,16 +17,23 @@ Next dev server on `:3000`. Config lives in the in-app **Settings** page (Zotero
 URL, OpenAI key, model), so there is nothing to configure on disk.
 
 Host prereqs: **[`uv`](https://docs.astral.sh/uv/)**, **Node**, and **`espeak-ng`** (Kokoro TTS
-phonemization; `apt install espeak-ng` / `brew install espeak-ng`). The backend pins to Python
-3.12; `uv venv --python 3.12` (run by `make setup`) fetches it automatically, so no system Python
-3.12 is needed. `ffmpeg` is bundled (`imageio-ffmpeg`), and the ~1GB Kokoro voice downloads on
-demand from the Narrate UI on first use.
+phonemization). Install with your package manager: `apt install espeak-ng` /
+`brew install espeak-ng` / `sudo pacman -S --needed uv espeak-ng` (on Arch, Node comes from
+`nodejs-lts-jod` - keep it; do not let pacman swap in the bleeding-edge `nodejs` package). The
+backend pins to Python 3.12; `uv venv --python 3.12` (run by `make setup`) fetches it
+automatically, so no system Python 3.12 is needed. `ffmpeg` is bundled (`imageio-ffmpeg`), and
+the ~1GB Kokoro voice downloads on demand from the Narrate UI on first use.
+
+Run `make setup` **first** (once), then start the two servers in separate terminals:
 
 ```bash
-make setup        # one-time: backend venv + deps, frontend deps
+make setup        # one-time: backend venv + deps, frontend deps - RUN THIS FIRST
 make backend      # terminal 1: uvicorn --reload on http://localhost:8000
 make frontend     # terminal 2: Next dev server (HMR) on http://localhost:3000
 ```
+
+If `make backend` reports `.venv/bin/uvicorn: No such file` or `make frontend` reports
+`Cannot find module 'pdfjs-dist'`, you skipped `make setup` (or deps changed) - run it.
 
 Open **http://localhost:3000**. The frontend talks to the backend cross-origin
 (`:3000` -> `:8000`), which the backend allows by default (`main.py` defaults `CORS_ORIGINS` to
