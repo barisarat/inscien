@@ -287,9 +287,10 @@ tts/
 .agents/
 .codex/
 
-# Editor + AI-assistant local files (kept locally, not shipped in the public repo)
+# Editor + AI-assistant local files (kept locally, not shipped in the public repo).
+# CLAUDE.md IS tracked: it's project-wide architecture/onboarding docs, useful to any
+# contributor or assistant. AGENTS.md stays local (it encodes this host's workflow rules).
 .vscode/
-CLAUDE.md
 AGENTS.md
 
 # Local Zotero test snapshot (never commit — full library metadata + PDFs)
