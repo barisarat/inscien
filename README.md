@@ -57,15 +57,22 @@ the full walkthrough.
 ## Run from source (development)
 
 InScien is a FastAPI backend plus a Next.js frontend; citation data is cached in a single JSON
-file (no database beyond SQLite for settings). For development, run the stack with Docker:
+file (no database beyond SQLite for settings). Dev runs natively on the host - no Docker, no
+`.env` (config lives in the in-app Settings page).
+
+Host prereqs: [`uv`](https://docs.astral.sh/uv/), Node, and `espeak-ng` (Kokoro TTS
+phonemization; `apt install espeak-ng` / `brew install espeak-ng`). The backend pins to Python
+3.12; `uv` fetches it automatically, so no system Python 3.12 is needed.
 
 ```bash
-cp .env.example .env          # set ZOTERO_HOST_DIR to your Zotero data folder
-docker compose up             # backend on :8200, frontend on :3200
+make setup        # one-time: backend venv + deps, frontend deps
+make backend      # terminal 1: FastAPI on http://localhost:8000
+make frontend     # terminal 2: Next dev server on http://localhost:3000
 ```
 
-A local Ollama must be running on the host for narration. To build the desktop installers
-yourself, see [PACKAGING.md](PACKAGING.md).
+Then open http://localhost:3000 and set your Zotero data folder (and, for narration, a model)
+in Settings. A local Ollama running on the host (`http://localhost:11434`) covers narration for
+free. To build the desktop installers yourself, see [PACKAGING.md](PACKAGING.md).
 
 ## Privacy
 

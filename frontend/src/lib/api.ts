@@ -1,9 +1,11 @@
 // Single source of truth for the backend origin. NEXT_PUBLIC_* is inlined at build time.
-// Empty string = same-origin: the production image serves the API and the static UI from
-// one process, so requests use relative `/api/...` paths and the bundle is port-agnostic.
-// In dev the frontend (:3200) and backend (:8200) are separate origins, so the dev compose
-// sets NEXT_PUBLIC_API_URL to the backend URL.
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
+// Production/desktop builds serve the API and the static UI from one process (same origin),
+// so the default is "" and requests use relative `/api/...` paths - port-agnostic. In dev the
+// Next dev server (:3000) and the API (:8000) are separate origins, so default to localhost:8000.
+// `NEXT_PUBLIC_API_URL` overrides either (e.g. a non-default backend port).
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")
 
 async function getErrorMessage(res: Response): Promise<string> {
   const data: unknown = await res.json().catch(() => ({}))

@@ -8,7 +8,7 @@ Such a paper renders as an isolated node (just itself) in the References lens - 
 This counts them off the cached data only (data/openalex.json) - no network - and prints example
 OpenAlex links so you can confirm the empty reference list is OpenAlex's, not ours.
 
-Run:  docker compose exec backend python scripts/check_refs.py
+Run:  cd backend && .venv/bin/python scripts/check_refs.py
 """
 
 import os

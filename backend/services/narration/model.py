@@ -1,9 +1,9 @@
 """Kokoro TTS weights - presence check + a download job with progress.
 
-The desktop build does NOT bundle the Kokoro weights (they'd push the installer to ~1.5GB) - the
-user downloads them once, with a visible progress bar, before the first narration. They land in the
-writable data dir and the TTS engine reads them from there. Docker still bakes them into the image
-(`KOKORO_MODEL_PATH`/`KOKORO_VOICES_PATH` env), so `model_present()` is true there and this is a no-op.
+The weights are NOT bundled (they'd push the installer to ~1.5GB) - the user downloads them once,
+with a visible progress bar, before the first narration. They land in the writable data dir and the
+TTS engine reads them from there. An explicit `KOKORO_MODEL_PATH`/`KOKORO_VOICES_PATH` pointing at
+pre-placed weights makes `model_present()` true and this a no-op.
 """
 
 import logging

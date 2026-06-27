@@ -40,7 +40,7 @@ def _db_zotero_dir():
 
 
 def get_zotero_settings():
-    # In-app setting (desktop build) wins; ZOTERO_DATA_DIR env is the Docker/dev fallback.
+    # In-app setting (desktop build) wins; ZOTERO_DATA_DIR env is the host/dev fallback.
     data_dir = _db_zotero_dir() or os.getenv("ZOTERO_DATA_DIR", "/workspace/zotero")
     return {
         "data_dir": data_dir,

@@ -1,17 +1,18 @@
 """Durable data-dir resolution - one base dir for everything InScien persists.
 
-SQLite, the paper-vector store, the chunk manifest, the OpenAlex cache, job records, narration
-audio, the Zotero snapshot, and the embedding-model cache all live under one base directory. In
-Docker that's the `./data` bind mount (default below); in the **desktop app** the Tauri shell sets
-`INSCIEN_DATA_DIR` to the OS per-user app-data dir, so a single env var redirects them all. Each
-individual path still honours its own explicit override (e.g. `INSCIEN_VECTORS_PATH`) for back-compat.
+SQLite, the OpenAlex cache, job records, narration audio, the Zotero snapshot, and the Kokoro
+weights all live under one base directory. For host dev that's the repo-root `data/` folder
+(default below); in the **desktop app** the Tauri shell sets `INSCIEN_DATA_DIR` to the OS per-user
+app-data dir, so a single env var redirects them all. Each individual path still honours its own
+explicit override (e.g. `INSCIEN_VECTORS_PATH`) for back-compat.
 """
 
 import os
 from pathlib import Path
 
-# Default base = the Docker ./data mount, so existing deployments are unchanged.
-_DEFAULT_DATA_DIR = "/workspace/data"
+# Default base = the repo-root `data/` dir (this file is backend/core/paths.py, so parents[2] is
+# the repo root, regardless of cwd). The desktop build overrides this via INSCIEN_DATA_DIR.
+_DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[2] / "data")
 
 
 def data_dir() -> str:

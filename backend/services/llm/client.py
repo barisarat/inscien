@@ -34,7 +34,7 @@ from repositories.settings_repository import get_settings
 logger = logging.getLogger(__name__)
 
 DEFAULT_LOCAL_MODEL = "qwen2.5:3b"
-DEFAULT_OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1")
+DEFAULT_OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 # OpenAI (or any OpenAI-compatible endpoint - set OPENAI_BASE_URL for Groq/OpenRouter/etc.).
 # `or` (not a getenv default) so an empty-string env value still falls back to the real URL.
 DEFAULT_OPENAI_URL = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
@@ -106,8 +106,7 @@ def resolve_llm_config():
     """
     s = _read_settings()
     if s["provider"] == "openai":
-        # Stored key (desktop build, configured in-app) takes precedence; env is the fallback
-        # for the Docker/dev path.
+        # Stored key (configured in-app) takes precedence; env is the host/dev fallback.
         api_key = s.get("openai_api_key") or (os.getenv("OPENAI_API_KEY") or "").strip()
         if api_key:
             return {

@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 
 # In a frozen desktop build all config comes from the parent (Tauri) environment - don't pick up a
-# stray `.env` from the working directory (e.g. dev Docker paths like /workspace/data).
+# stray `.env` from the working directory.
 if not getattr(sys, "frozen", False):
     load_dotenv()
 
@@ -64,11 +64,12 @@ else:
         lifespan=lifespan,
     )
 
-ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in (os.getenv("CORS_ORIGINS") or "").split(",")
-    if origin.strip()
-]
+# Dev runs the Next dev server and the API on separate localhost origins, so CORS is needed.
+# Default to localhost (zero-config host dev); `CORS_ORIGINS` overrides. Prod/desktop serve the
+# UI same-origin, so the list is never consulted there - and localhost-only is safe to ship.
+_DEV_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+_configured = [o.strip() for o in (os.getenv("CORS_ORIGINS") or "").split(",") if o.strip()]
+ALLOWED_ORIGINS = _configured or _DEV_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,

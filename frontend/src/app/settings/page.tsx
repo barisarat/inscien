@@ -206,7 +206,7 @@ export default function SettingsPage() {
                   className="!px-4"
                   value={ollamaBaseUrl}
                   onChange={(e) => setOllamaBaseUrl(e.target.value)}
-                  placeholder="http://host.docker.internal:11434/v1"
+                  placeholder="http://localhost:11434/v1"
                 />
               </Field>
             </>

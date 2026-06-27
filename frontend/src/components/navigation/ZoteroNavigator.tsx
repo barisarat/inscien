@@ -490,8 +490,8 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
 
         {!loading && !error && libraryMissing ? (
           <div className="flex min-h-12 items-center text-xs leading-4 text-muted-foreground" style={SIDEBAR_GUTTER}>
-            No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set{" "}
-            <code>ZOTERO_HOST_DIR</code> to your Zotero data directory and restart the stack - see the README.
+            No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}. Set your
+            Zotero data directory in Settings.
           </div>
         ) : null}
         {!loading && !error && !liveConnected && !libraryMissing ? (

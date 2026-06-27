@@ -16,8 +16,8 @@ CLOUD_MODEL_HINT = "gpt-5.4-nano"
 
 
 def _openai_key_present(row) -> bool:
-    """A key is available if it's stored in settings OR set in the environment (env wins as a
-    fallback for the Docker/dev path; the desktop build stores it in the DB)."""
+    """A key is available if it's stored in settings OR set in the environment (env is the
+    host/dev fallback; the desktop build stores it in the DB)."""
     return bool((row.openai_api_key or "").strip() or (os.getenv("OPENAI_API_KEY") or "").strip())
 
 

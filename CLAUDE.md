@@ -14,23 +14,28 @@ is Map + Narrate.
 
 Single-user, local, no auth. Stack: FastAPI backend + Next.js frontend (static export). SQLite for
 app state; the citation data is a JSON cache (`data/openalex.json`). Distributed as a **cross-OS
-desktop app** (Tauri, with the backend frozen into a sidecar) and also runnable via Docker.
-Narration scripts run against the user's local Ollama by default, or an optional OpenAI key - both
-configured in-app. The Map needs no model at all (just OpenAlex over each paper's DOI).
+desktop app** (Tauri, with the backend frozen into a sidecar). Narration scripts run against the
+user's local Ollama by default, or an optional OpenAI key - both configured in-app. The Map needs
+no model at all (just OpenAlex over each paper's DOI).
 
 ## Running the stack
 
+Dev runs natively on the host (no Docker, no `.env`); config lives in the in-app Settings page.
+Host prereqs: `uv`, Node, `espeak-ng` (Kokoro phonemization). The backend pins to Python 3.12;
+`uv` fetches it automatically (no system 3.12 needed).
+
 ```bash
-docker compose up                                # dev: backend :8200, frontend :3200
-docker compose -f compose.prod.yaml up --build   # prod: one container on :8200
+make setup        # one-time: backend venv + deps, frontend deps
+make backend      # terminal 1: uvicorn --reload on :8000
+make frontend     # terminal 2: Next dev server on :3000
 ```
 
 There is no indexing step: browse Zotero collections in the sidebar and select papers - the Map
 fetches their citations from OpenAlex on demand. An opt-in "Fetch citations" action warms the
 whole library's references in the background, so any selection then renders instantly. A local
-Ollama is needed only for narration. Point InScien at the Zotero data dir via `ZOTERO_HOST_DIR`
-(Docker) or the Settings page (desktop). Desktop installers are built by the release CI on a `v*`
-tag; to build locally, see `PACKAGING.md`.
+Ollama is needed only for narration. Point InScien at the Zotero data dir via the Settings page
+(`ZOTERO_DATA_DIR` is an env fallback). Desktop installers are built by the release CI on a `v*`
+tag; to build locally, see `PACKAGING.md`. Full run/serve details in `RUNNING.md`.
 
 ## Architecture
 
@@ -50,9 +55,9 @@ Cited-by, render-from-cache-first + progressive streaming, no-connection nodes d
 shared `JobRunner`) runs the pipeline (`pipeline.py`): resolve the paper's PDF -> parse -> draft
 an explanatory script with the LLM client -> clean for speech -> synthesize with **Kokoro** on
 CPU (`tts_engine.py`) -> mux to mp3 with a bundled **ffmpeg** (`imageio-ffmpeg`, so no system
-ffmpeg is needed). The ~1 GB Kokoro voice is **downloaded on demand** in the desktop build
-(`model.py`, `GET/POST /api/narrate/model[/download]`, with a UI progress bar) and baked into the
-Docker image. No SSE; the UI polls the job. Frontend: `NarrateMode.tsx`.
+ffmpeg is needed). The ~1 GB Kokoro voice is **downloaded on demand** (`model.py`,
+`GET/POST /api/narrate/model[/download]`, with a UI progress bar). No SSE; the UI polls the job.
+Frontend: `NarrateMode.tsx`.
 
 **Citations (`services/refs/`).** `openalex.py` is a thin OpenAlex client (free, CC0, no key; the
 polite pool via a constant `mailto`, self-throttled under ~10/s, bounded retries). `refstore.py`

@@ -32,7 +32,7 @@ BITRATE = "192k"
 def _ffmpeg_exe():
     """Path to the ffmpeg to mux the mp3. Prefer the self-contained binary shipped by
     imageio-ffmpeg (bundled into the frozen desktop builds - Windows/macOS have no system
-    ffmpeg), then an explicit override, then PATH (Docker's image ffmpeg)."""
+    ffmpeg), then an explicit override, then a system ffmpeg on PATH."""
     override = (os.getenv("FFMPEG_BINARY") or "").strip()
     if override:
         return override

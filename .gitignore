@@ -30,11 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (config lives in the in-app Settings page; no .env is shipped)
 .env*
 *.env*
-# ...but ship the documented template
-!.env.example
 
 # vercel
 .vercel
