@@ -26,15 +26,19 @@ On Arch Linux you can also use `sudo pacman -S uv`.
 
 ## 2. Run InScien
 
+InScien runs on Python 3.12 (its ML dependencies don't publish wheels for newer Python yet), so
+pin it with `--python 3.12` - uv fetches the right Python automatically and uses prebuilt wheels,
+so you never need a compiler:
+
 ```bash
-uvx inscien
+uvx --python 3.12 inscien
 ```
 
 That runs it in an isolated, ephemeral environment. To install it so the `inscien` command stays
 on your PATH:
 
 ```bash
-uv tool install inscien
+uv tool install --python 3.12 inscien
 inscien
 ```
 

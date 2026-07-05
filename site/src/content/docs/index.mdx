@@ -55,9 +55,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 #    Windows PowerShell:
 #    irm https://astral.sh/uv/install.ps1 | iex
 
-# 2) Run InScien
-uvx inscien                          # try it (ephemeral, isolated)
-uv tool install inscien && inscien   # or install the `inscien` command
+# 2) Run InScien (needs Python 3.12 - pin it so uv fetches the right one)
+uvx --python 3.12 inscien              # try it (ephemeral, isolated)
+uv tool install --python 3.12 inscien  # or install the `inscien` command, then run: inscien
 ```
 
 InScien starts a local server, opens your browser, and serves everything from your machine. Then

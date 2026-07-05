@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "inscien"
-version = "0.2.0"
+version = "0.2.1"
 description = "A local, private companion over your own Zotero library - citation Map + audio Narrate, served in your browser."
 license = { text = "MIT" }
 requires-python = ">=3.12,<3.13"
@@ -34,7 +34,6 @@ dependencies = [
     "hyperframe==6.1.0",
     "idna==3.11",
     "jiter==0.14.0",
-    "mmh3==5.2.1",
     "numpy==2.4.4",
     "onnxruntime==1.26.0",
     "openai==2.37.0",
@@ -42,7 +41,6 @@ dependencies = [
     "pillow==12.2.0",
     "portalocker==3.2.0",
     "protobuf==7.34.1",
-    "py_rust_stemmers==0.1.5",
     "pycparser==3.0",
     "pydantic==2.13.0",
     "pydantic_core==2.46.0",
@@ -55,7 +53,6 @@ dependencies = [
     "sniffio==1.3.1",
     "SQLAlchemy==2.0.49",
     "starlette==1.0.0",
-    "tokenizers==0.23.1",
     "tqdm==4.67.3",
     "typing-inspection==0.4.2",
     "typing_extensions==4.15.0",

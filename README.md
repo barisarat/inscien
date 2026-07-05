@@ -25,9 +25,10 @@ InScien runs as a local web app in your own browser - one command, no separate i
 same on Windows, macOS, and Linux. With [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
-uvx inscien            # try it (ephemeral, isolated)
-# or install it so `inscien` stays on your PATH:
-uv tool install inscien && inscien
+# InScien runs on Python 3.12 (its ML deps have no newer wheels yet), so pin it - this
+# makes uv fetch 3.12 and use prebuilt wheels (no compilers needed):
+uvx --python 3.12 inscien              # try it (ephemeral, isolated)
+uv tool install --python 3.12 inscien  # or install the `inscien` command, then run: inscien
 ```
 
 It starts a local server, opens your browser, and serves the whole app from your machine. Nothing
