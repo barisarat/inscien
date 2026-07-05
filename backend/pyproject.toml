@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "inscien"
+version = "0.2.0"
+description = "A local, private companion over your own Zotero library - citation Map + audio Narrate, served in your browser."
+license = { text = "MIT" }
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "annotated-doc==0.0.4",
+    "annotated-types==0.7.0",
+    "anyio==4.13.0",
+    "certifi==2026.2.25",
+    "cffi==2.0.0",
+    "charset-normalizer==3.4.7",
+    "click==8.3.2",
+    "cryptography==46.0.7",
+    "distro==1.9.0",
+    "fastapi==0.135.3",
+    "filelock==3.29.0",
+    "flatbuffers==25.12.19",
+    "fsspec==2026.4.0",
+    "greenlet==3.4.0",
+    "grpcio==1.80.0",
+    "h11==0.16.0",
+    "h2==4.3.0",
+    "hf-xet==1.5.0",
+    "hpack==4.1.0",
+    "httpcore==1.0.9",
+    "httpx==0.28.1",
+    "huggingface_hub==1.15.0",
+    "hyperframe==6.1.0",
+    "idna==3.11",
+    "jiter==0.14.0",
+    "mmh3==5.2.1",
+    "numpy==2.4.4",
+    "onnxruntime==1.26.0",
+    "openai==2.37.0",
+    "packaging==26.1",
+    "pillow==12.2.0",
+    "portalocker==3.2.0",
+    "protobuf==7.34.1",
+    "py_rust_stemmers==0.1.5",
+    "pycparser==3.0",
+    "pydantic==2.13.0",
+    "pydantic_core==2.46.0",
+    "python-dateutil==2.9.0.post0",
+    "python-dotenv==1.2.2",
+    "python-multipart==0.0.27",
+    "PyYAML==6.0.3",
+    "requests==2.33.1",
+    "six==1.17.0",
+    "sniffio==1.3.1",
+    "SQLAlchemy==2.0.49",
+    "starlette==1.0.0",
+    "tokenizers==0.23.1",
+    "tqdm==4.67.3",
+    "typing-inspection==0.4.2",
+    "typing_extensions==4.15.0",
+    "tzdata==2026.1",
+    "urllib3==2.6.3",
+    "uvicorn==0.44.0",
+    "pymupdf>=1.24,<2.0",
+    # 0.5+ self-wires the bundled espeak (espeakng-loader + phonemizer-fork). 0.4 did not,
+    # so it would need a system espeak-ng - pinning >=0.5 keeps the build self-contained.
+    "kokoro-onnx>=0.5",
+    "pydub>=0.25",
+    "imageio-ffmpeg>=0.5",
+    "platformdirs>=4",
+    "audioop-lts; python_version >= '3.13'",
+]
+
+[project.scripts]
+inscien = "launcher:main"
+
+# Flat app layout (no top-level `inscien/` package): list exactly what ships in the wheel.
+# Installed into an isolated env by uvx/pipx, so top-level modules (main, core, ...) can't collide.
+[tool.hatch.build.targets.wheel]
+only-include = [
+    "launcher.py",
+    "main.py",
+    "run_server.py",
+    "core",
+    "models",
+    "repositories",
+    "routers",
+    "schemas",
+    "services",
+    "webui",
+]
