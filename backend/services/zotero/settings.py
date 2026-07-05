@@ -2,8 +2,10 @@
 
 InScien rides on the user's *local* Zotero library - `zotero.sqlite` + a
 `storage/<KEY>/<file>.pdf` tree - read-only, via a private snapshot copy (never the
-live DB; Zotero may hold a WAL lock). The data dir is bind-mounted read-only into the
-backend at `/workspace/zotero`. No Zotero web API, no API key.
+live DB; Zotero may hold a WAL lock). The data dir is resolved (see `get_zotero_settings`)
+from the in-app setting, then the `ZOTERO_DATA_DIR` env, then auto-detection of the user's
+Zotero install (`detect.py`: default `$HOME/Zotero`, or the custom dir from `prefs.js`). No
+Zotero web API, no API key.
 """
 
 import logging
@@ -40,8 +42,18 @@ def _db_zotero_dir():
 
 
 def get_zotero_settings():
-    # In-app setting (desktop build) wins; ZOTERO_DATA_DIR env is the host/dev fallback.
-    data_dir = _db_zotero_dir() or os.getenv("ZOTERO_DATA_DIR", "/workspace/zotero")
+    # Resolution order: in-app setting (desktop build) wins, then the ZOTERO_DATA_DIR env
+    # (host/dev), then auto-detection of the user's Zotero install (default `$HOME/Zotero` or the
+    # custom dir from prefs.js), and finally the default path even if it doesn't exist yet so the
+    # error messages point somewhere sane.
+    from services.zotero.detect import default_zotero_data_dir, detect_zotero_data_dir
+
+    data_dir = (
+        _db_zotero_dir()
+        or (os.getenv("ZOTERO_DATA_DIR") or "").strip()
+        or detect_zotero_data_dir()
+        or default_zotero_data_dir()
+    )
     return {
         "data_dir": data_dir,
         # Live DB + storage tree (read-only mount). Overridable for tests.

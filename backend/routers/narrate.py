@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from routers.papers import corpus_papers
 from services.narration.jobs import active_narration, audio_path, get_job, list_narrations, start_job
+from services.reveal import reveal_path
 from services.narration.model import get_download as get_model_download, model_present, start_download
 
 logger = logging.getLogger(__name__)
@@ -147,5 +148,20 @@ def audio(job_id: str):
     return FileResponse(
         str(path),
         media_type="audio/mpeg",
-        headers={"Content-Disposition": f'inline; filename="{job_id}.mp3"'},
+        headers={"Content-Disposition": f'inline; filename="{path.name}"'},
     )
+
+
+@router.post("/{job_id}/reveal")
+def reveal(job_id: str):
+    """Open the OS file manager at the saved mp3. The backend is a local process, so it can do this
+    even though the browser can't. The path is derived server-side from the job id (never from the
+    client), so only our own narration audio dir is ever revealed."""
+    path = audio_path(job_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="audio not ready")
+    try:
+        reveal_path(str(path))
+    except (FileNotFoundError, RuntimeError) as e:
+        raise HTTPException(status_code=500, detail=f"could not open file manager: {e}")
+    return {"ok": True}

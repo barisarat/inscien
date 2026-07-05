@@ -8,6 +8,7 @@ so there is no separate GPU tts container.
 
 import json
 import os
+import re
 from pathlib import Path
 
 from core.paths import data_path
@@ -23,13 +24,33 @@ _PUBLIC_FIELDS = ("id", "title", "status", "stage", "progress", "detail", "error
 _runner = JobRunner("narration", JOBS_DIR, _PUBLIC_FIELDS)
 
 
-def audio_path(job_id):
-    return AUDIO_DIR / f"{job_id}.mp3"
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slug(title, maxlen=60):
+    """ASCII-safe, filesystem-safe slug of a paper title (lowercase, `-`-joined), or ""."""
+    return _SLUG_RE.sub("-", (title or "").lower()).strip("-")[:maxlen].strip("-")
+
+
+def _audio_filename(job_id, title):
+    """`<title-slug>--<job_id>.mp3` so a shared file is recognizable, while the job id stays
+    embedded for lookup. Falls back to `<job_id>.mp3` when there's no usable title."""
+    slug = _slug(title)
+    return f"{slug}--{job_id}.mp3" if slug else f"{job_id}.mp3"
+
+
+def audio_path(job_id, title=None):
+    """The mp3 path for a job. Pass `title` when WRITING (builds the friendly name); omit it when
+    READING (resolves the stored file - friendly `*--<job_id>.mp3` or a legacy `<job_id>.mp3`)."""
+    if title is not None:
+        return AUDIO_DIR / _audio_filename(job_id, title)
+    matches = sorted(AUDIO_DIR.glob(f"*--{job_id}.mp3"))
+    return matches[0] if matches else AUDIO_DIR / f"{job_id}.mp3"
 
 
 def start_job(file_name, title="", doc_id=None):
     def work(job_id, progress):
-        result = run_narration(file_name, str(audio_path(job_id)), progress)
+        result = run_narration(file_name, str(audio_path(job_id, title)), progress)
         return {"durationMin": result["duration_min"], "faithfulness": result["faithfulness"]}
     return _runner.start(work, extra={"title": title or "", "docId": doc_id})
 

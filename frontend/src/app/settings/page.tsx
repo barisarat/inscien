@@ -80,6 +80,7 @@ export default function SettingsPage() {
   const [openAiKeyPresent, setOpenAiKeyPresent] = useState(false)
   const [openAiKey, setOpenAiKey] = useState("")
   const [zoteroDataDir, setZoteroDataDir] = useState("")
+  const [zoteroDetected, setZoteroDetected] = useState("")
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("")
   const [ollamaReachable, setOllamaReachable] = useState(true)
   const [status, setStatus] = useState<Status>({ kind: "idle" })
@@ -89,7 +90,8 @@ export default function SettingsPage() {
       .then(([s, m]) => {
         setProvider(s.llmProvider || "local")
         setOllamaBaseUrl(s.ollamaBaseUrl)
-        setZoteroDataDir(s.zoteroDataDir)
+        setZoteroDataDir(s.zoteroDataDir || s.zoteroDataDirDetected || "")
+        setZoteroDetected(s.zoteroDataDirDetected || "")
         setOptions(m.options)
         setOllamaReachable(m.ollamaReachable)
         setCloudModelHint(m.cloudModelHint ?? "")
@@ -161,6 +163,24 @@ export default function SettingsPage() {
               onChange={(e) => setZoteroDataDir(e.target.value)}
               placeholder="e.g. /home/you/Zotero  or  C:\Users\you\Zotero"
             />
+            {zoteroDetected && (
+              <p className="!mt-2 text-xs text-muted-foreground">
+                {zoteroDataDir === zoteroDetected ? (
+                  <>Auto-detected from your Zotero install.</>
+                ) : (
+                  <>
+                    Auto-detected at <code>{zoteroDetected}</code>.{" "}
+                    <button
+                      type="button"
+                      className="font-medium underline hover:no-underline"
+                      onClick={() => setZoteroDataDir(zoteroDetected)}
+                    >
+                      Use this
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
           </Field>
         </SettingsSection>
 

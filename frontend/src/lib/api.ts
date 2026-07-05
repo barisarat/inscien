@@ -62,6 +62,7 @@ export interface AppSettings {
   llmModel: string
   ollamaBaseUrl: string
   zoteroDataDir: string
+  zoteroDataDirDetected: string
   openAiApiKeyPresent: boolean
 }
 
@@ -202,6 +203,11 @@ export async function getNarrateModel(): Promise<{ present: boolean }> {
 
 export async function startNarrateModelDownload(): Promise<{ jobId: string }> {
   return authedAction("/api/narrate/model/download", "POST")
+}
+
+// Reveal the saved mp3 in the OS file manager (the local backend can, the browser can't).
+export async function revealNarration(jobId: string): Promise<{ ok: boolean }> {
+  return authedAction(`/api/narrate/${encodeURIComponent(jobId)}/reveal`, "POST")
 }
 
 export async function getNarrateModelDownload(jobId: string): Promise<NarrationStatus> {

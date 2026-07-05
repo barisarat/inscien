@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { AudioLines, Download, Loader2, Settings } from "lucide-react"
+import { AudioLines, Download, FolderOpen, Loader2, Settings } from "lucide-react"
 
 import {
   activeNarration,
@@ -15,6 +15,7 @@ import {
   listPapers,
   startNarration,
   startNarrateModelDownload,
+  revealNarration,
   API_BASE,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
@@ -35,6 +36,7 @@ export default function NarrateMode() {
   const [phase, setPhase] = useState<Phase>("idle")
   const [title, setTitle] = useState("")
   const [jobId, setJobId] = useState("")
+  const [revealErr, setRevealErr] = useState("")
   // null = not yet checked; gates the Generate button on a configured/reachable narration model.
   const [modelReady, setModelReady] = useState<boolean | null>(null)
   // Kokoro voice weights: null = not yet checked. The desktop build doesn't bundle them, so the
@@ -174,8 +176,24 @@ export default function NarrateMode() {
   const audioBlock = (id: string, autoPlay = false) => {
     const url = `${API_BASE}/api/narrate/${encodeURIComponent(id)}/audio`
     return (
-      <div className="flex w-full flex-col items-center">
+      <div className="flex w-full flex-col items-center gap-3">
         <audio className="w-full" controls autoPlay={autoPlay} src={url} />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={async () => {
+            setRevealErr("")
+            try {
+              await revealNarration(id)
+            } catch {
+              setRevealErr("Couldn't open the folder on this system.")
+            }
+          }}
+        >
+          <FolderOpen className="size-4" /> Show in folder
+        </Button>
+        {revealErr && <p className="text-xs text-muted-foreground">{revealErr}</p>}
       </div>
     )
   }

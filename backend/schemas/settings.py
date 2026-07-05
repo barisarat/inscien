@@ -9,6 +9,7 @@ class SettingsOut(BaseModel):
     llmModel: str             # active model id for the selected provider
     ollamaBaseUrl: str
     zoteroDataDir: str         # the user's Zotero data folder (or "" to fall back to env/default)
+    zoteroDataDirDetected: str  # auto-detected Zotero folder (contains zotero.sqlite), or "" if none
     openAiApiKeyPresent: bool  # whether a key is set (DB or env) - never the key itself
 
 

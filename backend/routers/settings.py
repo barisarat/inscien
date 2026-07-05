@@ -7,6 +7,7 @@ from core.db import get_db
 from repositories import settings_repository as settings_repo
 from schemas.settings import SettingsIn, SettingsOut
 from services.llm.client import DEFAULT_OLLAMA_URL, list_ollama_models_status
+from services.zotero.detect import detect_zotero_data_dir
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -28,6 +29,7 @@ def _to_out(row) -> SettingsOut:
         llmModel=row.llm_model or "",
         ollamaBaseUrl=row.ollama_base_url or "",
         zoteroDataDir=row.zotero_data_dir or "",
+        zoteroDataDirDetected=detect_zotero_data_dir() or "",
         openAiApiKeyPresent=_openai_key_present(row),
     )
 
