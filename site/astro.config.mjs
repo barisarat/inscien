@@ -14,7 +14,7 @@ export default defineConfig({
 		starlight({
 			title: 'InScien',
 			description: 'A local, private companion for your Zotero library - map its citations, narrate its papers.',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/aratbaris/inscien' }],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/barisarat/inscien' }],
 			sidebar: [
 				{
 					label: 'Getting started',
@@ -31,6 +31,7 @@ export default defineConfig({
 						{ label: 'Settings & models', slug: 'guides/settings' },
 					],
 				},
+				{ label: 'Troubleshooting', slug: 'troubleshooting' },
 			],
 		}),
 	],

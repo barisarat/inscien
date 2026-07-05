@@ -8,7 +8,20 @@ columns - is fixed by sorting blocks into a left/right column per page. Swap thi
 module for Docling/Marker later without touching the chunker or store.
 """
 
-import fitz  # PyMuPDF
+def _load_fitz():
+    """Import PyMuPDF lazily so a broken/missing native lib doesn't crash app startup - only
+    narration (which parses PDFs) needs it; the Map does not. On Windows the usual failure is a
+    missing Microsoft Visual C++ Redistributable, so point the user at the fix."""
+    try:
+        import fitz  # PyMuPDF
+        return fitz
+    except (ImportError, OSError) as e:
+        raise RuntimeError(
+            "PyMuPDF (the PDF engine used for narration) could not load its native library. "
+            "On Windows this usually means the Microsoft Visual C++ Redistributable is missing - "
+            "install it from https://aka.ms/vs/17/release/vc_redist.x64.exe and try again. "
+            "The Map works without it."
+        ) from e
 
 
 def _column_index(block, mid):
@@ -39,7 +52,7 @@ def _ordered_blocks(page):
 
 def parse_pdf(path):
     """Return [{text, page, bbox}] in reading order across all pages."""
-    doc = fitz.open(path)
+    doc = _load_fitz().open(path)
     blocks = []
 
     try:
@@ -61,7 +74,7 @@ def parse_pdf(path):
 
 def pdf_title(path):
     """Best-effort document title: PDF metadata title if present, else None."""
-    doc = fitz.open(path)
+    doc = _load_fitz().open(path)
     try:
         title = (doc.metadata or {}).get("title") or ""
     finally:

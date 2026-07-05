@@ -19,7 +19,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Windows (PowerShell):
 
 ```powershell
-irm https://astral.sh/uv/install.ps1 | iex
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 On Arch Linux you can also use `sudo pacman -S uv`.
@@ -57,5 +57,13 @@ ollama pull llama3.1:8b
 
 InScien talks to Ollama at `http://localhost:11434`. You can also paste an OpenAI key in Settings
 instead - see **Settings & models** in the sidebar.
+
+## Windows: narration needs the VC++ runtime
+
+Narration reads PDFs with PyMuPDF, a native library that needs the **Microsoft Visual C++
+Redistributable**. Most Windows machines already have it. If narration reports a PyMuPDF / DLL
+load error, install it once from
+[aka.ms/vc_redist](https://aka.ms/vs/17/release/vc_redist.x64.exe) and retry. The **Map** needs
+none of this.
 
 Next: the [Quick start](/getting-started/quick-start/).

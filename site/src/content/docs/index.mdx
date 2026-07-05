@@ -53,7 +53,7 @@ system-wide).
 #    macOS / Linux:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 #    Windows PowerShell:
-#    irm https://astral.sh/uv/install.ps1 | iex
+#    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 # 2) Run InScien (needs Python 3.12 - pin it so uv fetches the right one)
 uvx --python 3.12 inscien              # try it (ephemeral, isolated)

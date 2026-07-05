@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "inscien"
-version = "0.2.1"
+version = "0.2.2"
 description = "A local, private companion over your own Zotero library - citation Map + audio Narrate, served in your browser."
 license = { text = "MIT" }
 requires-python = ">=3.12,<3.13"
