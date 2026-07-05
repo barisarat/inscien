@@ -1,25 +1,19 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react"
-import { Check, ChevronRight, Download, Info, Loader2, Play, RefreshCw, X } from "lucide-react"
+import { useCallback, useEffect, useState, type PointerEvent } from "react"
+import { Check, ChevronRight, Info, Loader2, Play, RefreshCw, X } from "lucide-react"
 
 import {
-  activeFetch,
   fetchZoteroCollections,
-  fetchZoteroIndexableKeys,
   fetchZoteroItems,
-  getGraphFetch,
   listNarrations,
   listPapers,
   mappedKeys,
-  prefetchStatus,
   reconcileZotero,
-  startLibraryPrefetch,
   type ZoteroCollection,
   type ZoteroItem,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { pollJob } from "@/lib/pollJob"
 import { useWorkspace } from "@/app/map/workspace/WorkspaceProvider"
 import {
   Sidebar,
@@ -55,80 +49,12 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
   const [reconciling, setReconciling] = useState(false)
   const [reconcileMsg, setReconcileMsg] = useState<string | null>(null)
   const [narrations, setNarrations] = useState<Map<string, { jobId: string; title: string }>>(new Map())
-  // Papers OpenAlex resolved citation data for -> "mappable". Filled by the citation fetch.
+  // Papers OpenAlex resolved citation data for -> "mappable" (a check in the tree). Filled from the
+  // cache on load; a selection's citations are fetched lazily by the Map when you view it, so we
+  // never bulk-fetch the whole library or a whole collection (that hits OpenAlex rate limits).
   const [mapped, setMapped] = useState<Set<string>>(new Set())
-  const [pending, setPending] = useState(0) // DOI-bearing papers still needing a fetch
-  const [fetchedAll, setFetchedAll] = useState(false) // a whole-library fetch has completed
-  const [fetching, setFetching] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const [prefetchPct, setPrefetchPct] = useState(0)
-  const [prefetchMsg, setPrefetchMsg] = useState<string | null>(null)
   const [selectedOpen, setSelectedOpen] = useState(false)
   const [titleByKey, setTitleByKey] = useState<Map<string, string>>(new Map())
-
-  // Fetch references + citers for the whole (DOI-bearing) library so any selection maps
-  // instantly. Papers un-grey as they resolve; runs once per load (guarded), cheap on re-run
-  // (the backend skips already-cached items).
-  const prefetchRunning = useRef(false)
-
-  // Poll a (new or already-running) whole-library fetch to completion, un-greying papers as they
-  // resolve so the map can use them immediately.
-  const attachToJob = useCallback(async (jobId: string) => {
-    setConfirming(false)
-    setFetching(true)
-    setPrefetchPct(0)
-    setPrefetchMsg("Fetching citations...")
-    try {
-      await pollJob(jobId, getGraphFetch, {
-        intervalMs: 1200,
-        onProgress: (job) => {
-          setPrefetchPct(job.progress ?? 0)
-          setPrefetchMsg(job.detail || "Fetching citations...")
-          void mappedKeys().then((m) => setMapped(new Set(m.keys))).catch(() => {})
-        },
-        onDone: () => {},
-        onError: () => setPrefetchMsg(null),
-      })
-      const [m, s] = await Promise.all([mappedKeys(), prefetchStatus().catch(() => ({ pending: 0, total: 0 }))])
-      setMapped(new Set(m.keys))
-      setPending(s.pending)
-    } catch {
-      /* keep whatever mapped set we already have */
-    } finally {
-      setFetchedAll(true)
-      setFetching(false)
-      setPrefetchMsg(null)
-      prefetchRunning.current = false
-    }
-  }, [])
-
-  const runPrefetch = useCallback(async () => {
-    if (prefetchRunning.current) return
-    prefetchRunning.current = true
-    try {
-      const { jobId } = await startLibraryPrefetch() // idempotent - returns the running job if any
-      await attachToJob(jobId)
-    } catch {
-      prefetchRunning.current = false
-      setFetching(false)
-      setConfirming(false)
-    }
-  }, [attachToJob])
-
-  // If a whole-library fetch is already running (e.g. started before a reload, or still going from
-  // an earlier session), resume its progress instead of looking idle / queuing a duplicate.
-  const resumeIfFetching = useCallback(async () => {
-    if (prefetchRunning.current) return
-    try {
-      const { jobId } = await activeFetch()
-      if (jobId) {
-        prefetchRunning.current = true
-        void attachToJob(jobId)
-      }
-    } catch {
-      /* ignore - just won't resume */
-    }
-  }, [attachToJob])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -137,12 +63,11 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
     // (and new ones appear) on reload; expanded collections re-fetch via the effect below.
     setItems({})
     try {
-      const [cols, narr, corpus, maps, pstat] = await Promise.all([
+      const [cols, narr, corpus, maps] = await Promise.all([
         fetchZoteroCollections(),
         listNarrations(),
         listPapers(),
         mappedKeys(),
-        prefetchStatus().catch(() => ({ pending: 0, total: 0 })),
       ])
       setCollections(cols.collections)
       setLiveConnected(cols.liveConnected !== false)
@@ -150,19 +75,17 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
       setMountPath(cols.mountPath ?? null)
       setNarrations(new Map(narr.items.map((n) => [n.docId, { jobId: n.jobId, title: n.title }])))
       setMapped(new Set(maps.keys))
-      setPending(pstat.pending)
       setTitleByKey((prev) => {
         const next = new Map(prev)
         corpus.papers.forEach((p) => next.set(p.docId, p.title))
         return next
       })
-      void resumeIfFetching()
     } catch {
       setError("Couldn't load your Zotero library. Is the mount set?")
     } finally {
       setLoading(false)
     }
-  }, [resumeIfFetching])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -228,20 +151,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
     [loadItems],
   )
 
-  const selectCollection = useCallback(
-    async (col: ZoteroCollection) => {
-      try {
-        const { itemKeys } = await fetchZoteroIndexableKeys(col.collectionID)
-        if (!itemKeys.length) return
-        const allSelected = itemKeys.every((k) => selectedKeys.has(k))
-        setMany(itemKeys, !allSelected)
-      } catch {
-        setError("Couldn't resolve that collection.")
-      }
-    },
-    [selectedKeys, setMany],
-  )
-
   const renderCollection = (col: ZoteroCollection, depth: number) => {
     const isOpen = expanded.has(col.collectionID)
     const rows = items[col.collectionID]
@@ -258,7 +167,11 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
           >
             <ChevronRight className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
           </Button>
-          <SidebarMenuButton className="grid h-7 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_2.5rem] pr-4" onClick={() => selectCollection(col)} title="Select this collection">
+          <SidebarMenuButton
+            className="grid h-7 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_2.5rem] pr-4"
+            onClick={() => toggleExpand(col)}
+            title={isOpen ? "Collapse collection" : "Expand collection"}
+          >
             <span className="truncate">{col.name}</span>
             {typeof col.itemCount === "number" && col.itemCount > 0 ? (
               <span className="text-right text-xs tabular-nums text-muted-foreground">{col.itemCount}</span>
@@ -279,18 +192,13 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
               rows.map((item) => {
                 const isSel = selectedKeys.has(item.itemKey)
                 const isMapped = mapped.has(item.itemKey)
-                // A DOI'd paper still being fetched spins; with no DOI (or after a completed
-                // fetch that found nothing) it greys, like books did.
-                const spinning = fetching && !!item.doi && !isMapped
-                const unmappable = !item.doi || (fetchedAll && !isMapped)
+                // A paper with no DOI can't be mapped; one with a DOI shows a check once its
+                // citations are cached (fetched lazily when you view it on the Map).
+                const unmappable = !item.doi
                 const narration = narrations.get(item.itemKey)
                 const reason = !item.doi
                   ? "No DOI - not on the map"
-                  : spinning
-                    ? "Fetching citations..."
-                    : unmappable
-                      ? "No references in OpenAlex - not on the References map"
-                      : (item.title ?? item.itemKey)
+                  : (item.title ?? item.itemKey)
                 return (
                   <div
                     key={item.itemKey}
@@ -338,11 +246,7 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
                       ) : (
                         <span className="h-6 w-7" aria-hidden />
                       )}
-                      {spinning ? (
-                        <span className="flex h-6 w-7 items-center justify-center" title="Fetching citations...">
-                          <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
-                        </span>
-                      ) : isMapped ? (
+                      {isMapped ? (
                         <Tooltip>
                           <TooltipTrigger
                             render={
@@ -439,54 +343,6 @@ export default function ZoteroNavigator({ onResizeStart }: Props) {
         ) : (
           <div className="py-2 text-xs text-muted-foreground" style={SIDEBAR_GUTTER}>Select papers to scope your map</div>
         )}
-
-        {fetching ? (
-          <div className="border-b" style={SIDEBAR_GUTTER}>
-            <div className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3 shrink-0 animate-spin" />
-              <span className="truncate">{prefetchMsg || "Fetching citations..."}</span>
-            </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
-              <div className="h-full bg-primary transition-[width]" style={{ width: `${Math.max(3, prefetchPct)}%` }} />
-            </div>
-            <div className="h-3" aria-hidden />
-          </div>
-        ) : confirming ? (
-          <div className="border-b text-xs" style={SIDEBAR_GUTTER}>
-            <div className="flex min-h-12 items-center leading-4 text-muted-foreground">
-              Fetch citations for {pending} {pending === 1 ? "paper" : "papers"}? Each paper&apos;s DOI is sent to OpenAlex.
-            </div>
-            <div className="flex h-11 items-start gap-2 pt-1">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
-                onClick={() => void runPrefetch()}
-              >
-                Fetch
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 min-w-16 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
-                onClick={() => setConfirming(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : pending > 0 ? (
-          <div className="flex h-13 items-center border-b" style={SIDEBAR_GUTTER}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-fit justify-start gap-2 rounded-[min(var(--radius-md),12px)] border-border/70 bg-card !px-4 text-[0.8rem] hover:border-border hover:bg-muted"
-              onClick={() => setConfirming(true)}
-            >
-              <Download className="size-3.5 shrink-0" /> Fetch citations · {pending} {pending === 1 ? "paper" : "papers"}
-            </Button>
-          </div>
-        ) : null}
 
         {!loading && !error && libraryMissing ? (
           <div className="flex min-h-12 items-center text-xs leading-4 text-muted-foreground" style={SIDEBAR_GUTTER}>
