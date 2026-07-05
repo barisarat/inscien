@@ -9,7 +9,7 @@ can replay any time.
 
 ## The one-time voice download
 
-The desktop app doesn't bundle the ~1 GB voice model, to keep the installer small. The first
+InScien doesn't ship the ~1 GB voice model up front, to keep the install small. The first
 time you narrate, InScien shows a **Download narration voice** button with a progress bar.
 After that, narration runs without re-downloading - the voice stays on your machine.
 

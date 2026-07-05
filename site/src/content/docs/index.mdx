@@ -5,15 +5,15 @@ template: splash
 hero:
   tagline: Turn your Zotero library into a navigable map and audio narrations. Local-first, private, and entirely yours.
   actions:
-    - text: Download
-      link: '#download'
+    - text: Install
+      link: '#install'
       variant: primary
     - text: Get started
       link: /getting-started/installation/
       icon: right-arrow
       variant: secondary
     - text: View on GitHub
-      link: https://github.com/aratbaris/inscien
+      link: https://github.com/barisarat/inscien
       icon: github
       variant: minimal
 ---
@@ -41,35 +41,33 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 	</Card>
 </CardGrid>
 
-## Download
+## Install
 
-Pick your platform, grab the installer from the latest release, and follow the one-time steps.
-The builds are unsigned, so you'll click past a SmartScreen / Gatekeeper warning the first time.
+InScien runs as a local web app in your own browser - one command, the same on Windows, macOS,
+and Linux. All you need is [`uv`](https://docs.astral.sh/uv/): it brings its own Python, and the
+app carries everything else (the voice engine and audio are bundled - nothing is installed
+system-wide).
 
-<CardGrid>
-	<Card title="Windows">
-		Get the `..._x64-setup.exe` from the
-		[latest release](https://github.com/aratbaris/inscien/releases/latest).
-		[Install steps ->](/getting-started/installation/#windows)
-	</Card>
-	<Card title="macOS">
-		Get the `..._aarch64.dmg` from the
-		[latest release](https://github.com/aratbaris/inscien/releases/latest).
-		[Install steps ->](/getting-started/installation/#macos)
-	</Card>
-	<Card title="Linux">
-		Get the `.AppImage` or `.deb` from the
-		[latest release](https://github.com/aratbaris/inscien/releases/latest).
-		[Install steps ->](/getting-started/installation/#linux)
-	</Card>
-</CardGrid>
+```bash
+# 1) Install uv once
+#    macOS / Linux:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+#    Windows PowerShell:
+#    irm https://astral.sh/uv/install.ps1 | iex
 
-All installers live on the [Releases page](https://github.com/aratbaris/inscien/releases/latest).
+# 2) Run InScien
+uvx inscien                          # try it (ephemeral, isolated)
+uv tool install inscien && inscien   # or install the `inscien` command
+```
+
+InScien starts a local server, opens your browser, and serves everything from your machine. Then
+point it at your Zotero folder in Settings. [Full steps ->](/getting-started/installation/)
 
 ## How it works
 
-InScien is a desktop app you download and run locally. It rides read-only on your existing
-[Zotero](https://www.zotero.org) library, with no import and no copy. The **Map** needs no
-model; **narration** uses a model you connect (a local Ollama, or your own OpenAI key).
+InScien runs locally and opens in your own browser - no separate app to install, no account. It
+rides read-only on your existing [Zotero](https://www.zotero.org) library, with no import and no
+copy. The **Map** needs no model; **narration** uses a model you connect (a local Ollama, or your
+own OpenAI key).
 
-[Install it](/getting-started/installation/) and point it at your Zotero folder to begin.
+[Get started](/getting-started/installation/) and point it at your Zotero folder to begin.

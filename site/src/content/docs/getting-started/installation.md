@@ -1,49 +1,57 @@
 ---
 title: Installation
-description: Download and install InScien on Windows, macOS, or Linux.
+description: Install and run InScien on Windows, macOS, or Linux with a single command.
 ---
 
-InScien is a desktop app. Download the installer for your operating system from the
-[latest release](https://github.com/aratbaris/inscien/releases/latest), then follow the
-one-time steps for your platform below.
+InScien runs as a local web app in your own browser. You install it with
+[`uv`](https://docs.astral.sh/uv/) - one command, the same on every OS. `uv` fetches its own
+Python, and the app bundles everything else (the Kokoro voice engine and ffmpeg), so there are no
+system packages to install.
+
+## 1. Install uv
+
+macOS / Linux:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://astral.sh/uv/install.ps1 | iex
+```
+
+On Arch Linux you can also use `sudo pacman -S uv`.
+
+## 2. Run InScien
+
+```bash
+uvx inscien
+```
+
+That runs it in an isolated, ephemeral environment. To install it so the `inscien` command stays
+on your PATH:
+
+```bash
+uv tool install inscien
+inscien
+```
+
+Either way, InScien starts a local server and opens your browser at it. Later, update with
+`uv tool upgrade inscien`.
 
 ## Prerequisite: a model for narration
 
-The **Map needs no model**. **Narration** needs a model you connect - either a
-local [Ollama](https://ollama.com) (private and free) or an OpenAI API key (higher quality,
-paid). To use a local model, install Ollama and pull one before narrating:
+The **Map needs no model**. **Narration** needs a model you connect - either a local
+[Ollama](https://ollama.com) (private and free) or an OpenAI API key (higher quality, paid). For a
+local model, install Ollama and pull one before narrating:
 
 ```bash
 ollama pull llama3.1:8b
 ```
 
-InScien talks to Ollama at `http://localhost:11434`. You can also paste an OpenAI key in
-Settings instead - see **Settings & models** in the sidebar.
-
-## Windows
-
-1. Download `InScien_x.y.z_x64-setup.exe` and run it.
-2. The build is unsigned, so Windows SmartScreen may warn. Click **More info -> Run anyway**.
-3. It installs to Program Files and adds a Start-Menu shortcut.
-
-## macOS
-
-1. Download `InScien_x.y.z_aarch64.dmg`, open it, and drag InScien into Applications.
-2. The build is unsigned, so Gatekeeper blocks the first launch. **Right-click the app ->
-   Open**, then confirm. (Alternatively:
-   `xattr -dr com.apple.quarantine /Applications/InScien.app`.)
-
-## Linux
-
-- **AppImage:** `chmod +x InScien_*.AppImage && ./InScien_*.AppImage`
-- **Debian / Ubuntu:** `sudo dpkg -i InScien_*.deb`
-
-On minimal setups (bare window managers), audio playback for narration needs the GStreamer
-plugins your desktop normally already provides:
-
-```bash
-# Arch example
-sudo pacman -S --needed gst-plugins-base gst-plugins-good gst-libav
-```
+InScien talks to Ollama at `http://localhost:11434`. You can also paste an OpenAI key in Settings
+instead - see **Settings & models** in the sidebar.
 
 Next: the [Quick start](/getting-started/quick-start/).
