@@ -1,95 +1,57 @@
 name: release
 
-# Build the cross-OS desktop installers and attach them to a GitHub Release.
-# Trigger by pushing a tag like `v0.1.0`, or run manually.
+# Build and publish the `inscien` wheel to PyPI on a `v*` tag (or manually).
+#
+# InScien ships as `uvx inscien` - a browser-served local app. The wheel is pure-Python and its
+# native dependencies (onnxruntime, kokoro-onnx -> espeak via espeakng-loader, imageio-ffmpeg)
+# publish their own per-OS wheels, so this single Linux build serves Windows, macOS, and Linux.
+# The Tauri desktop installers are retired; src-tauri/ is experimental (see PACKAGING.md).
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
 
 jobs:
-  build:
+  publish:
+    runs-on: ubuntu-latest
     permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            triple: x86_64-unknown-linux-gnu
-            sidecar_ext: ""
-          - os: macos-14            # Apple Silicon
-            triple: aarch64-apple-darwin
-            sidecar_ext: ""
-          - os: windows-latest
-            triple: x86_64-pc-windows-msvc
-            sidecar_ext: ".exe"
-    runs-on: ${{ matrix.os }}
+      id-token: write   # PyPI trusted publishing (OIDC) - no stored token
     steps:
       - uses: actions/checkout@v4
 
-      - name: Linux system deps (WebKitGTK for Tauri 2 + ffmpeg/espeak for TTS)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Guard - tag must match the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: backend
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf \
-            build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev \
-            ffmpeg espeak-ng
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/')"
+          echo "tag=$tag  pyproject=$ver"
+          if [ "$tag" != "$ver" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pyproject version $ver. Bump backend/pyproject.toml first."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with: { node-version: "24", cache: "npm", cache-dependency-path: frontend/package-lock.json }
 
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.triple }}
-      - uses: swatinem/rust-cache@v2
-        with: { workspaces: "src-tauri -> target" }
-
-      # --- 1) Freeze the backend into a single sidecar binary ---------------------------------
-      - name: PyInstaller freeze backend
-        working-directory: backend
-        shell: bash          # bash is available on all three runners; the commands below are bash
+      # Build the static UI and vendor it into backend/webui so the wheel serves it (same as `make web`).
+      - name: Build frontend (static export) + vendor into backend/webui
         run: |
-          python -m pip install --upgrade pip pyinstaller
-          pip install -r requirements.txt
-          pyinstaller inscien.spec
-          mkdir -p ../src-tauri/binaries
-          cp "dist/inscien-backend${{ matrix.sidecar_ext }}" \
-             "../src-tauri/binaries/inscien-backend-${{ matrix.triple }}${{ matrix.sidecar_ext }}"
-
-      # ML weights are NOT bundled - the Kokoro voice is downloaded on demand from the Narrate tab.
-      # So there's nothing to fetch here; this keeps the installer small (~tens of MB).
-
-      # --- 2) Build the frontend static export explicitly --------------------------------------
-      # We do NOT rely on tauri.conf.json's beforeBuildCommand: tauri-action runs it from the repo
-      # root (so `cd ../frontend` escapes the repo), unlike local `cargo tauri build`. Building here
-      # with a known working-directory avoids that CWD ambiguity across all three OSes. tauri-action
-      # then just bundles the prebuilt `frontend/out` (beforeBuildCommand is cleared in the config).
-      - name: Build frontend (static export)
-        working-directory: frontend
-        shell: bash
-        run: |
+          cd frontend
           npm ci
           npm run build
+          rm -rf ../backend/webui
+          cp -r out ../backend/webui
 
-      # --- 3) Build the Tauri app + attach installers to the draft Release ---------------------
-      - name: Build + release
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Tauri updater signing (minisign, independent of OS code-signing). When present,
-          # tauri-action emits the updater bundles + .sig files and uploads latest.json.
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          projectPath: src-tauri
-          tagName: ${{ github.ref_name }}
-          releaseName: "InScien ${{ github.ref_name }}"
-          releaseBody: "Unsigned v1 build. See PACKAGING.md for install notes (Gatekeeper/SmartScreen)."
-          # Must be published (not draft): the updater reads latest.json from
-          # releases/latest/download, which 404s on a draft release.
-          releaseDraft: false
-          args: --target ${{ matrix.triple }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build wheel
+        working-directory: backend
+        run: uv build
+
+      # Trusted publishing: uv detects the GitHub Actions OIDC token automatically (id-token: write
+      # above). One-time setup: on pypi.org, add this repo as a trusted publisher for `inscien`.
+      - name: Publish to PyPI
+        working-directory: backend
+        run: uv publish --trusted-publishing always

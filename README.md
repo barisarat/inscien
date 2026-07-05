@@ -19,18 +19,23 @@ Downloads and documentation: https://inscien.com/
 - **Read the source.** Open any paper's original PDF inside the app to read it or check it
   against the map.
 
-## Download
+## Install
 
-Grab the installer for your operating system from the
-[latest release](https://github.com/aratbaris/inscien/releases/latest):
+InScien runs as a local web app in your own browser - one command, no separate install, works the
+same on Windows, macOS, and Linux. With [`uv`](https://docs.astral.sh/uv/):
 
-- Windows: the `..._x64-setup.exe`
-- macOS: the `..._aarch64.dmg`
-- Linux: the `.AppImage` or `.deb`
+```bash
+uvx inscien            # try it (ephemeral, isolated)
+# or install it so `inscien` stays on your PATH:
+uv tool install inscien && inscien
+```
 
-Builds are unsigned for now, so you click past a SmartScreen (Windows) or Gatekeeper (macOS)
-warning on first launch. Full per-OS steps are in the
-[installation guide](https://inscien.com/getting-started/installation/).
+It starts a local server, opens your browser, and serves the whole app from your machine. Nothing
+is bundled that touches your system - the voice engine (Kokoro/espeak) and audio muxing (ffmpeg)
+ship inside the package. `uv` fetches its own Python, so there is nothing else to set up.
+
+> A native desktop build (Tauri) also exists under `src-tauri/`, but it is experimental and
+> unsupported - the browser-served `uvx` path above is the recommended way to run InScien.
 
 ## Prerequisite: a model for narration
 
@@ -60,12 +65,11 @@ InScien is a FastAPI backend plus a Next.js frontend; citation data is cached in
 file (no database beyond SQLite for settings). Dev runs natively on the host - no Docker, no
 `.env` (config lives in the in-app Settings page).
 
-Host prereqs: [`uv`](https://docs.astral.sh/uv/), Node, and `espeak-ng` (Kokoro TTS
-phonemization). Install them with your package manager:
-`apt install espeak-ng` / `brew install espeak-ng` /
-`sudo pacman -S --needed uv espeak-ng` (on Arch, Node comes from `nodejs-lts-jod` - keep
-it; do not let pacman swap in the bleeding-edge `nodejs` package). The backend pins to
-Python 3.12; `uv` fetches it automatically, so no system Python 3.12 is needed.
+Host prereqs: [`uv`](https://docs.astral.sh/uv/) and Node (on Arch, Node comes from
+`nodejs-lts-jod` - keep it; do not let pacman swap in the bleeding-edge `nodejs` package). TTS is
+fully bundled - Kokoro ships espeak via `espeakng-loader` and `ffmpeg` via `imageio-ffmpeg` - so
+no system packages are needed. The backend pins to Python 3.12; `uv` fetches it automatically, so
+no system Python 3.12 is needed.
 
 Run `make setup` **first** (once), then start the two servers:
 

@@ -21,8 +21,9 @@ no model at all (just OpenAlex over each paper's DOI).
 ## Running the stack
 
 Dev runs natively on the host (no Docker, no `.env`); config lives in the in-app Settings page.
-Host prereqs: `uv`, Node, `espeak-ng` (Kokoro phonemization). The backend pins to Python 3.12;
-`uv` fetches it automatically (no system 3.12 needed).
+Host prereqs: `uv` and Node. TTS is fully bundled (Kokoro >=0.5 ships espeak via espeakng-loader,
+ffmpeg via imageio-ffmpeg) - no system packages. The backend pins to Python 3.12; `uv` fetches it
+automatically (no system 3.12 needed).
 
 ```bash
 make setup        # one-time: backend venv + deps, frontend deps

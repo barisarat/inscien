@@ -16,13 +16,13 @@ No Docker, no `.env`. Two processes on native ports - the backend (FastAPI) on `
 Next dev server on `:3000`. Config lives in the in-app **Settings** page (Zotero folder, Ollama
 URL, OpenAI key, model), so there is nothing to configure on disk.
 
-Host prereqs: **[`uv`](https://docs.astral.sh/uv/)**, **Node**, and **`espeak-ng`** (Kokoro TTS
-phonemization). Install with your package manager: `apt install espeak-ng` /
-`brew install espeak-ng` / `sudo pacman -S --needed uv espeak-ng` (on Arch, Node comes from
-`nodejs-lts-jod` - keep it; do not let pacman swap in the bleeding-edge `nodejs` package). The
+Host prereqs: **[`uv`](https://docs.astral.sh/uv/)** and **Node** (on Arch, Node comes from
+`nodejs-lts-jod` - keep it; do not let pacman swap in the bleeding-edge `nodejs` package). TTS is
+fully bundled - Kokoro (>=0.5) ships espeak via `espeakng-loader` and `ffmpeg` via
+`imageio-ffmpeg` - so **no system packages** (no `espeak-ng`, no `ffmpeg`) are needed. The
 backend pins to Python 3.12; `uv venv --python 3.12` (run by `make setup`) fetches it
-automatically, so no system Python 3.12 is needed. `ffmpeg` is bundled (`imageio-ffmpeg`), and
-the ~1GB Kokoro voice downloads on demand from the Narrate UI on first use.
+automatically, so no system Python 3.12 is needed. The ~1GB Kokoro voice downloads on demand from
+the Narrate UI on first use.
 
 Run `make setup` **first** (once), then start the two servers in separate terminals:
 
@@ -42,15 +42,20 @@ want narration.
 
 ---
 
-## Production: the desktop app
+## Production: `uvx inscien` (browser-served)
 
-There is no production server or Docker image. The shipped artifact is a **cross-OS desktop app**
-(Tauri shell + the backend frozen by PyInstaller into a sidecar). It is built by
-[`.github/workflows/release.yml`](.github/workflows/release.yml) on a `v*` tag; the full runbook
-is in [`PACKAGING.md`](PACKAGING.md).
+There is no production server or Docker image. The shipped artifact is a **pure-Python wheel** on
+PyPI, run as `uvx inscien` (or `uv tool install inscien`). It starts the backend, which serves
+BOTH the API and the static UI on one loopback port, and opens the user's own browser at it -
+`backend/launcher.py` is the entry point. The wheel is built + published by
+[`.github/workflows/release.yml`](.github/workflows/release.yml) on a `v*` tag (single Linux job;
+native deps resolve per-OS at install time). Everything is self-contained: Kokoro bundles espeak
+(via `espeakng-loader`), `imageio-ffmpeg` bundles ffmpeg - no system packages. A native Tauri
+build still exists under `src-tauri/` but is **experimental/unsupported** (see
+[`PACKAGING.md`](PACKAGING.md)).
 
 What matters here is *how it serves*: **one process, one origin** - the same shape as dev's
-backend, minus the separate Next dev server.
+backend, minus the separate Next dev server. (The Tauri build, when used, serves the exact same way.)
 
 1. **The frontend is a static export.** `next.config.ts` sets `output: "export"`, so
    `next build` emits plain HTML/JS/CSS to `frontend/out/` (no Node server at runtime).

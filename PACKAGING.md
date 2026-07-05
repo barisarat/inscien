@@ -1,6 +1,13 @@
-# InScien — Desktop packaging (Tauri v1)
+# InScien — Desktop packaging (Tauri, experimental)
 
-InScien ships as a **Tauri desktop app**: a thin native window that spawns the InScien backend
+> **Status: experimental / unsupported.** InScien now ships as `uvx inscien` - a browser-served
+> local app (pure-Python wheel on PyPI, published by `.github/workflows/release.yml`). That is the
+> recommended and supported way to run it; see [`README.md`](README.md) and [`RUNNING.md`](RUNNING.md).
+> The Tauri desktop build below is kept for reference but is no longer part of the release pipeline:
+> its bundled WebKit is fragile on newer GPUs, and the Windows/macOS installers cannot be tested
+> without those machines. Prefer the `uvx` path.
+
+InScien can also be packaged as a **Tauri desktop app**: a thin native window that spawns the InScien backend
 (frozen with PyInstaller) as a sidecar. The backend serves **both** the API and the static UI on a
 private loopback port, and the window points at it — so the web frontend is reused verbatim, no
 rebuild. The **Map needs no model** (deterministic); **narration** uses a model you connect (local
