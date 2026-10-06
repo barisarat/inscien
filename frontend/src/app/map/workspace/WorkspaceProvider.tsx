@@ -3,13 +3,8 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 
 import { type PdfTab } from "../components/PdfViewerPanel"
-import { type Lens } from "./LensBar"
 
 interface WorkspaceValue {
-  // The active citation lens, held here because the switch lives in the top bar and the graph
-  // that reads it lives below - siblings, so neither can own the state.
-  lens: Lens
-  setLens: (l: Lens) => void
   openPdf: (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string; bbox?: number[] | null }) => void
   pdfTabs: PdfTab[]
   activePdfTabId: string | null
@@ -20,8 +15,6 @@ interface WorkspaceValue {
 }
 
 const WorkspaceContext = createContext<WorkspaceValue>({
-  lens: "cite",
-  setLens: () => {},
   openPdf: () => {},
   pdfTabs: [],
   activePdfTabId: null,
@@ -32,10 +25,8 @@ const WorkspaceContext = createContext<WorkspaceValue>({
 })
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [lens, setLens] = useState<Lens>("cite")
   const [pdfTabs, setPdfTabs] = useState<PdfTab[]>([])
   const [activePdfTabId, setActivePdfTabId] = useState<string | null>(null)
-
   const openPdf = useCallback(
     (t: { sourceId?: string | null; title?: string; page?: number | null; passage?: string; bbox?: number[] | null }) => {
       if (!t.sourceId) return
@@ -75,8 +66,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   return (
     <WorkspaceContext.Provider
       value={{
-        lens,
-        setLens,
         openPdf,
         pdfTabs,
         activePdfTabId,

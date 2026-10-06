@@ -1,149 +1,56 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working in this repository.
+How to work on InScien. `README.md` is usage; this file is the map and the rules.
 
-## Project overview
+## What it is
 
-**InScien** is a local, private **citation map** over the user's own **Zotero library**: what your
-papers cite and what cites them, from OpenAlex. One modality, no model. It was forked from
-FinanceLab (a FastAPI + Next.js platform) by keeping the Next.js workbench shell and stripping the
-finance domain. The original chat/agent ("RAG-cite"), the `/compare` and `/write` skills, the whole
-embedding / indexing / semantic-map layer, and (in 0.4.0) **Narrate** were **retired**; the shipped
-product is the Map.
+One pure-Python package (`src/inscien`) plus a Next.js static UI (`frontend/`) that is built
+into the package as `src/inscien/webui/`. Installed, it needs no Node and no network except the
+reference lookups and the one-time weights download.
 
-Single-user, local, no auth. Stack: FastAPI backend + Next.js frontend (static export). SQLite for
-app state; the citation data is a JSON cache (`data/openalex.json`). Distributed as a **pure-Python
-wheel on PyPI**, run as `uvx inscien`: one local process that serves the API and the UI on a
-loopback port and opens the user's own browser at it. **No LLM, no ML runtime, no API key** - the
-whole app is OpenAlex over each paper's DOI, so the only setting is the Zotero data folder.
+## Layout
 
-## Running the stack
-
-Dev runs natively on the host (no Docker, no `.env`); config lives in the in-app Settings page.
-Host prereqs: `uv` and Node - no system packages. The backend pins to Python 3.12; `uv` fetches it
-automatically (no system 3.12 needed).
-
-```bash
-make setup        # one-time: backend venv + deps, frontend deps
-make backend      # terminal 1: uvicorn --reload on :8000
-make frontend     # terminal 2: Next dev server on :3000
+```text
+src/inscien/
+  cli.py              `inscien` entry: serve (default), build, narrate, narration diagnostics
+  app.py              FastAPI app: routers, the static UI, INSCIEN_READONLY
+  core/paths.py       INSCIEN_HOME and every directory under it - the only place paths are made
+  routers/            HTTP API: settings, zotero, library, papers, narrations, jobs
+  services/zotero/    read-only Zotero access (detection, snapshot copy of zotero.sqlite)
+  services/library/   library store, staging, narration queue, host_job (the one-job runner)
+  refs/               `inscien build`: pdftext -> extract -> parse -> enrich -> paper.json
+  narrate/            `inscien narrate`: planning -> slicing -> narration_text/structure ->
+                      lexical/convert/prosody -> tts -> bundle (+ anchors, cues)
+frontend/src/app/     map/, listen/, settings/; components/JobPane.tsx shows the job
+tests/                pytest
 ```
 
-There is no indexing step: browse Zotero collections in the sidebar and select papers - the Map
-fetches their citations from OpenAlex on demand. An opt-in "Fetch citations" action warms the
-whole library's references in the background, so any selection then renders instantly. Point
-InScien at the Zotero data dir via the Settings page (`ZOTERO_DATA_DIR` is an env fallback). The wheel is published to PyPI by the release CI on a `v*`
-tag; to build it locally, `make wheel`. Full run/serve/release details in `RUNNING.md`.
+## Rules
 
-## Architecture
+- **Zotero is read-only.** Never write to the Zotero data directory; read the snapshot copy.
+- **All writes go under INSCIEN_HOME**, through `core/paths.py`. No other path is hardcoded.
+- **One job at a time.** Builds and narrations run as `python -m inscien build|narrate` in a
+  subprocess (`host_job.py`). A pipeline step prints `==> k/n label`; synthesis prints
+  `[ done/total]`. The job pane reads exactly those two shapes, so keep them.
+- **Narration keeps the author's sentences verbatim.** The rules may skip, join, fix extraction
+  artifacts and speak symbols; they never paraphrase. An acronym is expanded only where the paper
+  glosses it.
+- **Borderline lines:** inside a table or figure region, drop; elsewhere, keep. A stray row is
+  audible, a lost sentence is not.
+- **PDF text comes from `refs/pdftext.py` only** (PyMuPDF text trace, joined as a viewer's text
+  layer joins it). Extraction and planning both depend on its item shape.
+- **No personal data in the repo**: no PDFs, library JSON, bundles or paths. Tests use
+  synthetic input.
+- Plain ASCII in comments and Markdown.
 
-**Map (`routers/graph.py` + `services/refs/`).** The Map is the **OpenAlex citation graph** of the
-selected papers - no LLM, no embeddings. Two lenses: **References** (what your papers cite,
-`discovery_graph`) and **Cited-by** (what cites them, `citing_graph`), assembled from the cache
-(`refstore.py`, `data/openalex.json`). Fetching is a background job (`fetch_jobs.py` on the shared
-`JobRunner`): one OpenAlex call per paper by DOI (`openalex.py`, polite pool). A whole-library
-**prefetch** of references warms the cache (`POST /api/graph/prefetch`, opt-in); selection fetches
-cover anything uncached and are cancellable (`POST /api/graph/cancel/{id}`). A paper is mappable
-only if OpenAlex returns a record **with references** (`ready_keys`); ~1 in 5 records (mostly arXiv
-preprints) have none and are greyed in the library. Frontend: `GraphMode.tsx` (Lens = References |
-Cited-by, render-from-cache-first + progressive streaming, no-connection nodes dropped) +
-`GraphView.tsx` (force-directed graph); library is `ZoteroNavigator.tsx`.
+## Checks
 
-**Citations (`services/refs/`).** `openalex.py` is a thin OpenAlex client (free, CC0, no key; the
-polite pool via a constant `mailto`, self-throttled under ~10/s, bounded retries). `refstore.py`
-caches each paper's record keyed by Zotero itemKey in `data/openalex.json`, with status `mapped`
-(resolved) / `no_doi` / `not_found`; references are resolved to titles/years, and citers
-(`citingWorks`) are fetched lazily for the Cited-by lens. `fetch_jobs.py` runs the single-worker
-fetch jobs (prefetch / selection / cancel). There are no embeddings, no vector store, no BM25, and
-no clustering - those (and the old chat agent) are retired.
+```sh
+make test
+.venv/bin/python -m inscien build <pdf>     # with INSCIEN_HOME pointed at a scratch dir
+.venv/bin/python -m inscien narrate <pdf>
+```
 
-**Library (Zotero, `services/zotero/`).** Reads the user's Zotero library through a **private
-snapshot** - `reader.py` `shutil.copy`s `zotero.sqlite` to `data/zotero-snapshot.sqlite` and
-queries the copy, never the live DB (and serves the existing snapshot if the live source is
-absent). Collections, items, and metadata (incl. DOI) are read **live** from the snapshot
-(`library_items`, `item_metadata`); there is no index, manifest, or ledger - the only derived state
-is the OpenAlex citation cache. `routers/zotero.py` serves the collection tree + items;
-`routers/papers.py` `corpus_papers` (the sidebar's flat title lookup) is sourced straight from
-the reader.
-
-**PDFs (`routers/papers.py`).** Streams the original PDF inline (the browser honors a `#page=N`
-fragment); the doc id is the Zotero `itemKey`, resolved to its file in the Zotero storage tree.
-Opening a paper from the Map shows its source PDF in a side panel.
-
-**Settings (`routers/settings.py`).** A single `AppSettings` DB row holds `display_name` and
-`zotero_data_dir` - that is the whole config surface. The Zotero folder is **DB-first with env
-fallback** (`ZOTERO_DATA_DIR`), so the app is configured entirely in-app. A 0.3.x DB still carries
-the retired `llm_provider` / `llm_model` / `ollama_base_url` / `openai_api_key` columns; they are
-deliberately left unmapped and unread rather than dropped (see `models/app_settings.py` and
-`core/db.ensure_app_settings_columns`, which only ever ADDs columns).
-
-**Config / paths.** `core/paths.py` `data_dir()` reads `INSCIEN_DATA_DIR` - one base dir routing
-all durable state (SQLite, the OpenAlex cache `data/openalex.json`, the Zotero snapshot, job
-dirs). Zotero paths in `services/zotero/settings.py`. DB via `core/db.py` (`DATABASE_URL`, SQLite
-default). `OPENALEX_MAILTO` sets the polite-pool contact.
-
-## Packaging / distribution
-
-**Browser-served app (`backend/launcher.py`).** The shipped artifact is the `inscien` wheel on
-PyPI. `launcher.py` is the `inscien` console script: it sets `ENV_NAME=production`, points
-`FRONTEND_DIST` at the vendored `backend/webui`, sets `INSCIEN_DATA_DIR` to the OS app-data dir
-(`platformdirs`), picks a free loopback port, runs uvicorn, and opens the browser at it - so one
-process serves BOTH the API and the static UI on one origin (the `FRONTEND_DIST` static mount in
-`main.py`). The wheel is pure Python with no ML runtime. `make web` vendors the static export
-into `backend/webui`; `make wheel` builds the wheel.
-`.github/workflows/release.yml` does the same on a `v*` tag and publishes to PyPI via trusted
-publishing (the tag must match `backend/pyproject.toml`'s version). Nothing is frozen with
-PyInstaller and there are no native installers.
-
-**Docs.** GitHub only - `README.md` is the single user-facing document (install, first run, the
-Map guide, settings, troubleshooting). There is no marketing or docs site: the Astro + Starlight
-`site/` and its GitHub Pages workflow were removed, so `.github/workflows/release.yml` is the
-only pipeline left.
-
-## Status
-
-- **0.4.0 is Map-only.** The Map is **citation-only** (OpenAlex References / Cited-by); the earlier
-  semantic/embedding map, the vector store, the whole indexing step, and Narrate were removed. The
-  only config is the Zotero folder. Shipped as `uvx inscien` (PyPI), documented entirely in
-  `README.md` on GitHub.
-- Retired - do not reintroduce without intent: the chat / RAG-cite agent (`/api/agent/stream`,
-  `search_internal_content`, the old `services/rag/` grounding loops), the `/compare` and `/write`
-  skills, the embedding / indexing / semantic-map layer (fastembed, the vector store,
-  `services/map/fused.py`, `/api/map`, the chunk manifest, the `ZoteroSyncItem` ledger), AND the
-  **Tauri desktop build** (`src-tauri/`, the PyInstaller freeze `backend/inscien.spec` +
-  `run_server.py`, `scripts/build-linux.sh`, `PACKAGING.md`, the updater/signing plan - its
-  bundled WebKit was fragile on newer GPUs and the Windows/macOS installers were untestable),
-  AND the **public website** (the Astro + Starlight `site/`, `.github/workflows/site.yml`, the
-  `inscien.com` CNAME - its content now lives in `README.md`). Gone from routers, services, the
-  frontend, CI, and the docs.
-- Retired in 0.4.0 - **Narrate** (paper -> audio) and, with it, the entire model layer:
-  `routers/narrate.py` + `/api/narrate/*`, `services/narration/` (Kokoro TTS, the ~1 GB on-demand
-  voice download, the mp3 pipeline), `services/llm/client.py`, `services/lab/pdf_parser.py`,
-  `services/reveal.py`, `GET /api/settings/models`, the `llm_provider` / `llm_model` /
-  `ollama_base_url` / `openai_api_key` settings, `NarrateMode.tsx` + the Map/Narrate mode switch,
-  and the deps `kokoro-onnx`, `onnxruntime`, `pydub`, `imageio-ffmpeg`, `numpy`, `pymupdf`,
-  `openai`. Rationale: the Map needs no model, and carrying an ML/audio stack for one feature made
-  the install large, the Python version pinned, and the product two things at once. InScien is now
-  a literature-visualization tool: no LLM, no API key, no voice download. A 0.3.x DB keeps its
-  orphaned `llm_*` columns (unmapped, unread), and narration files left in the app-data dir are
-  inert.
-
-## Conventions
-
-- Standalone scripts insert the backend root on `sys.path` and `load_dotenv()` themselves;
-  `main.py` calls `load_dotenv()` on import.
-- No migration framework - `Base.metadata.create_all` builds tables on startup, and
-  `core/db.ensure_app_settings_columns` additively adds new `app_settings` columns.
-- **Plain ASCII copy** in all user-facing text and docs: no em/en dashes, curly quotes, or
-  ellipses; use `-` and `...`.
-- Frontend styling: reuse the design tokens in `frontend/src/app/globals.css`; use shadcn/ui
-  out of the box (never invent a design); accent blue is for links/active states, not
-  badges/pills (badges use `--surface-muted`).
-- **Padding/margin utilities need `!`.** `globals.css` has an UNLAYERED reset
-  (`* { margin:0; padding:0 }`). Unlayered CSS beats Tailwind's `@layer utilities` regardless of
-  specificity, so plain `px-*`/`pl-*`/`m-*` classes are silently overridden to 0 (the class is in
-  the DOM but computes to 0 - looks like the change "didn't apply"). Use the important prefix
-  (`!pl-4`, `!px-4`) for any padding/margin, matching the existing `!px-*` usages. Only margin and
-  padding are affected; `gap`/`bg`/`text`/`border` utilities work normally. See the comment at the
-  reset in `globals.css` before considering a systemic fix (layering the reset shifts spacing
-  app-wide).
+A change to `pdftext.py`, `extract.py` or `planning.py` is checked on several real papers
+before and after: the reference count and titles from `build`, and `narrate/work/<slug>/
+plan-review.txt` from `narrate`.

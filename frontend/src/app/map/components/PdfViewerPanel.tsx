@@ -36,7 +36,7 @@ export default function PdfViewerPanel({
   return (
     <aside className="flex h-full min-h-0 flex-col border-l bg-card">
       <div className="flex h-13 shrink-0 items-center gap-2 border-b" style={{ paddingLeft: "1.5rem", paddingRight: "1rem" }}>
-        <div className="flex flex-1 items-center gap-2 overflow-x-auto py-2" role="tablist">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto" role="tablist">
           {tabs.map((tab) => {
             const active = tab.id === activePdf?.id
             return (

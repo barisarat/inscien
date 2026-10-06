@@ -4,6 +4,7 @@ import "./globals.css"
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import JobPane from "@/components/JobPane"
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
@@ -15,12 +16,12 @@ const sourceCodePro = Source_Code_Pro({
 })
 
 export const metadata: Metadata = {
-  title: "InScien | Private research assistant",
-  description: "Ask your own research papers and get answers with page-precise, verifiable citations - local and private.",
+  title: "InScien",
+  description: "A map of your Zotero papers and what they cite, and narrations to listen to.",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 }
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={cn(sourceCodePro.variable, "font-sans", geist.variable)}>
       <body>
         <TooltipProvider>{children}</TooltipProvider>
+        <JobPane />
         <Toaster />
       </body>
     </html>

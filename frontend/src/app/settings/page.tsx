@@ -84,15 +84,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-svh bg-background pb-10" style={PAGE_GUTTER}>
-      <div className="mx-auto flex max-w-[57rem] flex-col">
+    <main className="min-h-svh bg-background" style={PAGE_GUTTER}>
+      <div className="flex max-w-[57rem] flex-col">
         <Link href="/map" className="inline-flex w-fit items-center gap-2 text-sm font-medium">
           <ArrowLeft className="size-4" /> Back to Map
         </Link>
 
         <div className="max-w-3xl" style={{ marginTop: "1.25rem", marginBottom: "1.75rem" }}>
           <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          <p className="text-sm leading-6 text-muted-foreground">
             InScien maps your library fully locally. Point it at your Zotero folder - there is
             nothing else to configure, and no model to connect.
           </p>

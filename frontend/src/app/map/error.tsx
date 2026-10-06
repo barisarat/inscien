@@ -22,7 +22,7 @@ export default function MapError({
   }, [error])
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
+    <main className="flex min-h-screen items-center justify-center">
       <Card className="max-w-md [--card-spacing:--spacing(6)]">
         <CardHeader>
           <CardTitle>Something broke unexpectedly</CardTitle>

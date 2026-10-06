@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useState, type CSSProperties, type PointerEvent } from "react"
 
-import ZoteroNavigator from "@/components/navigation/ZoteroNavigator"
+import LibraryNavigator from "@/components/navigation/LibraryNavigator"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import PdfViewerPanel from "../components/PdfViewerPanel"
-import TopBar from "./TopBar"
 import GraphMode from "./GraphMode"
 import { useWorkspace } from "./WorkspaceProvider"
 
@@ -15,8 +14,8 @@ const DEFAULT_SIDEBAR_WIDTH = 256
 const MIN_SIDEBAR_WIDTH = 224
 const MAX_SIDEBAR_WIDTH = 420
 
-// The whole app shell: the Zotero library sidebar + the Map and a draggable PDF viewer panel
-// inside the sidebar inset.
+// The whole app shell: the processed-paper library sidebar + the Map (or, while a narration is
+// open, paper tts' reader in its place) and a draggable PDF viewer panel inside the sidebar inset.
 export default function WorkspaceShell() {
   const { pdfTabs, activePdfTabId, hasOpenPdf, selectPdfTab, closePdfTab, closePdfPanel } =
     useWorkspace()
@@ -64,9 +63,8 @@ export default function WorkspaceShell() {
 
   return (
     <SidebarProvider style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
-      <ZoteroNavigator onResizeStart={startSidebarResize} />
+      <LibraryNavigator onResizeStart={startSidebarResize} />
       <SidebarInset className="h-svh overflow-hidden">
-        <TopBar />
         <ResizablePanelGroup className="min-h-0 flex-1">
           <ResizablePanel id="main" defaultSize={62} minSize={30} className="flex min-w-0 flex-col">
             <GraphMode />

@@ -1,25 +1,22 @@
-# InScien dev (no Docker). Run the backend (FastAPI) and frontend (Next) natively on the host,
-# in two terminals: `make backend` and `make frontend`. Config lives in the in-app Settings page
-# (the Zotero folder) - no .env needed.
-#
-# Host prereqs: uv (https://docs.astral.sh/uv/ - `pacman -S uv`) and Node. NO system packages are
-# needed - the backend is pure Python with no ML runtime. Its deps pin against Python 3.12; uv
-# fetches it automatically, so no system python3.12 is needed.
-.PHONY: setup backend frontend web wheel
+# InScien development. Requires uv and Node (Node only to build the UI; the installed tool needs neither).
+.PHONY: setup backend frontend web wheel test
 
-setup:   ## one-time: create the backend venv (Python 3.12 via uv) + install backend and frontend deps
-	cd backend && uv venv --python 3.12 .venv && uv pip install --python .venv -r requirements.txt
+setup:     ## one-time: Python env with the package in editable mode, and the frontend deps
+	uv venv --python 3.12 .venv && uv pip install --python .venv -e ".[dev]"
 	cd frontend && npm install
 
-backend: ## run FastAPI on http://localhost:8000 (hot reload)
-	cd backend && .venv/bin/uvicorn main:app --reload --port 8000
+backend:   ## the API on http://localhost:8000 with reload (UI from the Next dev server)
+	.venv/bin/uvicorn inscien.app:app --reload --port 8000
 
-frontend: ## run the Next dev server on http://localhost:3000
+frontend:  ## the Next dev server on http://localhost:3000
 	cd frontend && npm run dev
 
-web:     ## build the static UI and vendor it into backend/webui (for the pip/uvx build)
+web:       ## build the static UI and vendor it into the package
 	cd frontend && npm run build
-	rm -rf backend/webui && cp -r frontend/out backend/webui
+	rm -rf src/inscien/webui && cp -r frontend/out src/inscien/webui
 
-wheel: web  ## build the pip/uvx-installable wheel into backend/dist (run `web` first to refresh the UI)
-	cd backend && uv build
+wheel: web ## build the wheel and sdist into dist/
+	uv build
+
+test:
+	.venv/bin/pytest -q

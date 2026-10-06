@@ -1,0 +1,104 @@
+/* The parts of the reader that are geometry rather than design: the page boxes the source
+   pane scrolls through, the highlight rectangles over them, and the narration's own sentence
+   spans. Everything else in this view is a stock component. */
+
+.narration {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  max-width: 62ch;
+}
+
+.narration p {
+  margin: 0 0 1.1rem;
+}
+
+.narration p.heading {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 2rem 0 0.9rem;
+}
+
+.narration p.epigraph,
+.narration p.formula {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+/* One span per cue. Clicking one seeks there, so it has to feel touchable without drawing a
+   button - a hover underline in the accent, nothing else at rest. */
+.sentence {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.15s ease;
+}
+
+.sentence:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+}
+
+/* The one colour in the page. `on` is the sentence being spoken; `past` fades what is behind
+   it, so the eye lands on the boundary rather than hunting for the highlight. */
+.sentence.on {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.sentence.past {
+  color: var(--muted-foreground);
+}
+
+/* Every page gets its box up front, sized by aspect-ratio from the PDF's own page box, so the
+   images can load lazily without the scroll position jumping around under the highlight. */
+.page {
+  position: relative;
+  margin: 0 auto 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  width: calc(100% * var(--zoom, 1));
+}
+
+.page img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Positioned as percentages of the page box, so zoom and a pane resize need no recompute.
+   multiply keeps the words readable through the tint instead of washing them out. */
+.highlight {
+  position: absolute;
+  background: var(--accent-soft);
+  mix-blend-mode: multiply;
+  border-radius: 2px;
+  pointer-events: none;
+  transition: top 0.2s, left 0.2s;
+}
+
+/* The aligner placed the paragraph but not the sentence: say "somewhere in here" quietly
+   rather than lighting up a whole abstract as if that were the line being read. */
+.highlight.coarse {
+  opacity: 0.3;
+}
+
+/* The drag handle between the narration and the paper. */
+.splitter {
+  cursor: col-resize;
+  position: relative;
+  flex: 0 0 10px;
+}
+
+.splitter::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.splitter:hover::before {
+  background: var(--accent);
+  width: 2px;
+}

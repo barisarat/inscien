@@ -22,7 +22,10 @@ export interface AtlasNode {
   clusterLabel?: string | null
   collection?: string | null
   authors?: string[]
+  venue?: string | null
+  narrationUrl?: string | null
   year?: string | number | null
+  month?: number | null
   date?: string | null
   citedBy?: number | null // external: within-selection degree (shared anchors render bigger)
   globalCitedBy?: number | null
@@ -94,8 +97,10 @@ function clusterColor(cluster?: number | null): string {
   return clusters[cluster % clusters.length]
 }
 
-function nodeColorFor(n: AtlasNode, colorBy: ColorBy): string {
+function nodeColorFor(n: AtlasNode, colorBy: ColorBy, ownedColors?: Map<string, string>): string {
   if (n.type === "external") return palette().external
+  const own = ownedColors?.get(n.id)
+  if (own) return own
   if (colorBy === "type") return palette().owned
   return colorBy === "cluster" ? clusterColor(n.cluster) : collectionColor(n.collection)
 }
@@ -123,27 +128,133 @@ function citationScore(n: AtlasNode): number {
   return Math.max(0, n.citedBy ?? 0)
 }
 
-function citationScale(nodes: AtlasNode[]): Map<string, number> {
-  const scores = nodes.map((node) => Math.log10(citationScore(node) + 1))
-  const min = scores.length ? Math.min(...scores) : 0
-  const max = scores.length ? Math.max(...scores) : 0
-  const span = max - min
-  const values = new Map<string, number>()
+// Citation size is BUCKETED, not continuous - a small set of visibly distinct steps, the way
+// S/M/L/XL are distinct, rather than a smooth function nobody can read off the screen. The
+// breakpoints below are the buckets, and everything at or above the last one draws the same: past
+// a few hundred citations the difference between 800 and 3900 is not something the eye should be
+// asked to judge, and letting one landmark stretch the scale is what made every other node look
+// alike in the first place.
+//
+// The same array drives the citation FILTER in the header, so what you can filter by and what you
+// can see are the same set of thresholds.
+// Six tiers - xs, s, m, l, xl, xxl. Retuned when counts moved to Semantic Scholar: on the
+// deposit-limited OpenAlex numbers these thresholds topped out at 500, and with S2 counts (median
+// 173, p90 4393, max 26783) that put 73 of 234 references in the top bucket - a size scale whose
+// largest step means "somewhere between 500 and twenty-six thousand". These spread the same
+// library across 33/57/64/37/22/21. The absolute maximum is deliberately not a factor; the tiers
+// are categories, not a scale.
+export const CITATION_TIERS = [25, 100, 400, 1500, 5000]
 
-  nodes.forEach((node, index) => {
-    const normalized = span > 0 ? (scores[index] - min) / span : 0
-    const shaped = Math.max(0, Math.min(1, normalized)) ** 0.8
-    const minVal = node.type === "owned" ? 1.2 : 0.8
-    const maxVal = node.type === "owned" ? 9.5 : 6.25
-    values.set(node.id, minVal + (maxVal - minVal) * shaped)
-  })
+export function citationTier(count: number): number {
+  let tier = 0
+  for (const edge of CITATION_TIERS) if (count >= edge) tier += 1
+  return tier // 0 (under 25) .. 5 (5000+)
+}
+
+// force-graph treats `nodeVal` as an AREA - the drawn radius is `sqrt(val) * nodeRelSize` - so
+// evenly spaced SIZES need squared vals. These are the radii the tiers should draw at, in the
+// nodeRelSize=2.65 space the renderer uses, converted once here rather than tuned by eye.
+const TIER_RADIUS_EXTERNAL = [3, 5.6, 8.2, 10.8, 13.4, 16]
+const TIER_RADIUS_OWNED = [9, 11.2, 13.4, 15.6, 17.8, 20]
+const NODE_REL_SIZE = 2.65
+const asVal = (radius: number) => (radius / NODE_REL_SIZE) ** 2
+
+export function tierRadius(node: AtlasNode): number {
+  const tier = citationTier(citationScore(node))
+  return (node.type === "owned" ? TIER_RADIUS_OWNED : TIER_RADIUS_EXTERNAL)[tier]
+}
+
+// Floor on the drawn radius. Uniform shrinking is fine until the smallest tier disappears - at
+// which point the size ranking stops being readable at exactly the end where most nodes are.
+const MIN_DRAW_RADIUS = 2.6
+function citationScale(nodes: AtlasNode[], shrink = 1): Map<string, number> {
+  const values = new Map<string, number>()
+  for (const node of nodes) {
+    values.set(node.id, asVal(Math.max(MIN_DRAW_RADIUS, tierRadius(node) * shrink)))
+  }
   return values
 }
 
-// --- time-order layout: keep the network, nudge x-position by effective date ----------------
-const TIME_ORDER_W = 880
-const TIME_ORDER_LANE_H = 34
-const TIME_ORDER_LANES = 12
+// The largest factor the tier radii can keep without any two nodes overlapping at their laid-out
+// positions. Sizes are a ranking, not a measurement, so shrinking them all by the same factor
+// costs nothing legible - where overlap costs a great deal, because two merged circles read as
+// one node of the wrong size. Floored so a crowded view stays visible rather than vanishing.
+const NODE_GAP = 6 // includes room for the ring drawn around a shared reference
+
+// The shared ring is cut into one arc per citing paper. Four is the cap: five arcs on a node a
+// few pixels across are indistinguishable from a dotted line, and it matches the 4+ bucket the
+// Shared by filter stops at.
+const MAX_RING_ARCS = 4
+const RING_GAP_PX = 3
+
+// The ring sits this far outside a shared node's own circle, and the stroke straddles the line -
+// so the outer edge of what is DRAWN is the node radius plus this plus half the stroke. Shared
+// with the hit area, which claims exactly that and no more.
+const RING_OFFSET_PX = 2.5
+const RING_STROKE_PX = 2
+
+// Arc colours. Per citing paper while the edge palette can still be told apart; past that the
+// arcs stay countable but go one colour, because eight near-identical hues claim a precision the
+// eye cannot collect. Same fallback when a node's citing papers are unknown - a filtered-out
+// edge, say - so the arc count never silently disagrees with citedBy.
+const RING_COLOR_LIMIT = 8
+function ringColors(citing: string[] | undefined, ownedColors: Map<string, string>, arcs: number): string[] {
+  const plain = palette().citedStrong
+  if (!citing || ownedColors.size === 0 || ownedColors.size > RING_COLOR_LIMIT) {
+    return Array.from({ length: arcs }, () => plain)
+  }
+  return Array.from({ length: arcs }, (_, i) => ownedColors.get(citing[i] ?? "") ?? plain)
+}
+const MIN_SHRINK = 0.62
+function fitNodeScale(nodes: AtlasNode[], positions: Map<string, TimeOrderPosition>): number {
+  const placed = nodes
+    .map((n) => ({ p: positions.get(n.id), r: tierRadius(n) }))
+    .filter((e): e is { p: TimeOrderPosition; r: number } => e.p != null)
+  let shrink = 1
+  for (let i = 0; i < placed.length; i++) {
+    for (let j = i + 1; j < placed.length; j++) {
+      const a = placed[i]
+      const b = placed[j]
+      const distance = Math.hypot(a.p.x - b.p.x, a.p.y - b.p.y)
+      const room = (distance - NODE_GAP) / (a.r + b.r)
+      if (room < shrink) shrink = room
+    }
+  }
+  return Math.max(MIN_SHRINK, Math.min(1, shrink))
+}
+
+// --- ordered layout: time on x by RANK, influence on y by RANK -----------------------------
+//
+// Neither axis uses raw values, and that is the whole idea. A reference list spans 1968 to 2025
+// but only touches a dozen distinct years, so a year-valued x axis is mostly empty space that
+// exists because of arithmetic rather than because anything is there. Ranking removes it: the
+// years present are sorted, and each one is a single step from the next. Whether the gap is one
+// year or thirty does not change the distance, so the scale problem cannot arise.
+//
+// y ranks by citation count, most-cited at the top, so influence reads down the surface while
+// time reads across it. Magnitude is not lost - node size already carries it (see citationScale).
+// The grid is sized to the VIEWPORT, not to how many rows and columns happen to survive. Fixed
+// steps per column looked fine unfiltered and collapsed under a filter: filtering to 2020+ left
+// six year columns, so a fixed 120px step gave a 600px-wide field against a 2000px-tall one, and
+// the fitted result was a narrow ribbon down the middle of an empty canvas. The minimums below
+// only take over when the viewport would pack things tighter than they can be read.
+const FILL = 0.86      // fraction of the canvas the grid spans before fitting
+// Column widths are weighted by how many references each year holds and sum to the canvas width,
+// so there is no single "step" any more. What survives of that idea is MIN_COLUMN_W, which stops
+// a one-reference year collapsing to a line.
+// How much of a column width the months are allowed to use. Just under 1 so a December and the
+// following January stay distinguishable instead of landing on top of each other.
+const MONTH_SPREAD = 0.86
+// A year column never narrower than this, so a single-reference year is still a place.
+const MIN_COLUMN_W = 26
+// How far a node may be nudged from its column centre, as a fraction of that column width. Half
+// a width means it can reach the column edge and no further - crossing it would put the node in
+// another year, which is the one thing the x axis promises not to do.
+const MAX_DRIFT = 0.5
+// Your own papers are offset half a column, so a paper never shares an x with the references it
+// cites. They are a different kind of thing and reading them out of the reference stack is the
+// whole point of the map.
+const OWNED_COLUMN_OFFSET = 0.5
 
 type TimeOrderPosition = { x: number; y: number }
 type RuntimeNode = {
@@ -189,97 +300,214 @@ function yearValue(n: AtlasNode): number | null {
   return Number.isFinite(y) && y > 0 ? y : null
 }
 
-function timelineYears(nodes: AtlasNode[], edges: AtlasEdge[]): Map<string, number> {
-  const byId = new Map(nodes.map((n) => [n.id, n]))
-  const base = new Map<string, number>()
-  nodes.forEach((n) => {
+// Every node keeps the year it printed. There used to be a rule here that DELETED the year of a
+// reference dated later than the paper citing it, on the theory that a paper cannot cite the
+// future. It is a legacy of the OpenAlex-era map and it was silently destructive: a year-less node
+// is placed in the undated column, so on the LLM4IR survey - whose own year resolved to 2023 from
+// its arXiv v1 record while it cites 81 papers from 2024 - a quarter of the references were
+// relocated to the far left of the axis, reading as the oldest work on the map.
+//
+// A reference newer than its citing paper is a metadata discrepancy (a preprint year against a
+// camera-ready), not grounds for erasing a date the reference itself printed. It is also ill-posed
+// once several papers are selected: an external node is shared, so "newer than the citing paper"
+// has no single answer.
+function timelineYears(nodes: AtlasNode[]): Map<string, number> {
+  const years = new Map<string, number>()
+  for (const n of nodes) {
     const year = yearValue(n)
-    if (year != null) base.set(n.id, year)
-  })
-  const years = new Map(base)
-  const invalidExternal = new Set<string>()
-
-  edges.forEach((edge) => {
-    const source = byId.get(edge.source)
-    const target = byId.get(edge.target)
-    if (!source || !target) return
-
-    const sourceYear = base.get(source.id)
-    const targetYear = base.get(target.id)
-
-    const isReferenceEdge = edge.overlay === "references" || (!edge.overlay && source.type === "owned")
-    const isCitedEdge = edge.overlay === "cited" || (!edge.overlay && source.type === "external")
-
-    if (isReferenceEdge && source.type === "owned" && target.type === "external" && sourceYear != null && targetYear != null) {
-      if (Math.floor(targetYear) > Math.floor(sourceYear)) invalidExternal.add(target.id)
-    }
-    if (isCitedEdge && source.type === "external" && target.type === "owned" && sourceYear != null && targetYear != null) {
-      if (Math.floor(sourceYear) < Math.floor(targetYear)) invalidExternal.add(source.id)
-    }
-  })
-
-  invalidExternal.forEach((id) => years.delete(id))
+    if (year != null) years.set(n.id, year)
+  }
   return years
 }
 
-function timeOrderLane(index: number): number {
-  const lane = index % TIME_ORDER_LANES
-  const step = Math.floor(lane / 2) + 1
-  return (lane % 2 === 0 ? -step : step) * TIME_ORDER_LANE_H
-}
-
-function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>): Map<string, TimeOrderPosition> {
-  const years = nodes.map((n) => yearsById.get(n.id) ?? null)
-  const dated = years.filter((v): v is number => v != null)
-  const tMin = dated.length ? Math.min(...dated) : 0
-  const tMax = dated.length ? Math.max(...dated) : 1
-  const span = tMax - tMin || 1
-
-  const ordered = [...nodes].sort((a, b) => {
-    const ay = yearsById.get(a.id) ?? 0
-    const by = yearsById.get(b.id) ?? 0
-    return ay === by ? a.id.localeCompare(b.id) : ay - by
-  })
-  const yById = new Map<string, number>()
-  let externalIndex = 0
-  let ownedIndex = 0
-  for (const n of ordered) {
-    if (n.type === "owned") {
-      yById.set(n.id, ownedIndex === 0 ? 0 : timeOrderLane(ownedIndex - 1))
-      ownedIndex += 1
-    } else {
-      yById.set(n.id, timeOrderLane(externalIndex))
-      externalIndex += 1
-    }
+function computeTimeOrder(nodes: AtlasNode[], yearsById: Map<string, number>, size: { w: number; h: number }): Map<string, TimeOrderPosition> {
+  const yearOf = (n: AtlasNode) => {
+    const y = yearsById.get(n.id)
+    return y == null ? null : Math.floor(y)
   }
+
+  // Position within the year column. A reference list clusters hard into the last two or three
+  // years, so a column is where the crowding is - by year alone those nodes share one x and stack
+  // into a vertical pile. The month spreads them across the column instead, which is real
+  // information rather than jitter. Nodes with no month sit at the centre.
+  const monthOffset = (n: AtlasNode, step: number) => {
+    const month = n.month
+    if (typeof month !== "number" || month < 1 || month > 12) return 0
+    return ((month - 6.5) / 12) * step * MONTH_SPREAD
+  }
+
+  // x: one column per distinct year present. Columns are NOT equal width - a year is given room
+  // in proportion to how many references it holds (sqrt, so a 130-paper year is wider than a
+  // 2-paper one without being 65 times wider). Equal widths looked right until a survey arrived:
+  // 130 references in 2023 and 81 in 2024 against a 45px column left the sideways relaxation
+  // nowhere to go, and 25 nodes were pushed a FULL COLUMN OR MORE out of their own year - a 2024
+  // paper sitting at the 1975 end. Widening the busy years is what keeps the spill inside them.
+  const years = [...new Set(nodes.map(yearOf).filter((y): y is number => y != null))].sort((p, q) => p - q)
+  const columnOf = new Map(years.map((y, index) => [y, index]))
+  const gaps = Math.max(1, years.length - 1)
+
+  const perYear = new Map<number, number>()
+  for (const n of nodes) {
+    const year = yearOf(n)
+    if (year != null) perYear.set(year, (perYear.get(year) ?? 0) + 1)
+  }
+
+  // y: global rank by citation count, most cited at the top. Ties break on id so the layout is
+  // stable between renders rather than reshuffling equal-count nodes.
+  const ranked = [...nodes].sort((p, q) => {
+    const diff = citationScore(q) - citationScore(p)
+    return diff !== 0 ? diff : p.id.localeCompare(q.id)
+  })
+  // Vertical room starts at the canvas and grows only if the overlaps demand it. It used to
+  // reserve a row per node in the densest column, which made sense while every column was the
+  // same narrow width - a 130-reference year then had nowhere but down, and the field came out
+  // 3354px tall. With columns sized to their year that reservation is obsolete: measured on the
+  // survey, the aspect-filling 982px already clears every overlap at full node size.
+  const spanY = (size.h || 600) * FILL
+
+  // Total width is the CANVAS, not a step times the number of years. Deriving it from the gap
+  // count is backwards once columns are weighted: filtering to 2020+ leaves six years, which under
+  // the old rule gave a 469px-wide field to hold 411 references and forced the height to 3509px.
+  // How much room the map needs is a function of how many nodes there are, not how many distinct
+  // years they happen to fall in.
+  const spanX = (size.w || 900) * FILL
+  const stepX = spanX / gaps
+
+  // Split that width across the years by sqrt of how many references each holds, so a busy year
+  // gets room to spread inside itself and a sparse one stays narrow. That is also what keeps the
+  // axis compact where nothing was published, without stretching where plenty was.
+  const weights = years.map((y) => Math.sqrt(perYear.get(y) ?? 1))
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0) || 1
+  const columnW = weights.map((w) => Math.max(MIN_COLUMN_W, (spanX * w) / totalWeight))
+  const columnCentre: number[] = []
+  let cursor = -columnW.reduce((sum, w) => sum + w, 0) / 2
+  for (const w of columnW) { columnCentre.push(cursor + w / 2); cursor += w }
+  const widthOfColumn = (index: number) => columnW[index] ?? stepX
+  const xOfColumn = (index: number) => columnCentre[index] ?? -spanX / 2 + index * stepX
+  const homeX = new Map<string, number>()
+  for (const n of nodes) {
+    const year = yearOf(n)
+    const column = year == null ? null : columnOf.get(year)
+    const width = column == null ? stepX : widthOfColumn(column)
+    homeX.set(n.id, column == null
+      ? xOfColumn(0) - widthOfColumn(0) / 2 - stepX
+      : xOfColumn(column) + (n.type === "owned" ? OWNED_COLUMN_OFFSET * width : monthOffset(n, width)))
+  }
+
+  // One relaxation at a given field height. y comes from the citation ranking and is never moved,
+  // so the top-to-bottom order is exact; every overlap is paid for in x. A year column is an
+  // ordinal bucket rather than a measurement, so a node sitting off its column centre still reads
+  // correctly - the axis only has to say earlier-then-later, the way y only says more-cited-then-
+  // less.
+  // The x range each node may occupy: its own column, no wider.
+  const boundOf = new Map<string, { min: number; max: number }>()
+  for (const n of nodes) {
+    const year = yearOf(n)
+    const column = year == null ? null : columnOf.get(year)
+    const centre = column == null ? (homeX.get(n.id) ?? 0) : xOfColumn(column)
+    const width = column == null ? stepX : widthOfColumn(column)
+    boundOf.set(n.id, { min: centre - width * MAX_DRIFT, max: centre + width * MAX_DRIFT })
+  }
+
+  const relax = (trialSpanY: number) => {
+    const yOf = new Map<string, number>()
+    ranked.forEach((n, index) => {
+      const t = ranked.length > 1 ? index / (ranked.length - 1) : 0.5
+      yOf.set(n.id, -trialSpanY / 2 + t * trialSpanY)
+    })
+    const items = nodes.map((n) => ({ id: n.id, r: tierRadius(n), y: yOf.get(n.id) ?? 0, x: homeX.get(n.id) ?? 0 }))
+    // Sorted by y so the inner loop can stop early: once a later node is further away vertically
+    // than any pair could need, nothing after it can overlap either.
+    items.sort((a, b) => a.y - b.y)
+    const maxR = Math.max(0, ...items.map((i) => i.r))
+
+    const separate = (pullHome: number) => {
+      let moved = 0
+      for (let i = 0; i < items.length; i++) {
+        const a = items[i]
+        for (let j = i + 1; j < items.length; j++) {
+          const b = items[j]
+          const dy = b.y - a.y
+          if (dy >= a.r + maxR + NODE_GAP) break
+          const need = a.r + b.r + NODE_GAP
+          if (dy >= need) continue
+          const minDx = Math.sqrt(need * need - dy * dy)
+          const dx = b.x - a.x
+          const gap = Math.abs(dx)
+          if (gap >= minDx) continue
+          const push = (minDx - gap) / 2 + 0.5
+          const dir = dx === 0 ? (a.id < b.id ? -1 : 1) : Math.sign(dx)
+          a.x -= dir * push
+          b.x += dir * push
+          moved += 1
+        }
+      }
+      if (pullHome > 0) {
+        for (const item of items) item.x += ((homeX.get(item.id) ?? item.x) - item.x) * pullHome
+      }
+      // Hard bound: a node may spread within its own year and never past it. Without this the
+      // separation pass silently relocates crowded references into neighbouring years, which
+      // reads as data rather than as layout.
+      for (const item of items) {
+        const bound = boundOf.get(item.id)
+        if (!bound) continue
+        item.x = Math.min(bound.max, Math.max(bound.min, item.x))
+      }
+      return moved
+    }
+
+    // Settle with a weak pull back toward the year column, then pure-separation passes so the pull
+    // cannot leave a residual overlap behind.
+    for (let pass = 0; pass < 90; pass++) if (separate(0.03) === 0) break
+    for (let pass = 0; pass < 40; pass++) if (separate(0) === 0) break
+
+    const xs = items.map((i) => i.x)
+    const width = xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0
+    return { yOf, items, width, spanY: trialSpanY }
+  }
+
+  // Pick the field height. Sideways room is now bounded by the columns, so a crowded year can no
+  // longer be relieved by spreading into its neighbours - it has to be relieved by height. Start
+  // at the height that would fill the canvas and grow only as far as needed to clear the
+  // overlaps, capped so a 300-reference survey cannot demand an endless canvas. Whatever is left
+  // over is absorbed by shrinking the nodes.
+  const overlapCount = (items: { r: number; x: number; y: number }[]) => {
+    let bad = 0
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i]
+        const b = items[j]
+        if (Math.hypot(a.x - b.x, a.y - b.y) < a.r + b.r) bad += 1
+      }
+    }
+    return bad
+  }
+
+  const targetAspect = (size.w || 900) / (size.h || 600)
+  const usedWidth = columnW.reduce((sum, w) => sum + w, 0)
+  const baseSpanY = Math.max(spanY, usedWidth / targetAspect)
+  // Growth stops at roughly twice the canvas. Past that the field is taller than it is useful and
+  // the fit zooms it down anyway; the remaining crowding is better paid for by shrinking the
+  // nodes, which fitNodeScale does next. The unfiltered 562-reference view is the case that hits
+  // this - at 3.4x it was 3912px tall for an aspect of 0.42.
+  const GROWTH = [1, 1.25, 1.6, 2.1]
+  let layout = relax(baseSpanY)
+  for (const factor of GROWTH.slice(1)) {
+    if (overlapCount(layout.items) === 0) break
+    layout = relax(baseSpanY * factor)
+  }
+
+  const yById = layout.yOf
+  const relaxedX = new Map(layout.items.map((item) => [item.id, item.x]))
 
   const positionById = new Map<string, TimeOrderPosition>()
-  nodes.forEach((n, i) => {
-    const t = years[i]
-    if (t != null) {
-      positionById.set(n.id, {
-        x: -TIME_ORDER_W / 2 + ((t - tMin) / span) * TIME_ORDER_W,
-        y: yById.get(n.id) ?? 0,
-      })
-    }
-  })
+  for (const n of nodes) {
+    positionById.set(n.id, {
+      x: relaxedX.get(n.id) ?? homeX.get(n.id) ?? 0,
+      y: yById.get(n.id) ?? 0,
+    })
+  }
   return positionById
-}
-
-function timeOrderForce(positionById: Map<string, TimeOrderPosition>) {
-  let nodes: RuntimeNode[] = []
-  const yStrength = 0.16
-  const force = (alpha: number) => {
-    for (const node of nodes) {
-      const target = positionById.get(node.id)
-      if (target == null || node.y == null) continue
-      node.vy = (node.vy ?? 0) + (target.y - node.y) * yStrength * alpha
-    }
-  }
-  force.initialize = (next: unknown[]) => {
-    nodes = next as RuntimeNode[]
-  }
-  return force
 }
 
 function stableHash(value: string): number {
@@ -732,25 +960,23 @@ export default function GraphView({
   layout = "network",
   colorBy = "cluster",
   showHulls = true,
-  showLabels = false,
-  showConnections = true,
   scaleByCitations = true,
   emphasis = null,
   selectedId = null,
   layoutKey = "",
   onSelectNode,
+  onClearSelection,
 }: {
   data: { nodes: AtlasNode[]; edges: AtlasEdge[] }
   layout?: GraphLayout
   colorBy?: ColorBy
   showHulls?: boolean
-  showLabels?: boolean
-  showConnections?: boolean
   scaleByCitations?: boolean
   emphasis?: Emphasis
   selectedId?: string | null
   layoutKey?: string // changes only when the underlying owned scope changes -> fresh layout
   onSelectNode: (node: AtlasNode) => void
+  onClearSelection?: () => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -789,15 +1015,14 @@ export default function GraphView({
     }
   }, [])
 
-  const timelineYearMap = useMemo(() => timelineYears(data.nodes, data.edges), [data.edges, data.nodes])
-  const visibleNodes = useMemo(
-    () => (layout === "timeline" ? data.nodes.filter((n) => timelineYearMap.has(n.id)) : data.nodes),
-    [data.nodes, layout, timelineYearMap],
-  )
+  const timelineYearMap = useMemo(() => timelineYears(data.nodes), [data.nodes])
+  // Every node stays visible in either layout; an undated one is parked in its own band rather
+  // than filtered out; computeTimeOrder gives it a column of its own.
+  const visibleNodes = data.nodes
   const visibleIds = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes])
   const timeOrder = useMemo(
-    () => (layout === "timeline" ? computeTimeOrder(visibleNodes, timelineYearMap) : null),
-    [layout, timelineYearMap, visibleNodes],
+    () => (layout === "timeline" ? computeTimeOrder(visibleNodes, timelineYearMap, size) : null),
+    [layout, timelineYearMap, visibleNodes, size],
   )
 
   // Centroid of a cluster's already-placed nodes - so a newly-added node starts near its kin.
@@ -817,7 +1042,8 @@ export default function GraphView({
     const links = data.edges
       .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
       .map((e) => ({ source: e.source, target: e.target, __e: e }))
-    const citationValues = scaleByCitations ? citationScale(visibleNodes) : null
+    const shrink = timeOrder ? fitNodeScale(visibleNodes, timeOrder) : 1
+    const citationValues = scaleByCitations ? citationScale(visibleNodes, shrink) : null
     const nodes = visibleNodes.map((n) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const node: any = { id: n.id, __src: n, type: n.type, val: citationValues?.get(n.id) ?? 1.05 }
@@ -836,10 +1062,16 @@ export default function GraphView({
       }
       const timePosition = timeOrder?.get(n.id)
       if (timePosition != null) {
+        // BOTH axes are pinned. Leaving y to a force target was why overlaps survived the spacing
+        // pass: that pass guarantees clearance at the computed positions, but charge, link and
+        // centre forces then pulled nodes off them, so the guarantee described a layout nobody
+        // saw. There is nothing left for the simulation to discover here - x is a year ranking and
+        // y is a citation ranking, both computed - so pinning makes the drawing match the maths
+        // and stops the map drifting while you look at it.
         node.x = timePosition.x
         node.y = timePosition.y
         node.fx = timePosition.x
-        node.fy = undefined
+        node.fy = timePosition.y
       }
       return node
     })
@@ -872,7 +1104,7 @@ export default function GraphView({
     const degreeById = Array.isArray(runtimeData?.links) ? linkDegreeById(runtimeData.links) : new Map<string, number>()
     graph.d3Force?.("componentPack", packTargets ? componentPackForce(packTargets, 0.55) : null)
     graph.d3Force?.("compactCenter", layout === "network" ? compactCenterForce(0.018) : null)
-    graph.d3Force?.("nodeCollision", layout === "network" ? collisionForce(0.58) : null)
+    graph.d3Force?.("nodeCollision", collisionForce(0.58))
     if (layout === "network") {
       linkForce?.distance?.((link: RuntimeLink) => networkLinkDistance(link, degreeById))
       linkForce?.strength?.(0.55)
@@ -884,10 +1116,50 @@ export default function GraphView({
       chargeForce?.strength?.(-30)
       centerForce?.strength?.(0.05)
     }
-    if (layout === "timeline" && timeOrder) {
-      graph.d3Force?.("timeOrderSpread", timeOrderForce(timeOrder))
-    }
+    // No timeOrderSpread force: y is pinned, so a force toward the same y would be a no-op.
   }, [layout, timeOrder])
+
+  // One colour per selected paper, so an edge says which paper it belongs to and a shared
+  // reference shows one edge in each colour. With a single paper there is nothing to tell apart,
+  // so it keeps the plain owned colour rather than becoming arbitrarily green.
+  const ownedColors = useMemo(() => {
+    const owned = visibleNodes.filter((n) => n.type === "owned").map((n) => n.id)
+    if (owned.length < 2) return new Map<string, string>()
+    const clusters = palette().clusters
+    return new Map(owned.map((id, index) => [id, clusters[index % clusters.length]]))
+  }, [visibleNodes])
+
+  // Which of your papers cite each external node. The degree is already on the node (citedBy),
+  // but the ring draws one arc PER CITING PAPER in that paper's own colour, so it has to know
+  // which ones. Sorted by the owned order the palette was assigned from, so the same pair of
+  // papers always produces the same pair of arcs in the same place.
+  const citingPapers = useMemo(() => {
+    const owned = new Set(visibleNodes.filter((n) => n.type === "owned").map((n) => n.id))
+    const by = new Map<string, string[]>()
+    for (const e of data.edges) {
+      if (!owned.has(e.source) || owned.has(e.target)) continue
+      const list = by.get(e.target)
+      if (list) { if (!list.includes(e.source)) list.push(e.source) } else by.set(e.target, [e.source])
+    }
+    return by
+  }, [data.edges, visibleNodes])
+
+  // Edges are drawn only for the selected node. A reference list is a star per paper, so drawing
+  // every edge at once is a wall of lines that hides the structure it is meant to show; on click
+  // the one paper or one reference you asked about is the only thing connected.
+  const endpointIds = (link: RuntimeLink) => {
+    const source = typeof link.source === "object" ? link.source?.id : link.source
+    const target = typeof link.target === "object" ? link.target?.id : link.target
+    return [source, target] as (string | undefined)[]
+  }
+  const isIncident = (link: RuntimeLink) => {
+    if (!selectedId) return false
+    return endpointIds(link).includes(selectedId)
+  }
+  const linkOwnerColor = (link: RuntimeLink) => {
+    const [source, target] = endpointIds(link)
+    return (source && ownedColors.get(source)) || (target && ownedColors.get(target)) || palette().cited
+  }
 
   const dimNode = (id: string) => emphasis?.nodeIds != null && !emphasis.nodeIds.has(id)
   const forceConfigKey = `${layoutKey}:${layout}:${visibleNodes.length}:${data.edges.length}:${size.w}x${size.h}`
@@ -963,6 +1235,11 @@ export default function GraphView({
           nodeRelSize={2.65}
           warmupTicks={0}
           cooldownTicks={layout === "timeline" ? 100 : 120}
+          // Positions are not the user's to set. Both coordinates carry meaning - x is the year
+          // ranking, y the citation ranking - so a dragged node is simply reporting something
+          // untrue, and it would survive as a pinned fx/fy until the layout recomputed. Panning
+          // and zooming stay; only moving a node is refused.
+          enableNodeDrag={false}
           autoPauseRedraw={false}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkStrength={(l: any) => (
@@ -990,34 +1267,81 @@ export default function GraphView({
           nodeVal={(n: any) => n.val}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           nodeColor={(n: any) => {
-            const base = nodeColorFor(n.__src, colorBy)
+            const base = nodeColorFor(n.__src, colorBy, ownedColors)
             return dimNode(n.id) ? withAlpha(base, 0.12) : base
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkColor={(l: any) => {
-            if (!showConnections) return "rgba(0,0,0,0)"
+            if (!isIncident(l)) return "rgba(0,0,0,0)"
             const active = emphasis?.isActiveEdge ? emphasis.isActiveEdge(l.__e) : true
-            const cited = l.__e?.direct
             if (!active) return withAlpha(palette().external, 0.06)
-            if (cited) return palette().cited
-            return withAlpha(palette().external, layout === "timeline" ? 0.18 : 0.35)
+            return withAlpha(linkOwnerColor(l), 0.85)
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          linkWidth={(l: any) => (showConnections ? (l.__e?.direct ? 1.6 : 1) : 0)}
+          linkWidth={(l: any) => (isIncident(l) ? 1.8 : 0)}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          linkDirectionalArrowLength={(l: any) => (showConnections && l.__e?.direct ? 3 : 0)}
+          linkDirectionalArrowLength={(l: any) => (isIncident(l) && l.__e?.direct ? 3.5 : 0)}
           linkDirectionalArrowRelPos={1}
           onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
             if (showHulls && colorBy === "cluster") drawHulls(ctx, globalScale, graphData.nodes)
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onNodeClick={(node: any) => onSelectNode(node.__src as AtlasNode)}
+          // Edges follow the selection now, so clicking away has to be able to put them back.
+          onBackgroundClick={() => onClearSelection?.()}
           nodeLabel={(node: { __src: AtlasNode }) => node.__src.label}
+          // The hit area is exactly what is drawn: the dot, and out to the ring when the node
+          // has one. A margin beyond that was worse than the aim it saved (2026-09-14) - the
+          // cursor turned to a pointer over empty canvas all across the map, so the shape you
+          // were about to click was a guess. A ringed node is the bigger target because it looks
+          // bigger; nothing else grows.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D, scale: number) => {
+            const src = node.__src as AtlasNode
+            const ringed = src.type === "external" && (src.citedBy ?? 0) > 1
+            const radius = Math.sqrt(node.val ?? 1) * NODE_REL_SIZE
+              + (ringed ? (RING_OFFSET_PX + RING_STROKE_PX / 2) / Math.max(scale, 0.01) : 0)
+            ctx.fillStyle = color
+            ctx.beginPath()
+            ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI)
+            ctx.fill()
+          }}
           nodeCanvasObjectMode={() => "after"}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, scale: number) => {
             const src = node.__src as AtlasNode
             const dim = dimNode(node.id)
+            // A reference cited by more than one of your papers is the thing this map exists to
+            // surface, and with edges hidden until you click there is otherwise nothing to see it
+            // by. Ring it: grey fill plus a coloured outline stays distinct from a paper, which is
+            // a solid colour fill.
+            const degree = src.type === "external" ? (src.citedBy ?? 0) : 0
+            if (degree > 1 && !dim) {
+              // One ARC per citing paper rather than one solid ring (2026-09-14). The ring said
+              // only "more than one paper cites this"; segmented, the same pixels say how many,
+              // countable at a glance, and - while the selection is small enough for the edge
+              // palette to stay distinguishable - which ones, without tracing edges across the
+              // canvas. It costs no radius, so the collision spacing NODE_GAP was tuned for is
+              // untouched.
+              const radius = Math.sqrt(node.val ?? 1) * NODE_REL_SIZE + RING_OFFSET_PX / scale
+              const arcs = Math.min(degree, MAX_RING_ARCS)
+              const colors = ringColors(citingPapers.get(src.id), ownedColors, arcs)
+              // The gap is a constant number of SCREEN pixels, so it neither closes up when you
+              // zoom in nor eats the arc when you zoom out; capped because on a small node a
+              // fixed pixel gap is most of the circumference, which would leave four dashes.
+              const gap = Math.min(RING_GAP_PX / Math.max(radius * scale, 1), 0.5)
+              // Past the cap the arcs stop counting, so weight carries "at least this many" -
+              // the same 4+ bucket the Shared by filter offers.
+              ctx.lineWidth = (degree > MAX_RING_ARCS ? RING_STROKE_PX + 1 : RING_STROKE_PX) / scale
+              for (let i = 0; i < arcs; i += 1) {
+                const from = (i * 2 * Math.PI) / arcs - Math.PI / 2 + gap / 2
+                const to = ((i + 1) * 2 * Math.PI) / arcs - Math.PI / 2 - gap / 2
+                ctx.beginPath()
+                ctx.arc(node.x, node.y, radius, from, to)
+                ctx.strokeStyle = colors[i]
+                ctx.stroke()
+              }
+            }
             if (node.id === selectedId) {
               ctx.beginPath()
               ctx.arc(node.x, node.y, 3 + 7 / scale, 0, 2 * Math.PI)
@@ -1025,15 +1349,9 @@ export default function GraphView({
               ctx.lineWidth = 1.5 / scale
               ctx.stroke()
             }
-            if (!showLabels) return
-            if (src.type === "external" && (src.citedBy ?? 0) < 2 && node.id !== selectedId) return
-            if (dim && node.id !== selectedId) return
-            const label = String(src.label || "").slice(0, 32)
-            ctx.font = `${11 / scale}px sans-serif`
-            ctx.textAlign = "center"
-            ctx.textBaseline = "top"
-            ctx.fillStyle = src.type === "owned" ? palette().citedStrong : palette().label
-            ctx.fillText(label, node.x, node.y + 6 / scale)
+            // No labels on the canvas. Even limited to shared and selected nodes they collided into
+            // an unreadable mess on a 500-node map, and a truncated title says little anyway. The
+            // title is on hover (nodeLabel) and in full in the inspector on click.
           }}
         />
       ) : null}
