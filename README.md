@@ -1,21 +1,15 @@
 # InScien
 
-A local companion for your Zotero library. It maps how the papers you read cite each other, and
-reads papers aloud with a follow-along view of the PDF. Everything runs on your machine; nothing
-is uploaded.
+A local app working on top of your Zotero library to 
+1. Extract references from papers and get citation counts
+2. Visualize citation connections
+3. Narrate papers and follow along efficiently (with a custom processing for technical papers and local offline TTS)
 
-- **Map** - pick a Zotero collection, build its papers, and see the citation graph: which
-  references your papers share, and which papers you have not read yet are cited by several of
-  them.
-- **Narrate** - turn a paper into an audiobook of its main text: no references, tables, captions,
-  footnotes or formulas read out, the author's sentences kept verbatim.
-- **Listen** - play a narration with the sentence highlighted in the narration text and on the
-  PDF page, with a contents outline, and your position remembered.
 
 ## Requirements
 
 - Python 3.12 or newer
-- Zotero desktop with a local data directory (InScien reads it, never writes to it)
+- Zotero desktop with a local data directory (for read-only Zotero access)
 
 ## Install and run
 
@@ -31,9 +25,9 @@ inscien
 ```
 
 This starts the app on a loopback port and opens it in the browser. Zotero is found
-automatically; if it is not, set its data directory on the Settings page.
+automatically. If not found, set its data directory on the Settings page.
 
-## Build and narrate from the app
+## How to
 
 1. In the sidebar, open a Zotero collection.
 2. **Build** a paper to add its references to the map. A build reads the reference list from the
@@ -41,9 +35,9 @@ automatically; if it is not, set its data directory on the Settings page.
 3. **Narrate** a paper to make its audiobook. The first narration downloads the voice weights
    (about 340 MB) once.
 
-One job runs at a time; the job pane shows its steps and progress and can cancel it.
+One job runs at a time. The job pane shows its steps and progress and can cancel it.
 
-## Command line
+## CLI
 
 ```sh
 inscien build <paper.pdf>      # add a paper to the library
@@ -56,7 +50,7 @@ inscien --help
 `inscien narrate` takes `--voice` (comma-separated for several tracks), `--speed` and
 `--device cuda`.
 
-## Where data goes
+## Storage
 
 Everything InScien writes is under one directory, `INSCIEN_HOME`:
 
