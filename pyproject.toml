@@ -45,3 +45,8 @@ artifacts = ["src/inscien/webui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.hatch.build.targets.sdist]
+# Only what rebuilds the wheel: without this the sdist takes the whole checkout, CI build output included.
+include = ["src/inscien", "tests", "README.md", "LICENSE"]
+artifacts = ["src/inscien/webui"]
