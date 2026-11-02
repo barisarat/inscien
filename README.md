@@ -9,14 +9,14 @@ A local app on top of your Zotero library that does four things:
 
 ## Requirements
 
-- Python 3.12 or newer
+- Python 3.12 or 3.13
 - Zotero desktop with a local data directory (for read-only Zotero access)
 - For Ask: a local [Ollama](https://ollama.com)
 
 ## Install and run
 
 ```sh
-uvx inscien
+uvx --python 3.12 inscien
 ```
 
 or
@@ -32,7 +32,7 @@ automatically. If it is not found, set its data directory on the Settings page.
 Search and Ask come with the `search` extra:
 
 ```sh
-uvx --from "inscien[search]" inscien
+uvx --python 3.12 --from "inscien[search]" inscien
 ```
 
 or

@@ -75,4 +75,6 @@ before and after: the reference count and titles from `build`, and `narrate/work
 plan-review.txt` from `narrate`.
 
 Release: bump `__version__` in `src/inscien/__init__.py`, then push a `v*` tag. `release.yml` builds and
-publishes to PyPI by trusted publishing and refuses a tag that does not match the version.
+publishes to PyPI by trusted publishing and refuses a tag that does not match the version. A release
+that changes install, CLI, configuration or features also updates the inscien.com pages in
+`barisarat/inscien-site`.
