@@ -1,7 +1,7 @@
 """Serving the narrations: the bundle files, and where each listen stopped.
 
 `/b/<slug>/<file>` serves a bundle's audio, cues, anchors, meta and page images to the listen
-view. `/api/progress` is the one piece of listening state: where each listen stopped, a
+view, and `/api/narrations/<slug>/citations` the paper's citation markers for its hover cards. `/api/progress` is the one piece of listening state: where each listen stopped, a
 high-water mark, and a hand-set finished flag, in `bundles/.progress.json`.
 """
 
@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from inscien.core.paths import narrations_dir
+from inscien.services.library import citations as citation_service
 from inscien.services.library import narrations as narration_service
 
 router = APIRouter(tags=["narrations"])
@@ -128,3 +129,12 @@ def bundle_file(slug: str, name: str = ""):
     revalidate = name.endswith(".json")
     headers = {"Cache-Control": "no-cache"} if revalidate else None
     return FileResponse(target, headers=headers)
+
+
+@router.get("/api/narrations/{slug}/citations")
+def narration_citations(slug: str):
+    """The in-text citations on the bundle's pages, each with its rects and the references it
+    names, for the listen view's hover cards. Empty when the paper is not built."""
+    if not SAFE_SLUG.match(slug):
+        raise HTTPException(status_code=404, detail="not found")
+    return citation_service.for_bundle(slug)

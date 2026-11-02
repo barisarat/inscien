@@ -2,22 +2,23 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
-import { AudioLines, ChevronRight, Clock, Download, Hash, Headphones, Info, Loader2, RefreshCw, X } from "lucide-react"
+import { AudioLines, ChevronRight, Clock, Download, Headphones, Info, Loader2, RefreshCw, Search, X } from "lucide-react"
 
 import {
   fetchZoteroCollections,
   fetchZoteroItems,
+  filterZoteroItems,
   listLibraryPapers,
   type LibraryPaper,
   type ZoteroCollection,
   type ZoteroItem,
 } from "@/lib/api"
 import { useZoteroSelection } from "@/lib/ZoteroSelectionProvider"
-import { usePersisted } from "@/lib/usePersisted"
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -27,9 +28,10 @@ import {
   SidebarMenuSubItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import InScienMark from "@/components/InScienMark"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Toggle } from "@/components/ui/toggle"
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import { startBuild, startNarrate, useJob } from "@/lib/job"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -113,8 +115,11 @@ type Props = {
 // narrate. Each runs as the one background job, shown in the job pane.
 export default function LibraryNavigator({ onResizeStart }: Props) {
   const { selectedKeys, toggle, setMany, clear, persistError } = useZoteroSelection()
-  // How you like to read the tree, not anything about the library - so it lives on the device.
-  const [showCounts, setShowCounts] = usePersisted("inscien-sidebar-counts", true)
+  // The filter: while it holds text the tree gives way to the matching papers, grouped by shelf.
+  // `found` is null while a query is in flight.
+  const [filter, setFilter] = useState("")
+  const [found, setFound] = useState<{ items: (ZoteroItem & { collection: string })[]; more: boolean } | null>(null)
+  const filterSeq = useRef(0)
 
   const [collections, setCollections] = useState<ZoteroCollection[]>([])
   const [libraryMissing, setLibraryMissing] = useState(false)
@@ -250,6 +255,21 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
       return next
     })
   }, [])
+
+  // Re-query on every keystroke (debounced) and after load(), so a finished job shows in the
+  // matches as it does in the tree.
+  useEffect(() => {
+    const text = filter.trim()
+    const n = ++filterSeq.current
+    setFound(null)
+    if (!text) return
+    const timer = setTimeout(() => {
+      filterZoteroItems(text)
+        .then((r) => n === filterSeq.current && setFound(r))
+        .catch(() => n === filterSeq.current && setFound({ items: [], more: false }))
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [filter, papers])
 
   // Re-read the tree when a job finishes, so the row shows its new state.
   const lastJobStatus = useRef<string | null>(null)
@@ -476,7 +496,7 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
             checkbox, on the left, at one level: a select-all here put a checkbox in the column
             that means "listen" on every row below it, so one column meant two things and
             selection appeared on both sides of the row (2026-09-10). */}
-        <RowActions label={showCounts && count > 0 ? `${built.length}/${count}` : ""} first={null} second={null} />
+        <RowActions label={count > 0 ? `${built.length}/${count}` : ""} first={null} second={null} />
         </div>
 
         {/* Nesting is the indent: a collection's children live in its own sub-list, so no row
@@ -498,6 +518,38 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
     )
   }
 
+  // The filter's answer: the matching papers as ordinary rows (checkbox, build, narrate), under
+  // a label naming the shelf each sits on.
+  const renderMatches = () => {
+    if (found === null) {
+      return (
+        <div className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
+          <Loader2 className="size-3 animate-spin" /> Filtering...
+        </div>
+      )
+    }
+    if (!found.items.length) return <div className="px-2 text-xs text-muted-foreground">No paper title matches.</div>
+    const shelves: [string, ZoteroItem[]][] = []
+    for (const item of found.items) {
+      const last = shelves[shelves.length - 1]
+      if (last && last[0] === item.collection) last[1].push(item)
+      else shelves.push([item.collection, [item]])
+    }
+    return (
+      <>
+        {shelves.map(([shelf, rows]) => (
+          <div key={shelf}>
+            <SidebarGroupLabel>
+              <span className="truncate">{shelf}</span>
+            </SidebarGroupLabel>
+            <SidebarMenuSub className="mx-0 border-transparent px-0">{rows.map((item) => renderItem(item))}</SidebarMenuSub>
+          </div>
+        ))}
+        {found.more ? <div className="px-2 pt-2 text-xs text-muted-foreground">More match - type more of the title.</div> : null}
+      </>
+    )
+  }
+
   return (
     <Sidebar collapsible="offcanvas" className="group/library-sidebar">
       {onResizeStart ? (
@@ -509,9 +561,15 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
         />
       ) : null}
 
-      <SidebarHeader className="h-13 justify-center border-b px-4">
+      {/* The header and the filter strip start at 22px (pl-5.5), the x where the tree's chevrons
+          are drawn (the stock row's 16px icon box plus the glyph's own inset), so the mark, the
+          filter box and the chevrons share one left edge. */}
+      <SidebarHeader className="h-13 justify-center border-b pr-4 pl-5.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium">Library</span>
+          <span className="flex items-center gap-1.5">
+            <InScienMark className="h-5 w-auto text-foreground/80" />
+            <span className="text-sm font-medium">InScien</span>
+          </span>
           <div className="flex items-center gap-1">
             {/* Re-read the library and the narration state in place: a bundle that finished
                 building in paper tts, or a PDF queued from another tab, shows up without a
@@ -526,26 +584,28 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
 
       {/* The tree's control strip: fixed under the header, OUTSIDE the scroller, so it stays
           put while the tree moves. Always present - a bar that appears and disappears with a
-          selection shifts every row under it by its own height. View switches live here; the
-          selection count joins them when there is one. */}
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b px-4">
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Toggle
-                variant="segment"
-                size="sm"
-                pressed={showCounts}
-                onPressedChange={setShowCounts}
-                aria-label="Show how many papers are built"
-              />
-            }
-          >
-            <Hash />
-          </TooltipTrigger>
-          <TooltipContent>{showCounts ? "Hide" : "Show"} the built/total counts</TooltipContent>
-        </Tooltip>
-        <span className="flex-1" />
+          selection shifts every row under it by its own height. The filter lives here; the
+          selection count joins it when there is one. */}
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b pr-4 pl-5.5">
+        <InputGroup>
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+          <InputGroupInput
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setFilter("")}
+            placeholder="Filter papers by title"
+            aria-label="Filter papers by title"
+          />
+          {filter ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton size="icon-xs" aria-label="Clear filter" onClick={() => setFilter("")}>
+                <X />
+              </InputGroupButton>
+            </InputGroupAddon>
+          ) : null}
+        </InputGroup>
         {selectedKeys.size > 0 ? (
           <>
             <span className="text-xs text-muted-foreground">{selectedKeys.size} selected</span>
@@ -576,6 +636,8 @@ export default function LibraryNavigator({ onResizeStart }: Props) {
             <div className="px-2 text-xs leading-4 text-muted-foreground">
               No Zotero library found{mountPath ? <> at <code>{mountPath}</code></> : null}.
             </div>
+          ) : filter.trim() ? (
+            renderMatches()
           ) : collections.length === 0 ? (
             <div className="px-2 text-xs text-muted-foreground">No collections found.</div>
           ) : (

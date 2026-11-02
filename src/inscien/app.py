@@ -21,6 +21,7 @@ from inscien.routers.library import router as library_router
 from inscien.routers.zotero import router as zotero_router
 from inscien.routers.narrations import router as narrations_router
 from inscien.routers.jobs import router as jobs_router
+from inscien.routers.search import router as search_router
 import os
 
 ENV_NAME = os.getenv("ENV_NAME", "development")
@@ -67,6 +68,7 @@ app.include_router(library_router)
 app.include_router(zotero_router)
 app.include_router(narrations_router)
 app.include_router(jobs_router)
+app.include_router(search_router)
 
 
 # INSCIEN_READONLY=1 refuses every write except the listener's own - the reader's position and

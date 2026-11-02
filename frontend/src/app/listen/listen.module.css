@@ -75,6 +75,19 @@
   transition: top 0.2s, left 0.2s;
 }
 
+/* A citation marker on the page image: invisible until hovered, then tinted like a link, and
+   the hover card opens over it. Above the highlight, which takes no pointer events. */
+.cite {
+  position: absolute;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.cite:hover,
+.cite[data-popup-open] {
+  background: var(--accent-overlay);
+}
+
 /* The aligner placed the paragraph but not the sentence: say "somewhere in here" quietly
    rather than lighting up a whole abstract as if that were the line being read. */
 .highlight.coarse {

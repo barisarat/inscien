@@ -2,10 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Document, Page } from "react-pdf"
+import { ChevronDown, ChevronUp, ZoomIn, ZoomOut } from "lucide-react"
 import "react-pdf/dist/Page/TextLayer.css"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 
 import { pdfjs } from "@/lib/pdfWorker" // side effect: sets the offline workerSrc
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { usePersisted } from "@/lib/usePersisted"
 import styles from "./PdfViewerPanel.module.css"
 
 void pdfjs
@@ -13,6 +20,23 @@ void pdfjs
 // react-pdf hands the render callback a PDFPageProxy augmented with rendered + original
 // dimensions; we only need these few fields to map PDF-point coords onto rendered pixels.
 type RenderedPage = { pageNumber: number; width: number; originalWidth: number }
+
+// Zoom is "fit" (the page fills the panel's width) or a scale of the page's own size, where 1
+// draws one PDF point as one CSS pixel. The choice belongs to this device, so it is persisted.
+type Zoom = "fit" | number
+const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+const ZOOM_ITEMS = [{ value: "fit", label: "Fit width" }, ...ZOOMS.map((z) => ({ value: String(z), label: `${Math.round(z * 100)}%` }))]
+
+function IconButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<Button variant="ghost" size="icon-sm" onClick={onClick} disabled={disabled} aria-label={label} />}>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
 
 function normalize(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").replace(/[...]+$/, "").trim()
@@ -31,7 +55,9 @@ function escapeHtml(value: string): string {
  *  - FALLBACK: no bbox -> the legacy text-layer match (a customTextRenderer wraps items whose
  *    text is part of the passage).
  *  - HONEST MISS: no bbox and the text match found nothing -> a small note, so a miss is
- *    visible instead of silent. The page still scrolls into view either way.
+ *    visible instead of silent. The page still scrolls into view either way. *
+ * Above the pages, a toolbar: previous / next page, the current page (type a number and Enter
+ * to jump), the page count, and zoom (Fit width, or a scale of the page's own size).
  */
 export default function PdfDocument({
   fileUrl,
@@ -49,6 +75,10 @@ export default function PdfDocument({
   // Render scale (renderedPx / PDF points) per page number, captured on render success.
   const [scaleByPage, setScaleByPage] = useState<Record<number, number>>({})
   const [showMiss, setShowMiss] = useState(false)
+  const [zoom, setZoom] = usePersisted<Zoom>("inscien.pdfZoom", "fit")
+  const [current, setCurrent] = useState(targetPage)
+  const [pageText, setPageText] = useState(String(targetPage))
+  const [editingPage, setEditingPage] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   // Set during the target page's text render when a passage fragment is wrapped; read after
   // render to decide the honest-miss note. Reset whenever the target/passage changes.
@@ -80,6 +110,48 @@ export default function PdfDocument({
       ro.disconnect()
     }
   }, [])
+
+  // The current page is the one taking up most of the scroll area.
+  useEffect(() => {
+    const root = containerRef.current
+    if (!root || numPages === 0) return
+    const ratios = new Map<number, number>()
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) ratios.set(Number((e.target as HTMLElement).dataset.page), e.intersectionRatio)
+        let best = 0
+        let bestRatio = 0
+        for (const [page, ratio] of ratios) {
+          if (ratio > bestRatio) {
+            best = page
+            bestRatio = ratio
+          }
+        }
+        if (best) setCurrent(best)
+      },
+      { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
+    )
+    root.querySelectorAll("[data-page]").forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [numPages])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!editingPage) setPageText(String(current))
+  }, [current, editingPage])
+
+  const goTo = useCallback(
+    (page: number) => {
+      const n = Math.min(Math.max(1, Math.round(page)), Math.max(1, numPages))
+      containerRef.current?.querySelector(`#pg-${n}`)?.scrollIntoView({ block: "start" })
+    },
+    [numPages],
+  )
+
+  // Zoom steps from the scale on screen, so "in" from Fit width goes to the next preset above it.
+  const shownScale = zoom === "fit" ? (scaleByPage[current] ?? scaleByPage[1] ?? 1) : zoom
+  const zoomIn = () => setZoom(ZOOMS.find((z) => z > shownScale + 0.01) ?? ZOOMS[ZOOMS.length - 1])
+  const zoomOut = () => setZoom([...ZOOMS].reverse().find((z) => z < shownScale - 0.01) ?? ZOOMS[0])
 
   const scrollToTarget = useCallback(() => {
     containerRef.current
@@ -143,40 +215,88 @@ export default function PdfDocument({
       : null
 
   return (
-    <div className={styles.docScroll} ref={containerRef}>
-      <Document
-        file={fileUrl}
-        onLoadSuccess={({ numPages: n }) => setNumPages(n)}
-        loading={<div className={styles.docStatus}>Loading PDF...</div>}
-        error={<div className={styles.docStatus}>Could not load this PDF.</div>}
-      >
-        {Array.from({ length: numPages }, (_, i) => {
-          const page = i + 1
-          const isTarget = page === targetPage
-          // Run the text-match highlight whenever there's a passage: it refines within the
-          // bbox region box when present, and is the sole highlight when bbox is absent.
-          const useTextMatch = isTarget && !!normalizedPassage
-          return (
-            <div id={`pg-${page}`} key={page} className={styles.pageWrap}>
-              <Page
-                pageNumber={page}
-                width={width || undefined}
-                renderAnnotationLayer={false}
-                customTextRenderer={useTextMatch ? highlightRenderer : undefined}
-                onRenderSuccess={handleRenderSuccess}
-              />
-              {isTarget && overlayStyle ? (
-                <div className={styles.bboxOverlay} style={overlayStyle} aria-hidden />
-              ) : null}
-              {isTarget && showMiss ? (
-                <div className={styles.locateNote}>
-                  Could not pinpoint the exact passage on this page.
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
-      </Document>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-10 shrink-0 items-center gap-1 border-b px-3">
+        <IconButton label="Previous page" onClick={() => goTo(current - 1)} disabled={current <= 1}>
+          <ChevronUp />
+        </IconButton>
+        <IconButton label="Next page" onClick={() => goTo(current + 1)} disabled={current >= numPages}>
+          <ChevronDown />
+        </IconButton>
+        <Input
+          aria-label="Page"
+          inputMode="numeric"
+          className="h-7 w-12 px-1 text-center"
+          value={pageText}
+          onFocus={() => setEditingPage(true)}
+          onBlur={() => setEditingPage(false)}
+          onChange={(e) => setPageText(e.target.value.replace(/[^0-9]/g, ""))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && pageText) {
+              goTo(Number(pageText))
+              ;(e.target as HTMLInputElement).blur()
+            }
+          }}
+        />
+        <span className="text-xs tabular-nums text-muted-foreground">/ {numPages || "-"}</span>
+        <Separator orientation="vertical" className="mx-1 h-5" />
+        <IconButton label="Zoom out" onClick={zoomOut} disabled={zoom !== "fit" && zoom <= ZOOMS[0]}>
+          <ZoomOut />
+        </IconButton>
+        <Select
+          value={String(zoom)}
+          onValueChange={(v) => v && setZoom(v === "fit" ? "fit" : Number(v))}
+          items={ZOOM_ITEMS}
+        >
+          <SelectTrigger size="sm" className="w-28">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ZOOM_ITEMS.map((z) => (
+              <SelectItem key={z.value} value={z.value}>{z.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <IconButton label="Zoom in" onClick={zoomIn} disabled={zoom !== "fit" && zoom >= ZOOMS[ZOOMS.length - 1]}>
+          <ZoomIn />
+        </IconButton>
+      </div>
+      <div className={styles.docScroll} ref={containerRef}>
+        <Document
+          file={fileUrl}
+          onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+          loading={<div className={styles.docStatus}>Loading PDF...</div>}
+          error={<div className={styles.docStatus}>Could not load this PDF.</div>}
+        >
+          {Array.from({ length: numPages }, (_, i) => {
+            const page = i + 1
+            const isTarget = page === targetPage
+            // Run the text-match highlight whenever there's a passage: it refines within the
+            // bbox region box when present, and is the sole highlight when bbox is absent.
+            const useTextMatch = isTarget && !!normalizedPassage
+            return (
+              <div id={`pg-${page}`} key={page} data-page={page} className={styles.pageWrap}>
+                <Page
+                  pageNumber={page}
+                  width={zoom === "fit" ? width || undefined : undefined}
+                  scale={zoom === "fit" ? undefined : zoom}
+                  renderAnnotationLayer={false}
+                  customTextRenderer={useTextMatch ? highlightRenderer : undefined}
+                  onRenderSuccess={handleRenderSuccess}
+                />
+                {isTarget && overlayStyle ? (
+                  <div className={styles.bboxOverlay} style={overlayStyle} aria-hidden />
+                ) : null}
+                {isTarget && showMiss ? (
+                  <div className={styles.locateNote}>
+                    Could not pinpoint the exact passage on this page.
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
+        </Document>
+      </div>
     </div>
   )
 }

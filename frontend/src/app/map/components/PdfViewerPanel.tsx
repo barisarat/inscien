@@ -44,8 +44,8 @@ export default function PdfViewerPanel({
                 key={tab.id}
                 className={`flex h-8 min-w-0 max-w-[14rem] shrink-0 items-center gap-2 rounded-lg border !pl-4 !pr-2 text-xs transition-colors ${
                   active
-                    ? "border-border bg-muted text-foreground"
-                    : "border-border/70 bg-card text-foreground hover:border-border hover:bg-muted"
+                    ? "border-border bg-card text-foreground shadow-xs"
+                    : "border-transparent bg-card text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
                 role="tab"
                 aria-selected={active}

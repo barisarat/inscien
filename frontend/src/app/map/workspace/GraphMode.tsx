@@ -11,6 +11,7 @@ import GraphView, { CITATION_TIERS, type AtlasEdge, type AtlasNode } from "../co
 import NodeInspector from "../components/NodeInspector"
 import ModeBar from "@/components/navigation/ModeBar"
 import SidebarAwayTrigger from "./SidebarAwayTrigger"
+import SearchBar from "@/components/search/SearchBar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const percentile = (values: number[], p: number) => {
@@ -196,6 +197,8 @@ export default function GraphMode() {
       <div className="flex h-full min-h-0 flex-col">
         <ModeBar>
           <SidebarAwayTrigger />
+          <div className="ml-auto" />
+          <SearchBar />
         </ModeBar>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <p className="max-w-md text-sm text-muted-foreground">
@@ -293,6 +296,9 @@ export default function GraphMode() {
             </span>
           </>
         ) : null}
+
+        <div className="ml-auto" />
+        <SearchBar />
       </ModeBar>
 
       {phase === "loading" && ownedCount === 0 ? (

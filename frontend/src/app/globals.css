@@ -238,4 +238,10 @@ body {
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 dropped the pointer cursor on buttons; this is the rule the shadcn v4 docs give to
+     restore it, so every clickable control shows the hand on hover. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }

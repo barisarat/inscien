@@ -8,7 +8,7 @@ import { Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cancelCurrentJob, dismissJob, useDismissedJobId, useJob } from "@/lib/job"
 
-const KIND = { build: "Building", narrate: "Narrating" } as const
+const KIND = { build: "Building", narrate: "Narrating", index: "Indexing" } as const
 
 export default function JobPane() {
   const job = useJob()
@@ -25,7 +25,7 @@ export default function JobPane() {
         : `failed - ${job.error ?? "see the log"}`
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg border bg-background p-3 text-xs shadow-lg">
+    <div className="fixed right-4 bottom-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg border bg-popover p-3 text-xs text-popover-foreground shadow-lg">
       <div className="flex items-start gap-2">
         {running ? <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" /> : null}
         <div className="min-w-0 flex-1">

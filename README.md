@@ -1,15 +1,17 @@
 # InScien
 
-A local app working on top of your Zotero library to 
-1. Extract references from papers and get citation counts
-2. Visualize citation connections
-3. Narrate papers and follow along efficiently (with a custom processing for technical papers and local offline TTS)
+A local app on top of your Zotero library that does four things:
 
+1. Extracts the references from your papers and gets their citation counts
+2. Maps the citation connections
+3. Narrates papers with a player that follows along in the PDF, using local offline TTS
+4. Searches the papers and answers questions with quotes from them (optional)
 
 ## Requirements
 
 - Python 3.12 or newer
 - Zotero desktop with a local data directory (for read-only Zotero access)
+- For Ask: a local [Ollama](https://ollama.com)
 
 ## Install and run
 
@@ -25,7 +27,19 @@ inscien
 ```
 
 This starts the app on a loopback port and opens it in the browser. Zotero is found
-automatically. If not found, set its data directory on the Settings page.
+automatically. If it is not found, set its data directory on the Settings page.
+
+Search and Ask come with the `search` extra:
+
+```sh
+uvx --from "inscien[search]" inscien
+```
+
+or
+
+```sh
+pip install "inscien[search]"
+```
 
 ## How to
 
@@ -34,6 +48,9 @@ automatically. If not found, set its data directory on the Settings page.
    PDF and resolves it against OpenAlex, Crossref and Semantic Scholar.
 3. **Narrate** a paper to make its audiobook. The first narration downloads the voice weights
    (about 340 MB) once.
+4. **Index** the papers for search with Update index in the search settings, or `inscien index`.
+   The first index downloads the search models once.
+5. **Search** from the search bar. **Ask** and the LLM rerank appear while Ollama is running.
 
 One job runs at a time. The job pane shows its steps and progress and can cancel it.
 
@@ -42,6 +59,7 @@ One job runs at a time. The job pane shows its steps and progress and can cancel
 ```sh
 inscien build <paper.pdf>      # add a paper to the library
 inscien narrate <paper.pdf>    # make a narration
+inscien index                  # build or update the search index
 inscien voices                 # list the voices
 inscien sample am_echo af_heart   # one paragraph in those voices, to choose by ear
 inscien --help
@@ -67,6 +85,7 @@ narrate/     narration queue and per-paper work files
 import/      PDFs staged for a build
 data/        settings, the Zotero snapshot, the current job
 weights/     the voice weights
+search/      the search index and its models
 ```
 
 To move or back up your data, move or copy that directory.
@@ -82,11 +101,17 @@ All optional, as environment variables.
 | `INSCIEN_CONTACT_EMAIL`      | sent to OpenAlex and Crossref for their faster polite pool     |
 | `S2_API_KEY`                 | a Semantic Scholar API key, for higher rate limits             |
 | `INSCIEN_TTS_DEVICE`         | `cuda` to narrate on an NVIDIA GPU (see below)                 |
+| `INSCIEN_SEARCH_DEVICE`      | `cuda` to index and rerank on an NVIDIA GPU (see below)        |
+| `INSCIEN_LLM_MODEL`          | the Ollama model for Ask and the rerank (`qwen2.5:7b-instruct`) |
+| `INSCIEN_LLM_URL`            | where Ollama answers (`http://127.0.0.1:11434`)                |
 | `INSCIEN_HIDDEN_COLLECTIONS` | top-level Zotero collections to leave out, comma-separated     |
 | `INSCIEN_READONLY`           | `1` refuses every change except listening progress             |
 
-Narration runs on the CPU at a few times realtime. For a GPU, replace `onnxruntime` with
-`onnxruntime-gpu` in the same environment and set `INSCIEN_TTS_DEVICE=cuda`.
+Narration and search run on the CPU by default, narration at a few times realtime. To use an
+NVIDIA GPU:
+
+1. Replace `onnxruntime` with `onnxruntime-gpu` in the same environment.
+2. Set `INSCIEN_TTS_DEVICE=cuda` for narration and `INSCIEN_SEARCH_DEVICE=cuda` for search.
 
 ## Development
 

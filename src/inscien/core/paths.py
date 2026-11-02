@@ -8,6 +8,7 @@
       narrate/work/      per-paper narration work: raw text, plan, slices
       bundles/<slug>/    finished narrations, plus .progress.json (where each listen stopped)
       weights/           the Kokoro voice weights, downloaded on first narration
+      search/            the search index (index.sqlite3) and its models/, from `inscien index`
 
 INSCIEN_HOME defaults to the OS per-user data directory (platformdirs: ~/.local/share/inscien
 on Linux, ~/Library/Application Support/inscien on macOS, %LOCALAPPDATA%\\inscien on Windows).
@@ -66,6 +67,20 @@ def narration_work_dir() -> str:
 
 def narrations_dir() -> str:
     return _dir("bundles")
+
+
+def search_dir() -> str:
+    return _dir("search")
+
+
+def search_index_path() -> str:
+    """The search index: papers, passages, their BM25 tables and vectors (search/index.py)."""
+    return str(Path(search_dir(), "index.sqlite3"))
+
+
+def search_models_dir() -> str:
+    """The embedding and rerank models, downloaded on first use."""
+    return _dir("search", "models")
 
 
 def narrations_url() -> str:

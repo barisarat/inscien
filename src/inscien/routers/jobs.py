@@ -1,5 +1,5 @@
-"""The one background job (`services/library/host_job.py`): build a paper into the library or
-narrate it, started from the UI and followed in its job pane.
+"""The one background job (`services/library/host_job.py`): build a paper into the library,
+narrate it or index the library for search, started from the UI and followed in its job pane.
 
 Each start route first stages the PDF (into the import dir for a build, the narration queue for
 a narration) and then starts the job. One job at a time: a start while one runs answers 409.
@@ -75,3 +75,15 @@ def rebuild(slug: str):
 @router.post("/cancel")
 def cancel():
     return {"job": host_job.cancel()}
+
+
+@router.post("/index")
+def index(rebuild: bool = False):
+    """Index the library for search: new and changed papers, or every paper with `rebuild`."""
+    from inscien import search
+    if not search.installed():
+        raise HTTPException(status_code=409, detail="Search is not installed: pip install 'inscien[search]'")
+    try:
+        return {"job": host_job.start_index(rebuild)}
+    except host_job.Busy as exc:
+        raise HTTPException(status_code=409, detail=BUSY) from exc

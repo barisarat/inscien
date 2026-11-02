@@ -1,4 +1,5 @@
-"""The one background job: building a paper into the library, or narrating it.
+"""The one background job: building a paper into the library, narrating it, or indexing the
+library for search.
 
 The job runs the `inscien build` or `inscien narrate` command as a subprocess of this server
 (`python -m inscien ...`), so a crash in a long synthesis cannot take the server down and Cancel
@@ -172,3 +173,8 @@ def start_narration(file_name: str, title: str, voice: str | None = None,
     if slug:
         args += ["--slug", slug]
     return _start("narrate", title, args, steps=3)
+
+
+def start_index(rebuild: bool = False) -> dict:
+    """`inscien index`: every paper in the sidebar into the search index."""
+    return _start("index", "Search index", ["index", *(["--rebuild"] if rebuild else [])], steps=2)

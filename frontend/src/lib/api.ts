@@ -117,6 +117,12 @@ export async function fetchZoteroItems(collectionId: number): Promise<{ items: Z
   return authedGet(`/api/zotero/collections/${collectionId}/items`)
 }
 
+// The sidebar filter: papers of the visible collections whose title holds every word of `q`,
+// each with `collection`, the path of its shelf. `more` means the list was cut short.
+export async function filterZoteroItems(q: string): Promise<{ items: (ZoteroItem & { collection: string })[]; more: boolean }> {
+  return authedGet(`/api/zotero/items?q=${encodeURIComponent(q)}`)
+}
+
 // ---- Map graph shapes ----
 
 export interface GraphNode {
@@ -248,6 +254,32 @@ export function bundleFileUrl(slug: string, name: string): string {
   return `${API_BASE}/b/${encodeURIComponent(slug)}/${name}`
 }
 
+// The paper's in-text citations, for the hover cards over the page images. `page` is 0-based,
+// rects are [x0, y0, x1, y1] in PDF points (one per line the marker spans), `refs` are reference
+// numbers keyed into `references`. Empty when the paper is not built. `itemKey` is set when the
+// cited work is itself a Zotero item with a PDF, which the card opens in the app.
+export interface CitationReference {
+  n: number
+  title: string | null
+  raw: string | null
+  authors: string[]
+  year: number | string | null
+  venue: string | null
+  citedBy: number | null
+  doi: string | null
+  arxivId: string | null
+  itemKey: string | null
+}
+
+export interface Citations {
+  citations: { page: number; rects: number[][]; refs: number[] }[]
+  references: Record<string, CitationReference>
+}
+
+export function fetchCitations(slug: string): Promise<Citations> {
+  return authedGet(`/api/narrations/${encodeURIComponent(slug)}/citations`)
+}
+
 async function bundleJson<T>(slug: string, name: string): Promise<T> {
   const res = await doFetch(`/b/${encodeURIComponent(slug)}/${name}`, { method: "GET" })
   if (!res.ok) throw new Error(await getErrorMessage(res))
@@ -290,7 +322,7 @@ export function putProgress(
 
 export interface HostJob {
   id: string
-  kind: "build" | "narrate"
+  kind: "build" | "narrate" | "index"
   title: string
   status: "running" | "done" | "failed" | "cancelled"
   step: number
@@ -319,4 +351,75 @@ export function startRebuildJob(slug: string): Promise<{ job: HostJob }> {
 
 export function cancelJob(): Promise<{ job: HostJob | null }> {
   return authedAction("/api/job/cancel", "POST")
+}
+
+// ---- Search and Ask (the search index over the library's papers) ----
+
+export interface SearchStatus {
+  installed: boolean
+  indexed: boolean
+  papers: number
+  passages: number
+  models: string[] | null
+  defaultModel: string | null
+  minYear: number | null
+  maxYear: number | null
+}
+
+export interface TitleMatch {
+  itemKey: string
+  title: string
+  authors: string | null
+  year: number | null
+}
+
+export interface SearchResult {
+  chunkId: number
+  itemKey: string
+  title: string
+  authors: string | null
+  year: number | null
+  venue: string | null
+  page: number
+  text: string
+  bbox: number[] | null
+  dropped: boolean
+}
+
+export interface AskQuote {
+  n: number
+  chunkId: number
+  itemKey: string
+  title: string
+  authors: string | null
+  year: number | null
+  page: number
+  text: string
+  rects: number[][]
+}
+
+export interface AskAnswer {
+  summary: string
+  quotes: AskQuote[]
+  model: string
+}
+
+export function fetchSearchStatus(): Promise<SearchStatus> {
+  return authedGet("/api/search/status")
+}
+
+export function fetchTitleMatches(q: string): Promise<{ papers: TitleMatch[] }> {
+  return authedGet(`/api/search/titles?q=${encodeURIComponent(q)}`)
+}
+
+export function runSearch(params: URLSearchParams): Promise<{ results: SearchResult[] }> {
+  return authedGet(`/api/search?${params}`)
+}
+
+export function runAsk(params: URLSearchParams): Promise<AskAnswer> {
+  return authedGet(`/api/search/ask?${params}`)
+}
+
+export function startIndexJob(): Promise<{ job: HostJob }> {
+  return authedAction("/api/job/index", "POST")
 }

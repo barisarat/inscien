@@ -6,7 +6,7 @@
 import { useSyncExternalStore } from "react"
 import { toast } from "sonner"
 
-import { cancelJob, fetchJob, startBuildJob, startNarrateJob, startRebuildJob, type HostJob } from "@/lib/api"
+import { cancelJob, fetchJob, startBuildJob, startIndexJob, startNarrateJob, startRebuildJob, type HostJob } from "@/lib/api"
 
 let job: HostJob | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -55,6 +55,7 @@ async function start(run: () => Promise<{ job: HostJob }>) {
 export const startBuild = (itemKey: string) => start(() => startBuildJob(itemKey))
 export const startNarrate = (itemKey: string) => start(() => startNarrateJob(itemKey))
 export const startRebuild = (slug: string) => start(() => startRebuildJob(slug))
+export const startIndex = () => start(() => startIndexJob())
 
 export async function cancelCurrentJob() {
   try {

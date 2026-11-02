@@ -6,7 +6,6 @@ import LibraryNavigator from "@/components/navigation/LibraryNavigator"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import PdfViewerPanel from "../components/PdfViewerPanel"
-import GraphMode from "./GraphMode"
 import { useWorkspace } from "./WorkspaceProvider"
 
 const SIDEBAR_WIDTH_STORAGE_KEY = "inscien.sidebarWidth"
@@ -14,9 +13,9 @@ const DEFAULT_SIDEBAR_WIDTH = 256
 const MIN_SIDEBAR_WIDTH = 224
 const MAX_SIDEBAR_WIDTH = 420
 
-// The whole app shell: the processed-paper library sidebar + the Map (or, while a narration is
-// open, paper tts' reader in its place) and a draggable PDF viewer panel inside the sidebar inset.
-export default function WorkspaceShell() {
+// The whole app shell: the library sidebar, the page in the main area (the Map, or the search
+// results) and a draggable PDF viewer panel inside the sidebar inset.
+export default function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { pdfTabs, activePdfTabId, hasOpenPdf, selectPdfTab, closePdfTab, closePdfPanel } =
     useWorkspace()
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH)
@@ -67,7 +66,7 @@ export default function WorkspaceShell() {
       <SidebarInset className="h-svh overflow-hidden">
         <ResizablePanelGroup className="min-h-0 flex-1">
           <ResizablePanel id="main" defaultSize={62} minSize={30} className="flex min-w-0 flex-col">
-            <GraphMode />
+            {children}
           </ResizablePanel>
           {hasOpenPdf ? (
             <>

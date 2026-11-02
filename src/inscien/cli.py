@@ -4,6 +4,7 @@
     inscien serve [--port N] [--host H] [--no-browser]
     inscien build <pdf>          a paper PDF -> its library entry (the references the Map draws)
     inscien narrate <pdf>        a paper PDF -> a narration bundle (plan, slice, synthesize)
+    inscien index [--rebuild]    the papers in the library sidebar -> the search index
     inscien voices | sample | structure | score    narration diagnostics
 
 Everything is written under INSCIEN_HOME (see inscien/core/paths.py).
@@ -56,6 +57,12 @@ def cmd_narrate(args) -> None:
     narrate(args.pdf, voice=args.voice, speed=args.speed, device=args.device, slug=args.slug)
 
 
+def cmd_index(args) -> None:
+    from inscien.search.index import run
+
+    run(rebuild=args.rebuild)
+
+
 def main(argv=None) -> None:
     from inscien import __version__
     from inscien.narrate import cli as narrate_cli
@@ -86,6 +93,10 @@ def main(argv=None) -> None:
     narrate.add_argument("--slug", help="bundle name (a rebuild keeps the existing one)")
     narrate.add_argument("--device", choices=("cpu", "cuda"), default=os.getenv("INSCIEN_TTS_DEVICE") or "cpu")
     narrate.set_defaults(func=cmd_narrate)
+
+    index = subs.add_parser("index", help="library papers -> search index")
+    index.add_argument("--rebuild", action="store_true", help="index every paper again")
+    index.set_defaults(func=cmd_index)
 
     narrate_cli.add_commands(subs)
 

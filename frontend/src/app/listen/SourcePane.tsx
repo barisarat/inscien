@@ -1,8 +1,9 @@
 "use client"
 
-import { memo, useEffect, useMemo, type RefObject } from "react"
+import { memo, useEffect, useMemo, useState, type RefObject } from "react"
 
-import { bundleFileUrl, type Anchors, type Cue } from "@/lib/api"
+import { bundleFileUrl, fetchCitations, type Anchors, type Citations, type Cue } from "@/lib/api"
+import CitationCard from "./CitationCard"
 import styles from "./listen.module.css"
 
 // Where the sentence being spoken sits on the original page. Sentence rects when the aligner
@@ -35,6 +36,18 @@ function SourcePane({
   paneRef: RefObject<HTMLDivElement | null>
 }) {
   const key = highlight?.key ?? null
+  // The paper's citation markers, each a hover card over the page image. A paper that is not
+  // built (or a failed read) has none, and the pane is as it was.
+  const [citations, setCitations] = useState<Citations | null>(null)
+  useEffect(() => {
+    let live = true
+    fetchCitations(slug)
+      .then((c) => live && setCitations(c))
+      .catch(() => live && setCitations(null))
+    return () => {
+      live = false
+    }
+  }, [slug])
 
   // Keep the highlight in view by scrolling the PANE, and only once it has left a comfortable
   // band - a paragraph spanning two pages should not yank on every sentence.
@@ -74,6 +87,33 @@ function SourcePane({
     return byPage
   }, [highlight, anchors])
 
+  const cites = useMemo(() => {
+    const byPage = new Map<number, React.ReactNode[]>()
+    if (!citations) return byPage
+    citations.citations.forEach((c, i) => {
+      const size = anchors.pages[c.page]
+      const references = c.refs.map((n) => citations.references[String(n)]).filter(Boolean)
+      if (!size || !references.length) return
+      const list = byPage.get(c.page) ?? []
+      c.rects.forEach(([x0, y0, x1, y1], j) =>
+        list.push(
+          <CitationCard
+            key={`${i}-${j}`}
+            references={references}
+            style={{
+              left: `${(x0 / size.width) * 100}%`,
+              top: `${(y0 / size.height) * 100}%`,
+              width: `${((x1 - x0) / size.width) * 100}%`,
+              height: `${((y1 - y0) / size.height) * 100}%`,
+            }}
+          />
+        )
+      )
+      byPage.set(c.page, list)
+    })
+    return byPage
+  }, [citations, anchors])
+
   return (
     <div ref={paneRef} className="h-full overflow-auto pt-4" style={{ ["--zoom" as string]: zoom }}>
       {anchors.images.map((name, i) => {
@@ -87,6 +127,7 @@ function SourcePane({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" src={bundleFileUrl(slug, `pages/${name}`)} alt={`page ${i + 1}`} />
             {boxes.get(i + 1)}
+            {cites.get(i)}
           </div>
         )
       })}
